@@ -50,16 +50,16 @@
       <div class="header-actions">
         {% if online %}<span class="status online">Online</span>{% else %}<span class="status offline">Offline</span>{% endif %}
         <a class="btn secondary" href="{% url 'admin:inventory_server_change' server.id %}">
-          <span class="icon">EDIT</span> Editar
+          <span class="btn-icon edit-icon" aria-hidden="true"></span> Editar
         </a>
         <button class="btn secondary" type="button" onclick="window.location.reload()">
-          <span class="icon">SYNC</span> Actualizar
+          <span class="btn-icon refresh-icon" aria-hidden="true"></span> Actualizar
         </button>
         {% if is_linux and can_manage_credentials %}
-          <a class="btn primary" href="#linux-terminal"><span class="icon">CLI</span> Terminal</a>
+          <a class="btn primary" href="#linux-terminal"><span class="btn-icon terminal-icon" aria-hidden="true"></span> Abrir consola</a>
         {% endif %}
         <a class="btn danger" href="{% url 'admin:inventory_server_delete' server.id %}">
-          <span class="icon">DEL</span> Eliminar
+          <span class="btn-icon delete-icon" aria-hidden="true"></span> Eliminar
         </a>
       </div>
     </header>
