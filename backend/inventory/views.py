@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect
@@ -247,7 +247,13 @@ Get-ScheduledTaskInfo -TaskName "MonitoringAgent"
 """
 
 
-class UserListView(LoginRequiredMixin, TemplateView):
+class AdminRoleRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        user = self.request.user
+        return user.is_superuser or user.groups.filter(name="Administrador").exists()
+
+
+class UserListView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
     template_name = "inventory/user_list.html"
 
     def get_context_data(self, **kwargs):
@@ -259,7 +265,7 @@ class UserListView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class UserCreateView(LoginRequiredMixin, TemplateView):
+class UserCreateView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
     template_name = "inventory/user_form.html"
 
     def get_context_data(self, **kwargs):
@@ -279,7 +285,7 @@ class UserCreateView(LoginRequiredMixin, TemplateView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-class UserEditView(LoginRequiredMixin, TemplateView):
+class UserEditView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
     template_name = "inventory/user_form.html"
 
     def get_context_data(self, **kwargs):
@@ -302,7 +308,7 @@ class UserEditView(LoginRequiredMixin, TemplateView):
         return self.render_to_response(self.get_context_data(form=form, pk=pk))
 
 
-class UserDeleteView(LoginRequiredMixin, TemplateView):
+class UserDeleteView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
     template_name = "inventory/user_confirm_delete.html"
 
     def get_context_data(self, **kwargs):
