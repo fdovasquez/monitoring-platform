@@ -1,0 +1,15 @@
+[Unit]
+Description=Monitoring Platform Gunicorn
+After=network.target postgresql.service redis-server.service
+
+[Service]
+User=monitoring
+Group=monitoring
+WorkingDirectory=/opt/monitoring-platform/backend
+EnvironmentFile=/etc/monitoring-platform.env
+ExecStart=/opt/monitoring-platform/backend/.venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 3 --timeout 60
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
