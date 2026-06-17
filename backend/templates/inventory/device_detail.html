@@ -131,14 +131,14 @@
       </section>
     {% endif %}
 
-    <section class="metrics-panel">
+    <section class="metrics-panel metrics-panel-main">
       <div class="panel-heading">
         <div>
           <h2>Graficos de metricas</h2>
-          <p>Ultimas {{ samples|length }} muestras recibidas por el agente.</p>
+          <p>Ultimas {{ samples|length }} muestras recibidas por el agente. La linea muestra la evolucion historica de cada recurso.</p>
         </div>
       </div>
-      <div class="chart-grid">
+      <div class="chart-grid chart-grid-main">
         {% for serie in chart_series %}
           <article class="chart-card">
             <div class="chart-title">{{ serie.label }}</div>
@@ -155,25 +155,6 @@
           </article>
         {% endfor %}
       </div>
-    </section>
-
-    <section class="device-panel detail-table">
-      <table>
-        <thead><tr><th>Fecha</th><th>CPU</th><th>Memoria</th><th>Disco</th><th>Uptime</th></tr></thead>
-        <tbody>
-          {% for sample in samples %}
-            <tr>
-              <td>{{ sample.timestamp }}</td>
-              <td>{{ sample.cpu_percent|default:"-" }}%</td>
-              <td>{{ sample.memory_percent|default:"-" }}%</td>
-              <td>{{ sample.disk_percent|default:"-" }}%</td>
-              <td>{{ sample.uptime_seconds|default:"-" }}</td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="5">Aun no hay metricas recibidas.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
     </section>
   </main>
 </body>
