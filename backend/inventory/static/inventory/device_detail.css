@@ -598,6 +598,14 @@
   border-color: #1e293b;
 }
 
+.console-modal-card {
+  width: min(1120px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: hidden;
+  background: #020617;
+  border-color: #1e293b;
+}
+
 .terminal-head {
   display: flex;
   justify-content: space-between;
@@ -626,6 +634,14 @@
   display: block;
   width: 100%;
   min-height: 430px;
+  border: 0;
+  background: #020617;
+}
+
+.console-modal-card iframe {
+  display: block;
+  width: 100%;
+  height: min(560px, calc(100vh - 150px));
   border: 0;
   background: #020617;
 }
