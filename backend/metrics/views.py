@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from inventory.models import AgentToken
+from alerts.services import evaluate_metric_sample
 
 from .models import MetricSample
 from .serializers import MetricIngestSerializer
@@ -61,4 +62,5 @@ class MetricIngestView(APIView):
                 payload=request.data,
             )
 
+        evaluate_metric_sample(sample)
         return Response({"status": "ok", "sample_id": sample.id}, status=status.HTTP_201_CREATED)
