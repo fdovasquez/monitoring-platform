@@ -1,0 +1,152 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitoring Platform</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">MP</div>
+      <div>
+        <strong>Monitoring</strong>
+        <span>Platform</span>
+      </div>
+    </div>
+
+    <a class="primary-action" href="{% url 'admin:inventory_server_add' %}">Install new agent</a>
+
+    <nav class="nav-section">
+      <a class="nav-item active" href="{% url 'device-list' %}">
+        <span>All Devices</span>
+        <strong>{{ total_devices }}</strong>
+      </a>
+      <a class="nav-item" href="{% url 'admin:inventory_server_changelist' %}">
+        <span>Servers</span>
+        <strong>{{ total_devices }}</strong>
+      </a>
+      <a class="nav-item" href="{% url 'admin:inventory_agenttoken_changelist' %}">
+        <span>Agent Tokens</span>
+      </a>
+      <a class="nav-item" href="{% url 'admin:metrics_metricsample_changelist' %}">
+        <span>Metric Samples</span>
+      </a>
+    </nav>
+
+    <div class="group-title">Device groups</div>
+    <div class="group-list">
+      <div class="group-row"><span>Linux</span><strong>{{ linux_devices }}</strong></div>
+      <div class="group-row"><span>Windows</span><strong>{{ windows_devices }}</strong></div>
+      <div class="group-row"><span>Online</span><strong>{{ online_devices }}</strong></div>
+      <div class="group-row"><span>Offline</span><strong>{{ offline_devices }}</strong></div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>All Devices</h1>
+        <p>{{ online_devices }} online / {{ offline_devices }} offline</p>
+      </div>
+      <div class="top-actions">
+        <a href="{% url 'admin:index' %}">Admin</a>
+        <span>{{ request.user.username }}</span>
+      </div>
+    </header>
+
+    <section class="toolbar">
+      <div class="search">
+        <span>Search</span>
+        <input type="search" placeholder="Search devices" aria-label="Search devices">
+      </div>
+      <button type="button">Filters</button>
+      <a class="export" href="{% url 'admin:inventory_server_changelist' %}">Manage</a>
+    </section>
+
+    <section class="filter-row">
+      <span>Platform</span>
+      <mark>Linux</mark>
+      <mark>Windows</mark>
+      <span>Status</span>
+      <mark>Online</mark>
+    </section>
+
+    <section class="device-panel">
+      <table>
+        <thead>
+          <tr>
+            <th>Device</th>
+            <th>Status</th>
+            <th>CPU</th>
+            <th>Memory</th>
+            <th>Disk</th>
+            <th>Security score</th>
+            <th>Private IP</th>
+            <th>System uptime</th>
+            <th>Tags</th>
+            <th>Reachability</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for device in devices %}
+            <tr>
+              <td>
+                <div class="device-cell">
+                  <div class="os-icon {{ device.server.os_type }}">{{ device.server.os_type|slice:":1"|upper }}</div>
+                  <div>
+                    <strong>{{ device.server.name|default:device.server.hostname }}</strong>
+                    <span>{{ device.server.hostname }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                {% if device.online %}
+                  <span class="status online">Online</span>
+                {% else %}
+                  <span class="status offline">Offline</span>
+                {% endif %}
+              </td>
+              <td>{{ device.sample.cpu_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
+              <td>{{ device.sample.memory_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
+              <td>{{ device.sample.disk_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
+              <td>
+                <div class="score">
+                  <span style="--score: {{ device.security_score }}%"></span>
+                  <strong>{{ device.security_score }} / 100</strong>
+                </div>
+              </td>
+              <td>{{ device.server.ip_address|default:"-" }}</td>
+              <td>{{ device.uptime }}</td>
+              <td>
+                <div class="tags">
+                  <span>{{ device.server.get_os_type_display }}</span>
+                  {% if device.server.environment %}<span>{{ device.server.environment }}</span>{% endif %}
+                </div>
+              </td>
+              <td>
+                <div class="reach">
+                  <i></i>
+                  <span>{% if device.online %}100.0% Reachable{% else %}0.0% Reachable{% endif %}</span>
+                  <strong>{% if device.online %}{{ device.latency }} ms{% else %}-{% endif %}</strong>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="10">
+                <div class="empty-state">
+                  <strong>No devices yet</strong>
+                  <span>Create a server and agent token in Admin to start collecting metrics.</span>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
