@@ -1,0 +1,141 @@
+.alerts-shell {
+  display: grid;
+  gap: 16px;
+}
+
+.alert-health span,
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.health-ok,
+.status-pill.sent {
+  color: #138a45;
+  background: #e8f8ee;
+}
+
+.health-warn,
+.status-pill.error {
+  color: #b42318;
+  background: #fff0f0;
+}
+
+.alert-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.alert-tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  color: var(--ink-700);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.alert-tabs a.active {
+  color: var(--blue-700);
+  background: #edf5ff;
+  border-color: #b8cdf8;
+}
+
+.alerts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .8fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.field-check input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+}
+
+.test-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.rule-list {
+  display: grid;
+  gap: 10px;
+}
+
+.rule-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.rule-item strong,
+.rule-item span,
+.rule-item small {
+  display: block;
+}
+
+.rule-item span,
+.rule-item small {
+  margin-top: 3px;
+  color: var(--ink-500);
+}
+
+.rule-item form {
+  display: flex;
+  gap: 8px;
+}
+
+.danger-button {
+  min-height: 36px;
+  padding: 0 12px;
+  color: #b42318;
+  background: #fff7f7;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-weight: 750;
+}
+
+.history-filters {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.history-table {
+  overflow-x: auto;
+}
+
+.history-table table {
+  min-width: 1180px;
+}
+
+@media (max-width: 980px) {
+  .alerts-grid,
+  .history-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .rule-item,
+  .rule-item form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
