@@ -25,6 +25,11 @@ def profile_photo_path(instance, filename):
     return f"profiles/user-{instance.user_id}/avatar.{extension}"
 
 
+def site_logo_path(instance, filename):
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else "png"
+    return f"site/logo.{extension}"
+
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     phone = models.CharField(max_length=40, blank=True)
@@ -37,6 +42,29 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Perfil {self.user.username}"
+
+
+class SiteSettings(models.Model):
+    site_name = models.CharField(max_length=120, default="AGFA HealthCare")
+    subtitle = models.CharField(max_length=160, default="Monitor de servidores")
+    logo = models.ImageField(upload_to=site_logo_path, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuracion del sitio"
+        verbose_name_plural = "Configuracion del sitio"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        settings, _ = cls.objects.get_or_create(pk=1)
+        return settings
+
+    def __str__(self):
+        return self.site_name
 
 
 class Server(models.Model):
