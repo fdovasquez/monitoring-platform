@@ -22,7 +22,17 @@
     </nav>
     <div class="app-actions">
       <a href="{% url 'user-list' %}">Volver</a>
-      <span class="user-chip">{{ request.user.username }}</span>
+      <details class="account-menu">
+        <summary>{{ request.user.username }}</summary>
+        <div class="account-dropdown">
+          <a href="{% url 'profile' %}">Editar perfil</a>
+          <a href="{% url 'password-change' %}">Cambiar contraseña</a>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Cerrar sesión</button>
+          </form>
+        </div>
+      </details>
     </div>
   </header>
 
