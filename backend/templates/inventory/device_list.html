@@ -8,41 +8,23 @@
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="brand brand-logo">
+  <header class="app-header">
+    <a class="app-brand" href="{% url 'device-list' %}">
       <img src="{% static 'inventory/logo.png' %}" alt="AGFA HealthCare">
       <span>Monitor de servidores</span>
-    </div>
-
-    <a class="primary-action" href="{% url 'agent-install' %}">Instalar nuevo agente</a>
-
-    <nav class="nav-section">
-      <a class="nav-item active" href="{% url 'device-list' %}">
-        <span>Todos los dispositivos</span>
-        <strong>{{ total_devices }}</strong>
-      </a>
-      <a class="nav-item" href="{% url 'user-list' %}">
-        <span>Usuarios</span>
-      </a>
-      <a class="nav-item" href="{% url 'admin:inventory_server_changelist' %}">
-        <span>Administrar servidores</span>
-      </a>
-      <a class="nav-item" href="{% url 'admin:metrics_metricsample_changelist' %}">
-        <span>Muestras de metricas</span>
-      </a>
+    </a>
+    <nav class="app-nav" aria-label="Menu principal">
+      <a class="active" href="{% url 'device-list' %}">Dispositivos <span class="nav-count">{{ total_devices }}</span></a>
+      <a href="{% url 'agent-install' %}">Instalar agente</a>
+      <a href="{% url 'user-list' %}">Usuarios</a>
+      <a href="{% url 'admin:inventory_server_changelist' %}">Servidores</a>
+      <a href="{% url 'admin:metrics_metricsample_changelist' %}">Metricas</a>
     </nav>
-
-    <div class="group-title">Grupos de dispositivos</div>
-    <div class="group-list">
-      {% for group in device_groups %}
-        <a class="group-row {% if selected_group == group.id|stringformat:'s' %}active{% endif %}" href="{% url 'device-list' %}?group={{ group.id }}">
-          <span>{{ group.name }}</span><strong>{{ group.server_count }}</strong>
-        </a>
-      {% empty %}
-        <div class="group-row muted"><span>Sin grupos creados</span></div>
-      {% endfor %}
+    <div class="app-actions">
+      <a href="{% url 'admin:index' %}">Admin</a>
+      <span class="user-chip">{{ request.user.username }}</span>
     </div>
-  </aside>
+  </header>
 
   <main class="content">
     <header class="topbar">
@@ -51,10 +33,20 @@
         <p>{{ online_devices }} en linea / {{ offline_devices }} fuera de linea</p>
       </div>
       <div class="top-actions">
-        <a href="{% url 'admin:index' %}">Admin</a>
-        <span>{{ request.user.username }}</span>
+        <a class="action-button" href="{% url 'agent-install' %}">Instalar agente</a>
       </div>
     </header>
+
+    <section class="group-strip" aria-label="Grupos de dispositivos">
+      <span>Grupos</span>
+      {% for group in device_groups %}
+        <a class="{% if selected_group == group.id|stringformat:'s' %}active{% endif %}" href="{% url 'device-list' %}?group={{ group.id }}">
+          {{ group.name }} <strong>{{ group.server_count }}</strong>
+        </a>
+      {% empty %}
+        <em>Sin grupos creados</em>
+      {% endfor %}
+    </section>
 
     <section class="toolbar">
       <div class="search">
