@@ -218,6 +218,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         if total_value is not None and percent_value is not None:
             used_gb = round(total_value * percent_value / 100, 2)
             free_gb = round(total_value - used_gb, 2)
+        percent_css = DeviceDetailView.percent_css(percent_value)
 
         return {
             "label": disk.get("mountpoint") or disk.get("device") or "Disco",
@@ -228,9 +229,20 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             "used_gb": used_gb,
             "free_gb": free_gb,
             "percent": percent_value,
+            "percent_css": percent_css,
             "percent_display": DeviceDetailView.percent_display(percent_value),
             "tone": DeviceDetailView.utilization_tone(percent_value),
         }
+
+    @staticmethod
+    def percent_css(value):
+        if value is None:
+            return "0"
+        try:
+            numeric = max(0, min(float(value), 100))
+        except (TypeError, ValueError):
+            return "0"
+        return f"{numeric:.2f}".rstrip("0").rstrip(".")
 
     @staticmethod
     def percent_display(value):
