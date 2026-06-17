@@ -5,8 +5,10 @@ from .views import (
     DeviceConsoleView,
     DeviceDetailView,
     DeviceListView,
+    LogoutView,
     MachineCredentialCreateView,
     MachineCredentialDeleteView,
+    ProfileView,
     UserCreateView,
     UserDeleteView,
     UserEditView,
@@ -29,4 +31,6 @@ urlpatterns = [
     path("users/new/", UserCreateView.as_view(), name="user-create"),
     path("users/<int:pk>/edit/", UserEditView.as_view(), name="user-edit"),
     path("users/<int:pk>/delete/", UserDeleteView.as_view(), name="user-delete"),
+    path("profile/", ProfileView.as_view(), name="profile"),
+    path("logout/", LogoutView.as_view(), name="logout"),
 ]
