@@ -1,0 +1,161 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuracion del sitio</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/profile.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/site_settings.css' %}">
+</head>
+<body>
+  <header class="app-header">
+    <a class="app-brand" href="{% url 'device-list' %}">
+      {% if site_settings.logo %}
+        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+      {% else %}
+        <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}">
+      {% endif %}
+      <span>{{ site_settings.subtitle }}</span>
+    </a>
+    <nav class="app-nav" aria-label="Menu principal">
+      <a href="{% url 'device-list' %}">Dispositivos</a>
+      <a href="{% url 'agent-install' %}">Instalar agente</a>
+      <a href="{% url 'user-list' %}">Usuarios</a>
+      <a class="active" href="{% url 'site-settings' %}">Configuracion</a>
+      <a href="{% url 'admin:index' %}">Admin</a>
+    </nav>
+    <div class="app-actions">
+      <details class="account-menu">
+        <summary>{{ request.user.username }}</summary>
+        <div class="account-dropdown">
+          <a href="{% url 'profile' %}">Editar perfil</a>
+          <a href="{% url 'profile' %}#security">Cambiar contrasena</a>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Cerrar sesion</button>
+          </form>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <main class="content profile-shell">
+    <header class="profile-hero">
+      <div class="profile-identity">
+        <div class="site-logo-preview" data-logo-preview>
+          {% if site_settings_edit.logo %}
+            <img src="{{ site_settings_edit.logo.url }}" alt="{{ site_settings_edit.site_name }}">
+          {% else %}
+            <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings_edit.site_name }}">
+          {% endif %}
+        </div>
+        <div>
+          <p class="eyebrow">Personalizacion</p>
+          <h1>Configuracion del sitio</h1>
+          <p>Define el logo y los textos visibles en la cabecera de la plataforma.</p>
+        </div>
+      </div>
+      <a class="action-button" href="{% url 'device-list' %}">Volver</a>
+    </header>
+
+    {% if messages %}
+      <section class="messages-row profile-messages">
+        {% for message in messages %}
+          <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    <section class="settings-layout">
+      <form class="profile-card settings-card" method="post" enctype="multipart/form-data" data-loading-form>
+        {% csrf_token %}
+        <div class="profile-card-head">
+          <div>
+            <h2>Identidad visual</h2>
+            <p>Los cambios se aplican a la cabecera del sitio despues de guardar.</p>
+          </div>
+        </div>
+
+        <div class="brand-preview">
+          <div class="brand-preview-logo" data-logo-preview-secondary>
+            {% if site_settings_edit.logo %}
+              <img src="{{ site_settings_edit.logo.url }}" alt="{{ site_settings_edit.site_name }}">
+            {% else %}
+              <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings_edit.site_name }}">
+            {% endif %}
+          </div>
+          <div>
+            <strong>{{ site_settings_edit.site_name }}</strong>
+            <span>{{ site_settings_edit.subtitle }}</span>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="{{ settings_form.site_name.id_for_label }}">Nombre del sitio</label>
+            {{ settings_form.site_name }}
+            {% for error in settings_form.site_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ settings_form.subtitle.id_for_label }}">Texto inferior</label>
+            {{ settings_form.subtitle }}
+            {% for error in settings_form.subtitle.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field field-wide">
+            <label for="{{ settings_form.logo.id_for_label }}">Logo</label>
+            <div class="upload-row">
+              <label class="file-button" for="{{ settings_form.logo.id_for_label }}">Subir logo</label>
+              {{ settings_form.logo }}
+              <span>JPG, PNG o WEBP hasta 2 MB.</span>
+            </div>
+            {% if site_settings_edit.logo %}
+              <label class="inline-check">
+                {{ settings_form.delete_logo }}
+                <span>Eliminar logo actual y usar el logo por defecto</span>
+              </label>
+            {% endif %}
+            {% for error in settings_form.logo.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a class="ghost-button" href="{% url 'device-list' %}">Cancelar</a>
+          <button class="submit-button" type="submit" data-loading-label="Guardando...">Guardar configuracion</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const logoInput = document.getElementById("{{ settings_form.logo.id_for_label }}");
+    const logoTargets = document.querySelectorAll("[data-logo-preview], [data-logo-preview-secondary]");
+    if (logoInput) {
+      logoInput.addEventListener("change", () => {
+        const file = logoInput.files && logoInput.files[0];
+        if (!file) return;
+        const validTypes = ["image/jpeg", "image/png", "image/webp"];
+        if (!validTypes.includes(file.type) || file.size > 2 * 1024 * 1024) return;
+        const url = URL.createObjectURL(file);
+        logoTargets.forEach((target) => {
+          target.innerHTML = "";
+          const image = document.createElement("img");
+          image.src = url;
+          image.alt = "Vista previa del logo";
+          target.appendChild(image);
+        });
+      });
+    }
+
+    document.querySelectorAll("[data-loading-form]").forEach((form) => {
+      form.addEventListener("submit", () => {
+        const button = form.querySelector("button[type='submit']");
+        if (!button || button.disabled) return;
+        button.textContent = button.dataset.loadingLabel || "Guardando...";
+        button.disabled = true;
+      });
+    });
+  </script>
+</body>
+</html>
