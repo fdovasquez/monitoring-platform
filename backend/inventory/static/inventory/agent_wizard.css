@@ -91,6 +91,36 @@ select {
   margin-top: 18px;
 }
 
+.script-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.script-tab {
+  min-height: 36px;
+  color: var(--ink-700);
+  background: #fbfdff;
+}
+
+.script-tab.active {
+  color: white;
+  background: var(--blue-900);
+  border-color: var(--blue-900);
+}
+
+.script-card {
+  display: none;
+}
+
+.script-card.active {
+  display: block;
+}
+
 .script-card textarea {
   width: 100%;
   min-height: 320px;
