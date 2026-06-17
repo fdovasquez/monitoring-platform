@@ -33,7 +33,7 @@ class Server(models.Model):
     name = models.CharField(max_length=255, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     group = models.ForeignKey(DeviceGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="servers")
-    os_type = models.CharField(max_length=20, choices=OS_CHOICES, default=Server.OS_LINUX if False else "linux")
+    os_type = models.CharField(max_length=20, choices=OS_CHOICES, default=OS_LINUX)
     environment = models.CharField(max_length=100, blank=True)
     owner = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
