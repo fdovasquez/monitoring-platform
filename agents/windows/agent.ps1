@@ -24,6 +24,16 @@ $Hostname = if ($env:MONITORING_HOSTNAME) { $env:MONITORING_HOSTNAME } else { $e
 $Cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
 $Os = Get-CimInstance Win32_OperatingSystem
 $Disk = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
+$Disks = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object {
+    $Percent = if ($_.Size -gt 0) { [math]::Round((($_.Size - $_.FreeSpace) / $_.Size) * 100, 2) } else { 0 }
+    @{
+        device = $_.DeviceID
+        mountpoint = $_.DeviceID
+        fstype = $_.FileSystem
+        total_gb = [math]::Round($_.Size / 1GB, 2)
+        percent = [double]$Percent
+    }
+}
 $Uptime = [int]((Get-Date) - $Os.LastBootUpTime).TotalSeconds
 $MemoryPercent = [math]::Round((($Os.TotalVisibleMemorySize - $Os.FreePhysicalMemory) / $Os.TotalVisibleMemorySize) * 100, 2)
 $DiskPercent = [math]::Round((($Disk.Size - $Disk.FreeSpace) / $Disk.Size) * 100, 2)
@@ -36,6 +46,8 @@ $Payload = @{
         cpu_percent = [double]$Cpu
         memory_percent = [double]$MemoryPercent
         disk_c_percent = [double]$DiskPercent
+        disk_count = @($Disks).Count
+        disks = @($Disks)
         uptime_seconds = $Uptime
     }
     services = @()
