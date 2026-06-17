@@ -1,0 +1,66 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mi perfil</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+</head>
+<body>
+  <header class="app-header">
+    <a class="app-brand" href="{% url 'device-list' %}">
+      <img src="{% static 'inventory/logo.png' %}" alt="AGFA HealthCare">
+      <span>Monitor de servidores</span>
+    </a>
+    <nav class="app-nav" aria-label="Menu principal">
+      <a href="{% url 'device-list' %}">Dispositivos</a>
+      <a href="{% url 'agent-install' %}">Instalar agente</a>
+      <a href="{% url 'user-list' %}">Usuarios</a>
+      <a href="{% url 'admin:index' %}">Admin</a>
+    </nav>
+    <div class="app-actions">
+      <details class="account-menu">
+        <summary>{{ request.user.username }}</summary>
+        <div class="account-dropdown">
+          <a href="{% url 'profile' %}">Editar perfil</a>
+          <a href="{% url 'password-change' %}">Cambiar contraseña</a>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Cerrar sesión</button>
+          </form>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>Mi perfil</h1>
+        <p>Actualiza tus datos personales de acceso.</p>
+      </div>
+      <div class="top-actions">
+        <a href="{% url 'password-change' %}">Cambiar contraseña</a>
+      </div>
+    </header>
+
+    {% if messages %}
+      <section class="messages-row">
+        {% for message in messages %}<div class="message success">{{ message }}</div>{% endfor %}
+      </section>
+    {% endif %}
+
+    <form class="wizard-card user-form" method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<div class="message">{{ error }}</div>{% endfor %}
+      {% endfor %}
+      <button class="submit-button" type="submit">Guardar perfil</button>
+    </form>
+  </main>
+</body>
+</html>
