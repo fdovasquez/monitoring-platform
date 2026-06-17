@@ -122,9 +122,16 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "online": online,
                 "uptime": DeviceListView.format_uptime(latest.uptime_seconds if latest else None),
                 "security_score": DeviceListView.security_score(latest),
+                "cpu_display": self.percent_display(latest.cpu_percent if latest else None),
+                "memory_display": self.percent_display(latest.memory_percent if latest else None),
+                "disk_display": self.percent_display(latest.disk_percent if latest else None),
+                "cpu_tone": self.utilization_tone(latest.cpu_percent if latest else None),
+                "memory_tone": self.utilization_tone(latest.memory_percent if latest else None),
+                "disk_tone": self.utilization_tone(latest.disk_percent if latest else None),
                 "disk_count": disk_count,
                 "disk_details": disk_details,
                 "chart_series": self.chart_series(samples),
+                "recent_events": self.recent_events(server, samples, latest, online),
                 "credential_form": MachineCredentialForm(),
                 "credentials": server.credentials.all(),
                 "can_manage_credentials": user_can_manage_credentials(self.request.user),
@@ -141,11 +148,33 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             {"label": "CPU", "points": DeviceDetailView.svg_points(ordered_samples, "cpu_percent"), "class": "cpu"},
             {"label": "Memoria", "points": DeviceDetailView.svg_points(ordered_samples, "memory_percent"), "class": "memory"},
             {"label": "Disco", "points": DeviceDetailView.svg_points(ordered_samples, "disk_percent"), "class": "disk"},
+            {"label": "Red", "points": DeviceDetailView.svg_payload_points(ordered_samples, "network_percent"), "class": "network"},
         ]
 
     @staticmethod
     def svg_points(samples, field_name):
         values = [getattr(sample, field_name) for sample in samples if getattr(sample, field_name) is not None]
+        if not values:
+            return ""
+        if len(values) == 1:
+            x_positions = [150]
+        else:
+            step = 300 / (len(values) - 1)
+            x_positions = [round(index * step, 2) for index in range(len(values))]
+        points = []
+        for x_position, value in zip(x_positions, values):
+            y_position = round(80 - max(0, min(float(value), 100)) * 0.8, 2)
+            points.append(f"{x_position},{y_position}")
+        return " ".join(points)
+
+    @staticmethod
+    def svg_payload_points(samples, metric_name):
+        values = []
+        for sample in samples:
+            metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
+            value = metrics.get(metric_name)
+            if value is not None:
+                values.append(value)
         if not values:
             return ""
         if len(values) == 1:
@@ -166,10 +195,70 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
         disks = metrics.get("disks")
         if isinstance(disks, list) and disks:
-            return disks
+            return [DeviceDetailView.normalize_disk(disk) for disk in disks]
         if sample.disk_percent is not None:
-            return [{"mountpoint": "Principal", "percent": sample.disk_percent}]
+            return [DeviceDetailView.normalize_disk({"mountpoint": "Principal", "percent": sample.disk_percent})]
         return []
+
+    @staticmethod
+    def normalize_disk(disk):
+        percent = disk.get("percent")
+        total_gb = disk.get("total_gb")
+        try:
+            percent_value = float(percent) if percent is not None else None
+        except (TypeError, ValueError):
+            percent_value = None
+        try:
+            total_value = float(total_gb) if total_gb is not None else None
+        except (TypeError, ValueError):
+            total_value = None
+
+        used_gb = None
+        free_gb = None
+        if total_value is not None and percent_value is not None:
+            used_gb = round(total_value * percent_value / 100, 2)
+            free_gb = round(total_value - used_gb, 2)
+
+        return {
+            "label": disk.get("mountpoint") or disk.get("device") or "Disco",
+            "device": disk.get("device", ""),
+            "mountpoint": disk.get("mountpoint", ""),
+            "fstype": disk.get("fstype", ""),
+            "total_gb": total_value,
+            "used_gb": used_gb,
+            "free_gb": free_gb,
+            "percent": percent_value,
+            "percent_display": DeviceDetailView.percent_display(percent_value),
+            "tone": DeviceDetailView.utilization_tone(percent_value),
+        }
+
+    @staticmethod
+    def percent_display(value):
+        if value is None:
+            return "-"
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return "-"
+        if numeric.is_integer():
+            return f"{int(numeric)}%"
+        return f"{numeric:.1f}%"
+
+    @staticmethod
+    def utilization_tone(value):
+        if value is None:
+            return "neutral"
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return "neutral"
+        if numeric >= 90:
+            return "danger"
+        if numeric >= 80:
+            return "orange"
+        if numeric >= 65:
+            return "warning"
+        return "success"
 
     @staticmethod
     def disk_count(sample, disk_details):
@@ -183,6 +272,60 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             except (TypeError, ValueError):
                 pass
         return len(disk_details)
+
+    @staticmethod
+    def recent_events(server, samples, latest, online):
+        events = []
+        if latest:
+            events.append(
+                {
+                    "date": latest.timestamp,
+                    "type": "Agente",
+                    "severity": "Info" if online else "Critico",
+                    "message": "Metricas recibidas correctamente." if online else "El agente no reporta dentro de la ventana esperada.",
+                    "icon": "activity",
+                }
+            )
+            threshold_map = [
+                ("CPU", latest.cpu_percent),
+                ("Memoria", latest.memory_percent),
+                ("Disco", latest.disk_percent),
+            ]
+            for label, value in threshold_map:
+                if value is None:
+                    continue
+                if value >= 90:
+                    events.append(
+                        {
+                            "date": latest.timestamp,
+                            "type": label,
+                            "severity": "Critico",
+                            "message": f"{label} supera el 90% de utilizacion.",
+                            "icon": "alert",
+                        }
+                    )
+                elif value >= 80:
+                    events.append(
+                        {
+                            "date": latest.timestamp,
+                            "type": label,
+                            "severity": "Advertencia",
+                            "message": f"{label} supera el 80% de utilizacion.",
+                            "icon": "warning",
+                        }
+                    )
+
+        for sample in samples[1:4]:
+            events.append(
+                {
+                    "date": sample.timestamp,
+                    "type": "Monitoreo",
+                    "severity": "Info",
+                    "message": f"Muestra registrada para {server.hostname}.",
+                    "icon": "activity",
+                }
+            )
+        return events
 
 
 class MachineCredentialCreateView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
