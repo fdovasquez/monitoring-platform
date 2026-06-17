@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Monitoring Platform</title>
+  <title>Dispositivos</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
 </head>
 <body>
@@ -21,35 +21,37 @@
 
     <nav class="nav-section">
       <a class="nav-item active" href="{% url 'device-list' %}">
-        <span>All Devices</span>
+        <span>Todos los dispositivos</span>
         <strong>{{ total_devices }}</strong>
+      </a>
+      <a class="nav-item" href="{% url 'user-roles' %}">
+        <span>Usuarios y roles</span>
       </a>
       <a class="nav-item" href="{% url 'admin:inventory_server_changelist' %}">
-        <span>Servers</span>
-        <strong>{{ total_devices }}</strong>
-      </a>
-      <a class="nav-item" href="{% url 'admin:inventory_agenttoken_changelist' %}">
-        <span>Agent Tokens</span>
+        <span>Administrar servidores</span>
       </a>
       <a class="nav-item" href="{% url 'admin:metrics_metricsample_changelist' %}">
-        <span>Metric Samples</span>
+        <span>Muestras de metricas</span>
       </a>
     </nav>
 
-    <div class="group-title">Device groups</div>
+    <div class="group-title">Grupos de dispositivos</div>
     <div class="group-list">
-      <div class="group-row"><span>Linux</span><strong>{{ linux_devices }}</strong></div>
-      <div class="group-row"><span>Windows</span><strong>{{ windows_devices }}</strong></div>
-      <div class="group-row"><span>Online</span><strong>{{ online_devices }}</strong></div>
-      <div class="group-row"><span>Offline</span><strong>{{ offline_devices }}</strong></div>
+      {% for group in device_groups %}
+        <a class="group-row {% if selected_group == group.id|stringformat:'s' %}active{% endif %}" href="{% url 'device-list' %}?group={{ group.id }}">
+          <span>{{ group.name }}</span><strong>{{ group.server_count }}</strong>
+        </a>
+      {% empty %}
+        <div class="group-row muted"><span>Sin grupos creados</span></div>
+      {% endfor %}
     </div>
   </aside>
 
   <main class="content">
     <header class="topbar">
       <div>
-        <h1>All Devices</h1>
-        <p>{{ online_devices }} online / {{ offline_devices }} offline</p>
+        <h1>Todos los dispositivos</h1>
+        <p>{{ online_devices }} en linea / {{ offline_devices }} fuera de linea</p>
       </div>
       <div class="top-actions">
         <a href="{% url 'admin:index' %}">Admin</a>
@@ -59,54 +61,53 @@
 
     <section class="toolbar">
       <div class="search">
-        <span>Search</span>
-        <input type="search" placeholder="Search devices" aria-label="Search devices">
+        <span>Buscar</span>
+        <input type="search" placeholder="Buscar dispositivos" aria-label="Buscar dispositivos">
       </div>
-      <button type="button">Filters</button>
-      <a class="export" href="{% url 'admin:inventory_server_changelist' %}">Manage</a>
+      <a class="export" href="{% url 'agent-install' %}">Nuevo agente</a>
     </section>
 
     <section class="filter-row">
-      <span>Platform</span>
+      <span>Plataforma</span>
       <mark>Linux</mark>
       <mark>Windows</mark>
-      <span>Status</span>
-      <mark>Online</mark>
+      <span>Estado</span>
+      <mark>En linea</mark>
     </section>
 
     <section class="device-panel">
       <table>
         <thead>
           <tr>
-            <th>Device</th>
-            <th>Status</th>
+            <th>Dispositivo</th>
+            <th>Estado</th>
             <th>CPU</th>
-            <th>Memory</th>
-            <th>Disk</th>
-            <th>Security score</th>
-            <th>Private IP</th>
-            <th>System uptime</th>
-            <th>Tags</th>
-            <th>Reachability</th>
+            <th>Memoria</th>
+            <th>Disco</th>
+            <th>Seguridad</th>
+            <th>IP</th>
+            <th>Uptime</th>
+            <th>Etiquetas</th>
+            <th>Alcance</th>
           </tr>
         </thead>
         <tbody>
           {% for device in devices %}
             <tr>
               <td>
-                <div class="device-cell">
+                <a class="device-cell" href="{% url 'device-detail' device.server.id %}">
                   <div class="os-icon {{ device.server.os_type }}">{{ device.server.os_type|slice:":1"|upper }}</div>
                   <div>
                     <strong>{{ device.server.name|default:device.server.hostname }}</strong>
                     <span>{{ device.server.hostname }}</span>
                   </div>
-                </div>
+                </a>
               </td>
               <td>
                 {% if device.online %}
-                  <span class="status online">Online</span>
+                  <span class="status online">En linea</span>
                 {% else %}
-                  <span class="status offline">Offline</span>
+                  <span class="status offline">Fuera de linea</span>
                 {% endif %}
               </td>
               <td>{{ device.sample.cpu_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
@@ -123,13 +124,14 @@
               <td>
                 <div class="tags">
                   <span>{{ device.server.get_os_type_display }}</span>
+                  {% if device.server.group %}<span>{{ device.server.group.name }}</span>{% endif %}
                   {% if device.server.environment %}<span>{{ device.server.environment }}</span>{% endif %}
                 </div>
               </td>
               <td>
                 <div class="reach">
                   <i></i>
-                  <span>{% if device.online %}100.0% Reachable{% else %}0.0% Reachable{% endif %}</span>
+                  <span>{% if device.online %}100.0% alcanzable{% else %}0.0% alcanzable{% endif %}</span>
                   <strong>{% if device.online %}{{ device.latency }} ms{% else %}-{% endif %}</strong>
                 </div>
               </td>
@@ -138,8 +140,8 @@
             <tr>
               <td colspan="10">
                 <div class="empty-state">
-                  <strong>No devices yet</strong>
-                  <span>Create a server and agent token in Admin to start collecting metrics.</span>
+                  <strong>No hay dispositivos</strong>
+                  <span>Usa "Instalar nuevo agente" para crear un servidor, generar token y copiar el instalador.</span>
                 </div>
               </td>
             </tr>
