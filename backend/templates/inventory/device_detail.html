@@ -66,7 +66,7 @@
         <h2>Discos detectados</h2>
         <dl class="detail-list">
           {% for disk in disk_details %}
-            <dt>{{ disk.mountpoint|default:disk.device|default:"Disco" }}</dt>
+            <dt>{% if disk.mountpoint %}{{ disk.mountpoint }}{% elif disk.device %}{{ disk.device }}{% else %}Disco{% endif %}</dt>
             <dd>{{ disk.percent|default:"-" }}{% if disk.percent %}%{% endif %}</dd>
           {% empty %}
             <dt>Sin datos</dt><dd>El agente aun no ha reportado discos.</dd>
