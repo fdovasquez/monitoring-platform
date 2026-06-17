@@ -7,6 +7,7 @@
   <title>Mi perfil</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/profile.css' %}">
 </head>
 <body>
   <header class="app-header">
@@ -25,7 +26,7 @@
         <summary>{{ request.user.username }}</summary>
         <div class="account-dropdown">
           <a href="{% url 'profile' %}">Editar perfil</a>
-          <a href="{% url 'password-change' %}">Cambiar contraseña</a>
+          <a href="{% url 'profile' %}#security">Cambiar contraseña</a>
           <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit">Cerrar sesión</button>
@@ -35,32 +36,254 @@
     </div>
   </header>
 
-  <main class="content">
-    <header class="topbar">
-      <div>
-        <h1>Mi perfil</h1>
-        <p>Actualiza tus datos personales de acceso.</p>
+  <main class="content profile-shell">
+    <header class="profile-hero">
+      <div class="profile-identity">
+        <div class="avatar-preview" data-avatar-preview>
+          {% if account_profile.photo %}
+            <img src="{{ account_profile.photo.url }}" alt="Foto de perfil de {{ request.user.username }}">
+          {% else %}
+            <span>{{ avatar_initials }}</span>
+          {% endif %}
+        </div>
+        <div>
+          <p class="eyebrow">Cuenta de usuario</p>
+          <h1>Mi perfil</h1>
+          <p>Administra tus datos personales y la seguridad de acceso.</p>
+        </div>
       </div>
-      <div class="top-actions">
-        <a href="{% url 'password-change' %}">Cambiar contraseña</a>
-      </div>
+      <a class="action-button" href="{% url 'device-list' %}">Cancelar</a>
     </header>
 
     {% if messages %}
-      <section class="messages-row">
-        {% for message in messages %}<div class="message success">{{ message }}</div>{% endfor %}
+      <section class="messages-row profile-messages">
+        {% for message in messages %}
+          <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+        {% endfor %}
       </section>
     {% endif %}
 
-    <form class="wizard-card user-form" method="post">
-      {% csrf_token %}
-      {% for field in form %}
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% for error in field.errors %}<div class="message">{{ error }}</div>{% endfor %}
-      {% endfor %}
-      <button class="submit-button" type="submit">Guardar perfil</button>
-    </form>
+    <section class="profile-grid">
+      <form class="profile-card" method="post" enctype="multipart/form-data" data-dirty-form data-loading-form>
+        {% csrf_token %}
+        <div class="profile-card-head">
+          <div>
+            <h2>Datos personales</h2>
+            <p>Estos datos identifican al usuario dentro de la plataforma.</p>
+          </div>
+        </div>
+
+        <div class="avatar-editor">
+          <div class="avatar-preview avatar-preview-large" data-avatar-preview-secondary>
+            {% if account_profile.photo %}
+              <img src="{{ account_profile.photo.url }}" alt="Foto actual">
+            {% else %}
+              <span>{{ avatar_initials }}</span>
+            {% endif %}
+          </div>
+          <div class="avatar-actions">
+            <label class="file-button" for="{{ profile_form.photo.id_for_label }}">Subir foto</label>
+            {{ profile_form.photo }}
+            <p>JPG, PNG o WEBP. Tamaño máximo 2 MB.</p>
+            {% if account_profile.photo %}
+              <label class="inline-check">
+                {{ profile_form.delete_photo }}
+                <span>Eliminar foto actual</span>
+              </label>
+            {% endif %}
+            {% for error in profile_form.photo.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="{{ profile_form.first_name.id_for_label }}">Nombre</label>
+            {{ profile_form.first_name }}
+            {% for error in profile_form.first_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.last_name.id_for_label }}">Apellido</label>
+            {{ profile_form.last_name }}
+            {% for error in profile_form.last_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.email.id_for_label }}">Correo electrónico</label>
+            {{ profile_form.email }}
+            {% for error in profile_form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.phone.id_for_label }}">Teléfono <span>opcional</span></label>
+            {{ profile_form.phone }}
+            {% for error in profile_form.phone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field field-wide">
+            <label for="{{ profile_form.position.id_for_label }}">Cargo <span>opcional</span></label>
+            {{ profile_form.position }}
+            {% for error in profile_form.position.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a class="ghost-button" href="{% url 'device-list' %}">Cancelar</a>
+          <button class="submit-button" type="submit" data-loading-label="Guardando...">Guardar cambios</button>
+        </div>
+      </form>
+
+      <form id="security" class="profile-card security-card" method="post" action="{% url 'password-change' %}" data-dirty-form data-password-form data-loading-form>
+        {% csrf_token %}
+        <div class="profile-card-head">
+          <div>
+            <h2>Seguridad</h2>
+            <p>Cambia tu contraseña con validación de complejidad en tiempo real.</p>
+          </div>
+        </div>
+
+        {% if password_form.non_field_errors %}
+          <div class="message error">{{ password_form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="field password-field">
+          <label for="{{ password_form.current_password.id_for_label }}">Contraseña actual</label>
+          <div class="password-control">
+            {{ password_form.current_password }}
+            <button type="button" data-toggle-password="{{ password_form.current_password.id_for_label }}">Mostrar</button>
+          </div>
+          {% for error in password_form.current_password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="field password-field">
+          <label for="{{ password_form.new_password.id_for_label }}">Nueva contraseña</label>
+          <div class="password-control">
+            {{ password_form.new_password }}
+            <button type="button" data-toggle-password="{{ password_form.new_password.id_for_label }}">Mostrar</button>
+          </div>
+          {% for error in password_form.new_password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="password-strength" data-strength>
+          <span></span>
+          <strong>Débil</strong>
+        </div>
+
+        <ul class="password-checklist">
+          <li data-rule="length">Mínimo 8 caracteres</li>
+          <li data-rule="upper">Al menos una letra mayúscula</li>
+          <li data-rule="lower">Al menos una letra minúscula</li>
+          <li data-rule="number">Al menos un número</li>
+          <li data-rule="special">Al menos un carácter especial</li>
+          <li data-rule="different">Distinta a la contraseña actual</li>
+          <li data-rule="match">Confirmación coincide</li>
+        </ul>
+
+        <div class="field password-field">
+          <label for="{{ password_form.confirm_password.id_for_label }}">Confirmar nueva contraseña</label>
+          <div class="password-control">
+            {{ password_form.confirm_password }}
+            <button type="button" data-toggle-password="{{ password_form.confirm_password.id_for_label }}">Mostrar</button>
+          </div>
+          {% for error in password_form.confirm_password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="form-actions">
+          <a class="ghost-button" href="{% url 'profile' %}">Cancelar</a>
+          <button class="submit-button" type="submit" data-password-submit data-loading-label="Cambiando...">Cambiar contraseña</button>
+        </div>
+      </form>
+    </section>
   </main>
+
+  <script>
+    const fileInput = document.getElementById("{{ profile_form.photo.id_for_label }}");
+    const avatarTargets = document.querySelectorAll("[data-avatar-preview], [data-avatar-preview-secondary]");
+    if (fileInput) {
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        const validTypes = ["image/jpeg", "image/png", "image/webp"];
+        if (!validTypes.includes(file.type) || file.size > 2 * 1024 * 1024) return;
+        const url = URL.createObjectURL(file);
+        avatarTargets.forEach((target) => {
+          target.innerHTML = "";
+          const image = document.createElement("img");
+          image.src = url;
+          image.alt = "Vista previa";
+          target.appendChild(image);
+        });
+      });
+    }
+
+    document.querySelectorAll("[data-toggle-password]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const input = document.getElementById(button.dataset.togglePassword);
+        if (!input) return;
+        input.type = input.type === "password" ? "text" : "password";
+        button.textContent = input.type === "password" ? "Mostrar" : "Ocultar";
+      });
+    });
+
+    const passwordForm = document.querySelector("[data-password-form]");
+    if (passwordForm) {
+      const current = document.getElementById("{{ password_form.current_password.id_for_label }}");
+      const next = document.getElementById("{{ password_form.new_password.id_for_label }}");
+      const confirm = document.getElementById("{{ password_form.confirm_password.id_for_label }}");
+      const submit = passwordForm.querySelector("[data-password-submit]");
+      const strength = document.querySelector("[data-strength]");
+      const rules = {
+        length: () => next.value.length >= 8,
+        upper: () => /[A-Z]/.test(next.value),
+        lower: () => /[a-z]/.test(next.value),
+        number: () => /\d/.test(next.value),
+        special: () => /[^A-Za-z0-9]/.test(next.value),
+        different: () => current.value.length > 0 && next.value !== current.value,
+        match: () => next.value.length > 0 && next.value === confirm.value,
+      };
+
+      function refreshPasswordState() {
+        let passed = 0;
+        Object.keys(rules).forEach((name) => {
+          const item = passwordForm.querySelector(`[data-rule="${name}"]`);
+          const ok = rules[name]();
+          if (ok) passed += 1;
+          item.classList.toggle("valid", ok);
+        });
+        const label = passed >= 6 ? "Fuerte" : passed >= 4 ? "Media" : "Débil";
+        strength.dataset.level = label.toLowerCase();
+        strength.querySelector("strong").textContent = label;
+        strength.querySelector("span").style.width = `${Math.max(14, Math.round((passed / 7) * 100))}%`;
+        submit.disabled = passed < 7 || !current.value || !next.value || !confirm.value;
+      }
+
+      [current, next, confirm].forEach((input) => input.addEventListener("input", refreshPasswordState));
+      refreshPasswordState();
+    }
+
+    document.querySelectorAll("[data-loading-form]").forEach((form) => {
+      form.addEventListener("submit", () => {
+        const button = form.querySelector("button[type='submit']");
+        if (!button || button.disabled) return;
+        button.dataset.originalText = button.textContent;
+        button.textContent = button.dataset.loadingLabel || "Guardando...";
+        button.disabled = true;
+      });
+    });
+
+    let dirty = false;
+    document.querySelectorAll("[data-dirty-form] input, [data-dirty-form] select, [data-dirty-form] textarea").forEach((input) => {
+      input.addEventListener("change", () => { dirty = true; });
+      input.addEventListener("input", () => { dirty = true; });
+    });
+    document.querySelectorAll("[data-dirty-form]").forEach((form) => {
+      form.addEventListener("submit", () => { dirty = false; });
+    });
+    window.addEventListener("beforeunload", (event) => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+
+    {% if focus_security %}
+      document.getElementById("security")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    {% endif %}
+  </script>
 </body>
 </html>
