@@ -1,0 +1,109 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install new agent</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">MP</div>
+      <div>
+        <strong>Monitoring</strong>
+        <span>Platform</span>
+      </div>
+    </div>
+    <a class="primary-action" href="{% url 'agent-install' %}">Install new agent</a>
+    <nav class="nav-section">
+      <a class="nav-item" href="{% url 'device-list' %}"><span>All Devices</span></a>
+      <a class="nav-item active" href="{% url 'agent-install' %}"><span>Agent wizard</span></a>
+      <a class="nav-item" href="{% url 'admin:index' %}"><span>Admin</span></a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>Install new agent</h1>
+        <p>Crea el servidor, genera su token y copia un instalador listo para pegar.</p>
+      </div>
+      <div class="top-actions">
+        <a href="{% url 'device-list' %}">All Devices</a>
+      </div>
+    </header>
+
+    <section class="wizard-grid">
+      <form class="wizard-card" method="post">
+        {% csrf_token %}
+        <div class="step-label">Paso 1</div>
+        <h2>Datos del servidor</h2>
+        <p>Completa estos campos. El token se crea automaticamente.</p>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="message">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <label>Nombre tecnico del servidor</label>
+        <input name="hostname" placeholder="eidb.hospitalcurico.cl" required>
+
+        <label>Nombre visible</label>
+        <input name="name" placeholder="Base de datos EIDB">
+
+        <label>IP del servidor</label>
+        <input name="ip_address" placeholder="192.168.0.50">
+
+        <label>Sistema operativo</label>
+        <select name="os_type">
+          <option value="linux">Linux</option>
+          <option value="windows">Windows</option>
+          <option value="other">Otro</option>
+        </select>
+
+        <label>Ambiente</label>
+        <input name="environment" value="produccion">
+
+        <label>Responsable</label>
+        <input name="owner" placeholder="Area o persona responsable">
+
+        <button class="submit-button" type="submit">Crear servidor y generar token</button>
+      </form>
+
+      <section class="wizard-card help-card">
+        <div class="step-label">Paso 2</div>
+        <h2>Instalar en el cliente</h2>
+        {% if created_server %}
+          <p>Servidor creado: <strong>{{ created_server.hostname }}</strong></p>
+          <p>Token generado:</p>
+          <code class="token">{{ agent_token.token }}</code>
+          <p>Elige el sistema operativo del cliente y copia el bloque completo en una terminal con permisos de administrador.</p>
+        {% else %}
+          <p>Primero crea el servidor. Luego apareceran los comandos listos para copiar.</p>
+        {% endif %}
+      </section>
+    </section>
+
+    {% if created_server %}
+      <section class="script-section">
+        <article class="script-card">
+          <h2>Oracle Linux / RHEL / CentOS</h2>
+          <textarea readonly>{{ linux_script }}</textarea>
+        </article>
+        <article class="script-card">
+          <h2>Ubuntu / Debian</h2>
+          <textarea readonly>{{ ubuntu_script }}</textarea>
+        </article>
+        <article class="script-card">
+          <h2>Windows PowerShell</h2>
+          <textarea readonly>{{ windows_script }}</textarea>
+        </article>
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>
