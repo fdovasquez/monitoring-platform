@@ -92,11 +92,6 @@
         <div class="progress success" style="--value: 100%;"></div>
       </article>
       <article class="kpi-card card">
-        <div class="kpi-top"><span class="kpi-icon check">CHK</span><strong>{{ server.last_seen|default:"-" }}</strong></div>
-        <p>Ultimo check</p>
-        <div class="progress primary" style="--value: 100%;"></div>
-      </article>
-      <article class="kpi-card card">
         <div class="kpi-top"><span class="kpi-icon security">SEC</span><strong>{{ security_score }}/100</strong></div>
         <p>Puntaje seguridad</p>
         <div class="progress {{ cpu_tone }}" style="--value: {{ security_score }}%;"></div>
@@ -126,25 +121,24 @@
       </article>
 
       <article class="card disks-card span-5">
-        <div class="section-title">
-          <div>
-            <h2>Discos</h2>
-            <p>{{ disk_count }} disco{% if disk_count != 1 %}s{% endif %} detectado{% if disk_count != 1 %}s{% endif %}.</p>
-          </div>
+        <div class="storage-title">
+          <span class="storage-icon" aria-hidden="true"></span>
+          <h2>Disk</h2>
         </div>
-        <div class="disk-list">
+        <div class="storage-list">
           {% for disk in disk_details %}
-            <div class="disk-item">
-              <div class="disk-head">
-                <strong>{{ disk.label }}</strong>
-                <span>{{ disk.percent_display }}</span>
+            <div class="storage-row">
+              <div class="storage-row-head">
+                <span class="storage-name">{{ disk.label }}</span>
+                <span class="storage-capacity">
+                  {% if disk.free_gb != None and disk.total_gb != None %}
+                    {{ disk.free_gb }} GB libre de {{ disk.total_gb }} GB
+                  {% else %}
+                    {{ disk.percent_display }}
+                  {% endif %}
+                </span>
               </div>
-              <div class="progress {{ disk.tone }}" style="--value: {{ disk.percent|default:0 }}%;"></div>
-              <div class="disk-stats">
-                <span>Capacidad <strong>{% if disk.total_gb %}{{ disk.total_gb }} GB{% else %}-{% endif %}</strong></span>
-                <span>Usado <strong>{% if disk.used_gb %}{{ disk.used_gb }} GB{% else %}-{% endif %}</strong></span>
-                <span>Libre <strong>{% if disk.free_gb %}{{ disk.free_gb }} GB{% else %}-{% endif %}</strong></span>
-              </div>
+              <div class="storage-progress" style="--value: {{ disk.percent|default:0 }}%;"></div>
             </div>
           {% empty %}
             <div class="empty-compact">El agente aun no ha reportado discos.</div>
