@@ -56,7 +56,7 @@
           <span class="btn-icon refresh-icon" aria-hidden="true"></span> Actualizar
         </button>
         {% if is_linux and can_manage_credentials %}
-          <a class="btn primary" href="#linux-terminal"><span class="btn-icon terminal-icon" aria-hidden="true"></span> Abrir consola</a>
+          <button class="btn primary" type="button" data-open-modal="console-modal"><span class="btn-icon terminal-icon" aria-hidden="true"></span> Abrir consola</button>
         {% endif %}
         <a class="btn danger" href="{% url 'admin:inventory_server_delete' server.id %}">
           <span class="btn-icon delete-icon" aria-hidden="true"></span> Eliminar
@@ -123,7 +123,7 @@
       <article class="card disks-card span-5">
         <div class="storage-title">
           <span class="storage-icon" aria-hidden="true"></span>
-          <h2>Disk</h2>
+          <h2>Discos</h2>
         </div>
         <div class="storage-list">
           {% for disk in disk_details %}
@@ -131,10 +131,10 @@
               <div class="storage-row-head">
                 <span class="storage-name">{{ disk.label }}</span>
                 <span class="storage-capacity">
-                  {% if disk.free_gb != None and disk.total_gb != None %}
-                    {{ disk.free_gb }} GB libre de {{ disk.total_gb }} GB
+                  {% if disk.used_gb != None and disk.total_gb != None %}
+                    {{ disk.used_gb }} GB usado de {{ disk.total_gb }} GB
                   {% else %}
-                    {{ disk.percent_display }}
+                    {{ disk.percent_display }} utilizado
                   {% endif %}
                 </span>
               </div>
@@ -177,7 +177,11 @@
                 <td>{% if credential.is_active %}<span class="pill success">Activa</span>{% else %}<span class="pill muted">Inactiva</span>{% endif %}</td>
                 <td>
                   <div class="row-actions">
-                    <a class="text-action" href="#linux-terminal">Probar conexion</a>
+                    {% if is_linux and can_manage_credentials %}
+                      <button class="text-action" type="button" data-open-modal="console-modal">Probar conexion</button>
+                    {% else %}
+                      <span class="muted">No disponible</span>
+                    {% endif %}
                     {% if can_manage_credentials %}
                       <form method="post" action="{% url 'machine-credential-delete' server.id credential.id %}">
                         {% csrf_token %}
@@ -196,19 +200,22 @@
     </section>
 
     {% if is_linux and can_manage_credentials %}
-      <section id="linux-terminal" class="terminal-card card">
-        <div class="terminal-head">
-          <div>
-            <h2>Terminal Linux</h2>
-            <p>Consola embebida para ejecutar comandos SSH usando una credencial registrada.</p>
+      <div id="console-modal" class="modal-backdrop" hidden>
+        <section class="console-modal-card card" role="dialog" aria-modal="true" aria-label="Consola Linux">
+          <div class="terminal-head">
+            <div>
+              <h2>Terminal Linux</h2>
+              <p>Ejecuta comandos SSH usando una credencial registrada.</p>
+            </div>
+            <div class="terminal-actions">
+              <button class="btn dark" type="button" data-copy-console>Copiar salida</button>
+              <button class="btn dark" type="button" data-download-console>Descargar salida</button>
+              <button class="btn dark" type="button" data-close-modal="console-modal">Cerrar</button>
+            </div>
           </div>
-          <div class="terminal-actions">
-            <button class="btn dark" type="button" data-copy-console>Copiar salida</button>
-            <button class="btn dark" type="button" data-download-console>Descargar salida</button>
-          </div>
-        </div>
-        <iframe id="console-frame" src="{% url 'device-console' server.id %}" title="Consola Linux {{ server.hostname }}"></iframe>
-      </section>
+          <iframe id="console-frame" src="{% url 'device-console' server.id %}" title="Consola Linux {{ server.hostname }}"></iframe>
+        </section>
+      </div>
     {% endif %}
 
     <section class="card metrics-panel-main">
