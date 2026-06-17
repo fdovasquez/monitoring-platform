@@ -5,7 +5,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.decorators import method_decorator
 from django.utils import timezone
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.generic import TemplateView
 
 from metrics.models import MetricSample
@@ -206,6 +208,7 @@ class MachineCredentialDeleteView(LoginRequiredMixin, AdminRoleRequiredMixin, Te
         return redirect("device-detail", pk=server.id)
 
 
+@method_decorator(xframe_options_sameorigin, name="dispatch")
 class DeviceConsoleView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
     template_name = "inventory/device_console.html"
 
