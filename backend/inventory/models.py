@@ -3,6 +3,18 @@ import secrets
 from django.db import models
 
 
+class DeviceGroup(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Server(models.Model):
     OS_LINUX = "linux"
     OS_WINDOWS = "windows"
@@ -16,6 +28,7 @@ class Server(models.Model):
     hostname = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    group = models.ForeignKey(DeviceGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="servers")
     os_type = models.CharField(max_length=20, choices=OS_CHOICES, default=OS_LINUX)
     environment = models.CharField(max_length=100, blank=True)
     owner = models.CharField(max_length=255, blank=True)
