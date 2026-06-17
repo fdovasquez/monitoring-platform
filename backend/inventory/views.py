@@ -4,12 +4,13 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group, User
 from django.db.models import Count, Prefetch
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views.generic import TemplateView
 
 from metrics.models import MetricSample
 
+from .forms import ROLE_NAMES, UserCreateForm, UserEditForm, ensure_base_roles
 from .models import AgentToken, DeviceGroup, Server
 
 
@@ -246,19 +247,75 @@ Get-ScheduledTaskInfo -TaskName "MonitoringAgent"
 """
 
 
-class UserRoleAdminView(LoginRequiredMixin, TemplateView):
-    template_name = "inventory/user_roles.html"
-    role_names = ["Administrador", "Editor", "Visor"]
+class UserListView(LoginRequiredMixin, TemplateView):
+    template_name = "inventory/user_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["roles"] = Group.objects.filter(name__in=self.role_names).order_by("name")
+        ensure_base_roles()
+        context["roles"] = Group.objects.filter(name__in=ROLE_NAMES).order_by("name")
         context["users"] = User.objects.prefetch_related("groups").order_by("username")
         context.update(sidebar_context())
         return context
 
+
+class UserCreateView(LoginRequiredMixin, TemplateView):
+    template_name = "inventory/user_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = kwargs.get("form") or UserCreateForm()
+        context["form_title"] = "Crear usuario"
+        context["submit_label"] = "Crear usuario"
+        context.update(sidebar_context())
+        return context
+
     def post(self, request):
-        for role in self.role_names:
-            Group.objects.get_or_create(name=role)
-        messages.success(request, "Roles Administrador, Editor y Visor creados o actualizados.")
-        return redirect("user-roles")
+        form = UserCreateForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Usuario creado correctamente.")
+            return redirect("user-list")
+        return self.render_to_response(self.get_context_data(form=form))
+
+
+class UserEditView(LoginRequiredMixin, TemplateView):
+    template_name = "inventory/user_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = get_object_or_404(User, id=kwargs["pk"])
+        context["managed_user"] = user
+        context["form"] = kwargs.get("form") or UserEditForm(instance=user)
+        context["form_title"] = f"Editar usuario {user.username}"
+        context["submit_label"] = "Guardar cambios"
+        context.update(sidebar_context())
+        return context
+
+    def post(self, request, pk):
+        user = get_object_or_404(User, id=pk)
+        form = UserEditForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Usuario actualizado correctamente.")
+            return redirect("user-list")
+        return self.render_to_response(self.get_context_data(form=form, pk=pk))
+
+
+class UserDeleteView(LoginRequiredMixin, TemplateView):
+    template_name = "inventory/user_confirm_delete.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["managed_user"] = get_object_or_404(User, id=kwargs["pk"])
+        context.update(sidebar_context())
+        return context
+
+    def post(self, request, pk):
+        user = get_object_or_404(User, id=pk)
+        if user == request.user:
+            messages.error(request, "No puedes eliminar tu propio usuario mientras estas conectado.")
+            return redirect("user-list")
+        user.delete()
+        messages.success(request, "Usuario eliminado correctamente.")
+        return redirect("user-list")
