@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.models import Group, User
 
+from .models import MachineCredential
+
 
 ROLE_NAMES = ["Administrador", "Editor", "Visualizador"]
 
@@ -77,3 +79,25 @@ class UserEditForm(forms.ModelForm):
             user.save()
             user.groups.set([self.cleaned_data["role"]])
         return user
+
+
+class MachineCredentialForm(forms.ModelForm):
+    secret = forms.CharField(label="Clave", widget=forms.PasswordInput)
+
+    class Meta:
+        model = MachineCredential
+        fields = ["label", "username", "port", "secret", "is_active"]
+        labels = {
+            "label": "Nombre de la credencial",
+            "username": "Usuario",
+            "port": "Puerto SSH",
+            "is_active": "Activa",
+        }
+
+    def save(self, commit=True):
+        credential = super().save(commit=False)
+        credential.auth_method = MachineCredential.AUTH_PASSWORD
+        credential.set_secret(self.cleaned_data["secret"])
+        if commit:
+            credential.save()
+        return credential
