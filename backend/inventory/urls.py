@@ -16,6 +16,7 @@ from .views import (
     UserEditView,
     UserListView,
 )
+from .site_views import SiteSettingsView
 
 
 urlpatterns = [
@@ -36,5 +37,6 @@ urlpatterns = [
     path("profile/", ProfileView.as_view(), name="profile"),
     path("profile/password/", AccountPasswordChangeView.as_view(), name="password-change"),
     path("profile/password/done/", AccountPasswordChangeDoneView.as_view(), name="password-change-done"),
+    path("settings/", SiteSettingsView.as_view(), name="site-settings"),
     path("logout/", LogoutView.as_view(), name="logout"),
 ]
