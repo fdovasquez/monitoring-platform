@@ -1,0 +1,91 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usuarios</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">MP</div>
+      <div><strong>Monitoring</strong><span>Platform</span></div>
+    </div>
+    <a class="primary-action" href="{% url 'user-create' %}">Crear usuario</a>
+    <nav class="nav-section">
+      <a class="nav-item" href="{% url 'device-list' %}"><span>Todos los dispositivos</span></a>
+      <a class="nav-item active" href="{% url 'user-list' %}"><span>Usuarios</span></a>
+      <a class="nav-item" href="{% url 'agent-install' %}"><span>Instalar agente</span></a>
+      <a class="nav-item" href="{% url 'admin:index' %}"><span>Admin</span></a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>Administración de usuarios</h1>
+        <p>Crea, edita y elimina usuarios con roles Administrador, Editor o Visualizador.</p>
+      </div>
+      <div class="top-actions">
+        <a href="{% url 'user-create' %}">Crear usuario</a>
+      </div>
+    </header>
+
+    {% if messages %}
+      <section class="messages-row">
+        {% for message in messages %}<div class="message success">{{ message }}</div>{% endfor %}
+      </section>
+    {% endif %}
+
+    <section class="wizard-grid">
+      <article class="wizard-card">
+        <div class="step-label">Roles disponibles</div>
+        <h2>Administrador, Editor y Visualizador</h2>
+        <p>Estos roles se crean automaticamente y se asignan al crear o editar un usuario.</p>
+        <div class="group-list">
+          {% for role in roles %}
+            <div class="group-row"><span>{{ role.name }}</span></div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="device-panel detail-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Estado</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.get_full_name|default:"-" }}</td>
+              <td>{{ user.email|default:"-" }}</td>
+              <td>{% if user.is_active %}<span class="status online">Activo</span>{% else %}<span class="status offline">Inactivo</span>{% endif %}</td>
+              <td>{% for group in user.groups.all %}<span class="status online">{{ group.name }}</span> {% empty %}-{% endfor %}</td>
+              <td>
+                <div class="row-actions">
+                  <a href="{% url 'user-edit' user.id %}">Editar</a>
+                  <a class="danger-link" href="{% url 'user-delete' user.id %}">Eliminar</a>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6">No hay usuarios creados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
