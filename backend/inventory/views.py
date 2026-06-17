@@ -2,14 +2,21 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Prefetch
+from django.contrib.auth.models import Group, User
+from django.db.models import Count, Prefetch
 from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.generic import TemplateView
 
 from metrics.models import MetricSample
 
-from .models import AgentToken, Server
+from .models import AgentToken, DeviceGroup, Server
+
+
+def sidebar_context():
+    return {
+        "device_groups": DeviceGroup.objects.annotate(server_count=Count("servers")).order_by("name"),
+    }
 
 
 class DeviceListView(LoginRequiredMixin, TemplateView):
@@ -18,11 +25,15 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         latest_samples = MetricSample.objects.order_by("-timestamp")
+        group_id = self.request.GET.get("group")
         servers = (
             Server.objects.prefetch_related(Prefetch("metric_samples", queryset=latest_samples, to_attr="latest_samples"))
-            .select_related("agent_token")
+            .select_related("agent_token", "group")
             .order_by("hostname")
         )
+        if group_id:
+            servers = servers.filter(group_id=group_id)
+
         now = timezone.now()
         devices = []
 
@@ -46,6 +57,8 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
         context["offline_devices"] = sum(1 for device in devices if not device["online"])
         context["windows_devices"] = sum(1 for device in devices if device["server"].os_type == Server.OS_WINDOWS)
         context["linux_devices"] = sum(1 for device in devices if device["server"].os_type == Server.OS_LINUX)
+        context["selected_group"] = group_id
+        context.update(sidebar_context())
         return context
 
     @staticmethod
@@ -78,11 +91,36 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
         return f"{minutes}m"
 
 
+class DeviceDetailView(LoginRequiredMixin, TemplateView):
+    template_name = "inventory/device_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        server = Server.objects.select_related("group", "agent_token").get(id=kwargs["pk"])
+        samples = server.metric_samples.order_by("-timestamp")[:25]
+        latest = samples[0] if samples else None
+        online = bool(server.last_seen and server.last_seen >= timezone.now() - timedelta(minutes=5))
+        context.update(
+            {
+                "server": server,
+                "samples": samples,
+                "latest": latest,
+                "online": online,
+                "uptime": DeviceListView.format_uptime(latest.uptime_seconds if latest else None),
+                "security_score": DeviceListView.security_score(latest),
+            }
+        )
+        context.update(sidebar_context())
+        return context
+
+
 class AgentInstallWizardView(LoginRequiredMixin, TemplateView):
     template_name = "inventory/agent_install_wizard.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context.update(sidebar_context())
+        context["groups"] = DeviceGroup.objects.all()
         server_id = self.request.GET.get("server")
         if server_id:
             try:
@@ -110,16 +148,25 @@ class AgentInstallWizardView(LoginRequiredMixin, TemplateView):
         os_type = request.POST.get("os_type", Server.OS_LINUX)
         environment = request.POST.get("environment", "produccion").strip()
         owner = request.POST.get("owner", "").strip()
+        group_id = request.POST.get("group", "").strip()
+        group_name = request.POST.get("group_name", "").strip()
 
         if not hostname:
             messages.error(request, "Ingresa el nombre del servidor.")
             return redirect("agent-install")
+
+        group = None
+        if group_name:
+            group, _ = DeviceGroup.objects.get_or_create(name=group_name)
+        elif group_id:
+            group = DeviceGroup.objects.filter(id=group_id).first()
 
         server, created = Server.objects.get_or_create(
             hostname=hostname,
             defaults={
                 "name": name,
                 "ip_address": ip_address,
+                "group": group,
                 "os_type": os_type,
                 "environment": environment,
                 "owner": owner,
@@ -130,6 +177,7 @@ class AgentInstallWizardView(LoginRequiredMixin, TemplateView):
         if not created:
             server.name = name or server.name
             server.ip_address = ip_address or server.ip_address
+            server.group = group or server.group
             server.os_type = os_type
             server.environment = environment or server.environment
             server.owner = owner or server.owner
@@ -196,3 +244,21 @@ Register-ScheduledTask -TaskName "MonitoringAgent" -Action $Action -Trigger $Tri
 Start-ScheduledTask -TaskName "MonitoringAgent"
 Get-ScheduledTaskInfo -TaskName "MonitoringAgent"
 """
+
+
+class UserRoleAdminView(LoginRequiredMixin, TemplateView):
+    template_name = "inventory/user_roles.html"
+    role_names = ["Administrador", "Editor", "Visor"]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["roles"] = Group.objects.filter(name__in=self.role_names).order_by("name")
+        context["users"] = User.objects.prefetch_related("groups").order_by("username")
+        context.update(sidebar_context())
+        return context
+
+    def post(self, request):
+        for role in self.role_names:
+            Group.objects.get_or_create(name=role)
+        messages.success(request, "Roles Administrador, Editor y Visor creados o actualizados.")
+        return redirect("user-roles")
