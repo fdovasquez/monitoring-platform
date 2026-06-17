@@ -98,9 +98,11 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         server = Server.objects.select_related("group", "agent_token").get(id=kwargs["pk"])
-        samples = server.metric_samples.order_by("-timestamp")[:25]
+        samples = list(server.metric_samples.order_by("-timestamp")[:25])
         latest = samples[0] if samples else None
         online = bool(server.last_seen and server.last_seen >= timezone.now() - timedelta(minutes=5))
+        disk_details = self.disk_details(latest)
+        disk_count = self.disk_count(latest, disk_details)
         context.update(
             {
                 "server": server,
@@ -109,10 +111,63 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "online": online,
                 "uptime": DeviceListView.format_uptime(latest.uptime_seconds if latest else None),
                 "security_score": DeviceListView.security_score(latest),
+                "disk_count": disk_count,
+                "disk_details": disk_details,
+                "chart_series": self.chart_series(samples),
             }
         )
         context.update(sidebar_context())
         return context
+
+    @staticmethod
+    def chart_series(samples):
+        ordered_samples = list(reversed(samples))
+        return [
+            {"label": "CPU", "points": DeviceDetailView.svg_points(ordered_samples, "cpu_percent"), "class": "cpu"},
+            {"label": "Memoria", "points": DeviceDetailView.svg_points(ordered_samples, "memory_percent"), "class": "memory"},
+            {"label": "Disco", "points": DeviceDetailView.svg_points(ordered_samples, "disk_percent"), "class": "disk"},
+        ]
+
+    @staticmethod
+    def svg_points(samples, field_name):
+        values = [getattr(sample, field_name) for sample in samples if getattr(sample, field_name) is not None]
+        if not values:
+            return ""
+        if len(values) == 1:
+            x_positions = [150]
+        else:
+            step = 300 / (len(values) - 1)
+            x_positions = [round(index * step, 2) for index in range(len(values))]
+        points = []
+        for x_position, value in zip(x_positions, values):
+            y_position = round(80 - max(0, min(float(value), 100)) * 0.8, 2)
+            points.append(f"{x_position},{y_position}")
+        return " ".join(points)
+
+    @staticmethod
+    def disk_details(sample):
+        if not sample:
+            return []
+        metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
+        disks = metrics.get("disks")
+        if isinstance(disks, list) and disks:
+            return disks
+        if sample.disk_percent is not None:
+            return [{"mountpoint": "Principal", "percent": sample.disk_percent}]
+        return []
+
+    @staticmethod
+    def disk_count(sample, disk_details):
+        if not sample:
+            return 0
+        metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
+        disk_count = metrics.get("disk_count")
+        if disk_count is not None:
+            try:
+                return int(disk_count)
+            except (TypeError, ValueError):
+                pass
+        return len(disk_details)
 
 
 class AgentInstallWizardView(LoginRequiredMixin, TemplateView):
