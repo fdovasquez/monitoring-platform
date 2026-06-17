@@ -41,6 +41,12 @@
       </div>
     </header>
 
+    {% if messages %}
+      <section class="messages-row">
+        {% for message in messages %}<div class="message success">{{ message }}</div>{% endfor %}
+      </section>
+    {% endif %}
+
     <section class="detail-grid">
       <article class="wizard-card"><div class="step-label">CPU</div><h2>{{ latest.cpu_percent|default:"-" }}{% if latest %}%{% endif %}</h2></article>
       <article class="wizard-card"><div class="step-label">Memoria</div><h2>{{ latest.memory_percent|default:"-" }}{% if latest %}%{% endif %}</h2></article>
@@ -74,6 +80,56 @@
         </dl>
       </article>
     </section>
+
+    <section class="credentials-grid">
+      <article class="wizard-card">
+        <h2>Usuarios de conexion</h2>
+        <p>Credenciales registradas para ingresar a esta maquina.</p>
+        <div class="credential-list">
+          {% for credential in credentials %}
+            <div class="credential-row">
+              <div>
+                <strong>{{ credential.label }}</strong>
+                <span>{{ credential.username }}@{{ server.ip_address|default:server.hostname }}:{{ credential.port }}</span>
+              </div>
+              {% if can_manage_credentials %}
+                <form method="post" action="{% url 'machine-credential-delete' server.id credential.id %}">
+                  {% csrf_token %}
+                  <button class="text-danger" type="submit">Eliminar</button>
+                </form>
+              {% endif %}
+            </div>
+          {% empty %}
+            <div class="group-row muted"><span>Sin credenciales registradas</span></div>
+          {% endfor %}
+        </div>
+      </article>
+
+      {% if can_manage_credentials %}
+        <form class="wizard-card credential-form" method="post" action="{% url 'machine-credential-create' server.id %}">
+          {% csrf_token %}
+          <h2>Agregar usuario</h2>
+          {% for field in credential_form %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="message">{{ error }}</div>{% endfor %}
+          {% endfor %}
+          <button class="submit-button" type="submit">Guardar credencial</button>
+        </form>
+      {% endif %}
+    </section>
+
+    {% if is_linux and can_manage_credentials %}
+      <section class="console-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Consola Linux</h2>
+            <p>Ejecuta comandos por SSH usando una credencial registrada.</p>
+          </div>
+        </div>
+        <iframe src="{% url 'device-console' server.id %}" title="Consola Linux {{ server.hostname }}"></iframe>
+      </section>
+    {% endif %}
 
     <section class="metrics-panel">
       <div class="panel-heading">
