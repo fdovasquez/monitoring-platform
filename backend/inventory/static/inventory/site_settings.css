@@ -14,15 +14,15 @@
 }
 
 .site-logo-preview {
-  width: 150px;
-  height: 64px;
-  padding: 10px;
+  width: 120px;
+  height: 50px;
+  padding: 8px;
 }
 
 .brand-preview-logo {
-  width: 180px;
-  height: 78px;
-  padding: 12px;
+  width: 140px;
+  height: 58px;
+  padding: 8px;
 }
 
 .site-logo-preview img,
@@ -68,8 +68,11 @@
   position: absolute;
   width: 1px;
   height: 1px;
+  padding: 0;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+  border: 0;
+  opacity: 0;
 }
 
 .upload-row span {
