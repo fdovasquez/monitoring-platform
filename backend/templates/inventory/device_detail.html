@@ -1,0 +1,95 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ server.hostname }}</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">MP</div>
+      <div><strong>Monitoring</strong><span>Platform</span></div>
+    </div>
+    <a class="primary-action" href="{% url 'agent-install' %}">Instalar nuevo agente</a>
+    <nav class="nav-section">
+      <a class="nav-item" href="{% url 'device-list' %}"><span>Todos los dispositivos</span></a>
+      <a class="nav-item" href="{% url 'user-roles' %}"><span>Usuarios y roles</span></a>
+      <a class="nav-item" href="{% url 'admin:index' %}"><span>Admin</span></a>
+    </nav>
+    <div class="group-title">Grupos de dispositivos</div>
+    <div class="group-list">
+      {% for group in device_groups %}
+        <a class="group-row" href="{% url 'device-list' %}?group={{ group.id }}"><span>{{ group.name }}</span><strong>{{ group.server_count }}</strong></a>
+      {% empty %}
+        <div class="group-row muted"><span>Sin grupos creados</span></div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>{{ server.name|default:server.hostname }}</h1>
+        <p>{{ server.hostname }} / {{ server.ip_address|default:"sin IP" }}</p>
+      </div>
+      <div class="top-actions">
+        <a href="{% url 'admin:inventory_server_change' server.id %}">Editar servidor</a>
+        {% if online %}<span class="status online">En linea</span>{% else %}<span class="status offline">Fuera de linea</span>{% endif %}
+      </div>
+    </header>
+
+    <section class="detail-grid">
+      <article class="wizard-card"><div class="step-label">CPU</div><h2>{{ latest.cpu_percent|default:"-" }}{% if latest %}%{% endif %}</h2></article>
+      <article class="wizard-card"><div class="step-label">Memoria</div><h2>{{ latest.memory_percent|default:"-" }}{% if latest %}%{% endif %}</h2></article>
+      <article class="wizard-card"><div class="step-label">Disco</div><h2>{{ latest.disk_percent|default:"-" }}{% if latest %}%{% endif %}</h2></article>
+      <article class="wizard-card"><div class="step-label">Uptime</div><h2>{{ uptime }}</h2></article>
+    </section>
+
+    <section class="wizard-grid">
+      <article class="wizard-card">
+        <h2>Informacion del servidor</h2>
+        <dl class="detail-list">
+          <dt>Grupo</dt><dd>{{ server.group.name|default:"Sin grupo" }}</dd>
+          <dt>Sistema operativo</dt><dd>{{ server.get_os_type_display }}</dd>
+          <dt>Ambiente</dt><dd>{{ server.environment|default:"-" }}</dd>
+          <dt>Responsable</dt><dd>{{ server.owner|default:"-" }}</dd>
+          <dt>Ultima conexion</dt><dd>{{ server.last_seen|default:"-" }}</dd>
+          <dt>Puntaje seguridad</dt><dd>{{ security_score }} / 100</dd>
+        </dl>
+      </article>
+
+      <article class="wizard-card">
+        <h2>Token de agente</h2>
+        {% if server.agent_token %}
+          <code class="token">{{ server.agent_token.token }}</code>
+        {% else %}
+          <p>Este servidor no tiene token asociado.</p>
+        {% endif %}
+      </article>
+    </section>
+
+    <section class="device-panel detail-table">
+      <table>
+        <thead><tr><th>Fecha</th><th>CPU</th><th>Memoria</th><th>Disco</th><th>Uptime</th></tr></thead>
+        <tbody>
+          {% for sample in samples %}
+            <tr>
+              <td>{{ sample.timestamp }}</td>
+              <td>{{ sample.cpu_percent|default:"-" }}%</td>
+              <td>{{ sample.memory_percent|default:"-" }}%</td>
+              <td>{{ sample.disk_percent|default:"-" }}%</td>
+              <td>{{ sample.uptime_seconds|default:"-" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">Aun no hay metricas recibidas.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
