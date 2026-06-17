@@ -81,6 +81,17 @@ class UserEditForm(forms.ModelForm):
         return user
 
 
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]
+        labels = {
+            "first_name": "Nombre",
+            "last_name": "Apellido",
+            "email": "Email",
+        }
+
+
 class MachineCredentialForm(forms.ModelForm):
     secret = forms.CharField(label="Clave", widget=forms.PasswordInput)
 
