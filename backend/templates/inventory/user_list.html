@@ -17,8 +17,11 @@
     <nav class="nav-section">
       <a class="nav-item" href="{% url 'device-list' %}"><span>Todos los dispositivos</span></a>
       <a class="nav-item active" href="{% url 'user-list' %}"><span>Usuarios</span></a>
-      <a class="nav-item" href="{% url 'user-create' %}"><span>Nuevo usuario</span></a>
       <a class="nav-item" href="{% url 'agent-install' %}"><span>Instalar agente</span></a>
+    </nav>
+    <div class="group-title">Administracion</div>
+    <nav class="nav-section admin-nav">
+      <a class="nav-item" href="{% url 'user-create' %}"><span>Crear usuario</span></a>
       <a class="nav-item" href="{% url 'admin:index' %}"><span>Admin</span></a>
     </nav>
   </aside>
@@ -29,6 +32,9 @@
         <h1>Administracion de usuarios</h1>
         <p>Crea, edita y elimina usuarios con roles Administrador, Editor o Visualizador.</p>
       </div>
+      <div class="top-actions">
+        <a class="primary-action" href="{% url 'user-create' %}">Crear usuario</a>
+      </div>
     </header>
 
     {% if messages %}
@@ -37,20 +43,7 @@
       </section>
     {% endif %}
 
-    <section class="wizard-grid">
-      <article class="wizard-card">
-        <div class="step-label">Roles disponibles</div>
-        <h2>Administrador, Editor y Visualizador</h2>
-        <p>Estos roles se crean automaticamente y se asignan al crear o editar un usuario.</p>
-        <div class="group-list">
-          {% for role in roles %}
-            <div class="group-row"><span>{{ role.name }}</span></div>
-          {% endfor %}
-        </div>
-      </article>
-    </section>
-
-    <section class="device-panel detail-table">
+    <section class="device-panel detail-table user-table-panel">
       <table>
         <thead>
           <tr>
