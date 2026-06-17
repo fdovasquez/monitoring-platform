@@ -465,7 +465,7 @@
 
 .storage-row {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .storage-row-head {
@@ -474,6 +474,15 @@
   justify-content: space-between;
   gap: 12px;
   color: var(--detail-text);
+  font-size: 11px;
+}
+
+.storage-row-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #64748b;
   font-size: 11px;
 }
 
@@ -491,7 +500,25 @@
 .storage-capacity {
   color: #64748b;
   font-weight: 600;
+}
+
+.storage-free {
+  color: #64748b;
+  font-weight: 500;
   text-align: right;
+}
+
+.storage-percent {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .storage-progress {
@@ -501,7 +528,7 @@
   border-radius: 999px;
 }
 
-.storage-progress::before {
+.storage-progress span {
   display: block;
   width: var(--value, 0%);
   height: 100%;
@@ -870,6 +897,16 @@
 
   .storage-capacity {
     color: #94a3b8;
+  }
+
+  .storage-row-meta,
+  .storage-free {
+    color: #94a3b8;
+  }
+
+  .storage-percent {
+    color: #bfdbfe;
+    background: #1e3a8a;
   }
 
   .storage-progress {
