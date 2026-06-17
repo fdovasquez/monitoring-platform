@@ -11,17 +11,23 @@ class SiteSettingsForm(forms.ModelForm):
 
     class Meta:
         model = SiteSettings
-        fields = ["site_name", "subtitle", "logo"]
+        fields = ["site_name", "subtitle", "logo_width", "logo_height", "logo"]
         labels = {
             "site_name": "Nombre del sitio",
             "subtitle": "Texto inferior",
+            "logo_width": "Ancho del logo",
+            "logo_height": "Alto del logo",
             "logo": "Logo",
         }
         widgets = {
+            "logo_width": forms.NumberInput(attrs={"min": 40, "max": 260, "step": 1}),
+            "logo_height": forms.NumberInput(attrs={"min": 20, "max": 120, "step": 1}),
             "logo": forms.FileInput(attrs={"class": "logo-input"}),
         }
         help_texts = {
             "subtitle": "Texto pequeno que aparece bajo el logo en la cabecera.",
+            "logo_width": "Valor en pixeles. Recomendado entre 90 y 150.",
+            "logo_height": "Valor en pixeles. Recomendado entre 28 y 48.",
         }
 
     def clean_logo(self):
@@ -33,6 +39,18 @@ class SiteSettingsForm(forms.ModelForm):
         if getattr(logo, "content_type", "") not in self.allowed_content_types:
             raise forms.ValidationError("Solo se permiten imagenes JPG, PNG o WEBP.")
         return logo
+
+    def clean_logo_width(self):
+        width = self.cleaned_data["logo_width"]
+        if width < 40 or width > 260:
+            raise forms.ValidationError("El ancho debe estar entre 40 y 260 px.")
+        return width
+
+    def clean_logo_height(self):
+        height = self.cleaned_data["logo_height"]
+        if height < 20 or height > 120:
+            raise forms.ValidationError("El alto debe estar entre 20 y 120 px.")
+        return height
 
     def save(self, commit=True):
         settings = super().save(commit=False)
