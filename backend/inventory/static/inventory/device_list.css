@@ -164,6 +164,82 @@ a {
   border-radius: 999px;
 }
 
+.account-menu {
+  position: relative;
+}
+
+.account-menu summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 13px;
+  color: var(--ink-700);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  list-style: none;
+  box-shadow: 0 1px 1px rgba(15, 23, 42, .03);
+}
+
+.account-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.account-menu summary::after {
+  width: 7px;
+  height: 7px;
+  content: "";
+  border-right: 1.5px solid var(--ink-500);
+  border-bottom: 1.5px solid var(--ink-500);
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.account-menu[open] summary {
+  color: var(--blue-700);
+  border-color: #b8cdf8;
+}
+
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  min-width: 210px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, .14);
+}
+
+.account-dropdown a,
+.account-dropdown button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--ink-700);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: none;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-dropdown a:hover,
+.account-dropdown button:hover {
+  color: var(--blue-700);
+  background: #f5f9ff;
+}
+
 .content {
   max-width: 1680px;
   margin: 0 auto;
