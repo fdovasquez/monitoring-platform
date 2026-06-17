@@ -19,8 +19,9 @@
     </div>
     <a class="primary-action" href="{% url 'agent-install' %}">Instalar nuevo agente</a>
     <nav class="nav-section">
-      <a class="nav-item" href="{% url 'device-list' %}"><span>All Devices</span></a>
+      <a class="nav-item" href="{% url 'device-list' %}"><span>Todos los dispositivos</span></a>
       <a class="nav-item active" href="{% url 'agent-install' %}"><span>Asistente de agente</span></a>
+      <a class="nav-item" href="{% url 'user-roles' %}"><span>Usuarios y roles</span></a>
       <a class="nav-item" href="{% url 'admin:index' %}"><span>Admin</span></a>
     </nav>
   </aside>
@@ -32,7 +33,7 @@
         <p>Crea el servidor, genera su token y copia un instalador listo para pegar.</p>
       </div>
       <div class="top-actions">
-        <a href="{% url 'device-list' %}">All Devices</a>
+        <a href="{% url 'device-list' %}">Todos los dispositivos</a>
       </div>
     </header>
 
@@ -64,6 +65,17 @@
           <option value="windows">Windows</option>
           <option value="other">Otro</option>
         </select>
+
+        <label>Grupo</label>
+        <select name="group">
+          <option value="">Sin grupo</option>
+          {% for group in groups %}
+            <option value="{{ group.id }}">{{ group.name }}</option>
+          {% endfor %}
+        </select>
+
+        <label>Crear grupo nuevo</label>
+        <input name="group_name" placeholder="Base de datos, Finanzas, Produccion">
 
         <label>Ambiente</label>
         <input name="environment" value="produccion">
