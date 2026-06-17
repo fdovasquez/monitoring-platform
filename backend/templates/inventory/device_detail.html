@@ -130,6 +130,9 @@
             <div class="storage-row">
               <div class="storage-row-head">
                 <span class="storage-name">{{ disk.label }}</span>
+                <span class="storage-percent">{{ disk.percent_display }} usado</span>
+              </div>
+              <div class="storage-row-meta">
                 <span class="storage-capacity">
                   {% if disk.used_gb != None and disk.total_gb != None %}
                     {{ disk.used_gb }} GB usado de {{ disk.total_gb }} GB
@@ -137,8 +140,13 @@
                     {{ disk.percent_display }} utilizado
                   {% endif %}
                 </span>
+                {% if disk.free_gb != None %}
+                  <span class="storage-free">{{ disk.free_gb }} GB libre</span>
+                {% endif %}
               </div>
-              <div class="storage-progress" style="--value: {{ disk.percent|default:0 }}%;"></div>
+              <div class="storage-progress" style="--value: {{ disk.percent_css|default:'0' }}%;">
+                <span></span>
+              </div>
             </div>
           {% empty %}
             <div class="empty-compact">El agente aun no ha reportado discos.</div>
