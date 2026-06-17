@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AgentToken, DeviceGroup, MachineCredential, Server, UserProfile
+from .models import AgentToken, DeviceGroup, MachineCredential, Server, SiteSettings, UserProfile
 
 
 @admin.register(DeviceGroup)
@@ -38,4 +38,10 @@ class MachineCredentialAdmin(admin.ModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "phone", "position", "updated_at")
     search_fields = ("user__username", "user__first_name", "user__last_name", "user__email", "phone", "position")
+    readonly_fields = ("updated_at",)
+
+
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    list_display = ("site_name", "subtitle", "updated_at")
     readonly_fields = ("updated_at",)
