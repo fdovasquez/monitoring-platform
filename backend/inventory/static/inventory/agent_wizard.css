@@ -85,6 +85,11 @@ select {
   border-radius: 6px;
 }
 
+.message.success {
+  color: var(--green-600);
+  background: var(--green-100);
+}
+
 .script-section {
   display: grid;
   gap: 18px;
@@ -135,8 +140,50 @@ select {
   line-height: 1.5;
 }
 
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 18px;
+  margin: 18px 0;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 10px 14px;
+  margin: 0;
+}
+
+.detail-list dt {
+  color: var(--ink-500);
+  font-weight: 800;
+}
+
+.detail-list dd {
+  margin: 0;
+}
+
+.detail-table {
+  margin-top: 18px;
+  border-radius: 8px;
+}
+
+.group-row.active {
+  color: var(--blue-900);
+  background: #e8f1ff;
+  font-weight: 800;
+}
+
+.group-row.muted {
+  color: var(--ink-500);
+}
+
 @media (max-width: 980px) {
   .wizard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
     grid-template-columns: 1fr;
   }
 }
