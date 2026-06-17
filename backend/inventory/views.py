@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib import messages
+from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.db.models import Count, Prefetch
@@ -12,7 +13,7 @@ from django.views.generic import TemplateView
 
 from metrics.models import MetricSample
 
-from .forms import MachineCredentialForm, ROLE_NAMES, UserCreateForm, UserEditForm, ensure_base_roles
+from .forms import MachineCredentialForm, ProfileForm, ROLE_NAMES, UserCreateForm, UserEditForm, ensure_base_roles
 from .models import AgentToken, DeviceGroup, MachineCredential, Server
 
 
@@ -633,3 +634,27 @@ class UserDeleteView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
         user.delete()
         messages.success(request, "Usuario eliminado correctamente.")
         return redirect("user-list")
+
+
+class ProfileView(LoginRequiredMixin, TemplateView):
+    template_name = "inventory/profile.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = kwargs.get("form") or ProfileForm(instance=self.request.user)
+        context.update(sidebar_context())
+        return context
+
+    def post(self, request):
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Perfil actualizado correctamente.")
+            return redirect("profile")
+        return self.render_to_response(self.get_context_data(form=form))
+
+
+class LogoutView(LoginRequiredMixin, TemplateView):
+    def post(self, request):
+        logout(request)
+        return redirect("admin:login")
