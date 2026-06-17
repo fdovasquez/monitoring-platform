@@ -1,0 +1,15 @@
+[Unit]
+Description=Monitoring Platform Celery Worker
+After=network.target redis-server.service postgresql.service
+
+[Service]
+User=monitoring
+Group=monitoring
+WorkingDirectory=/opt/monitoring-platform/backend
+EnvironmentFile=/etc/monitoring-platform.env
+ExecStart=/opt/monitoring-platform/backend/.venv/bin/celery -A config worker -l INFO
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
