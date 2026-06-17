@@ -171,6 +171,69 @@ select {
   border-radius: 8px;
 }
 
+.credentials-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 460px);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.credential-list {
+  display: grid;
+  gap: 10px;
+}
+
+.credential-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: #fbfdff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.credential-row strong,
+.credential-row span {
+  display: block;
+}
+
+.credential-row span {
+  margin-top: 4px;
+  color: var(--ink-500);
+  font-size: 12px;
+}
+
+.credential-row form {
+  margin: 0;
+}
+
+.text-danger {
+  color: var(--red-600);
+  background: transparent;
+  border: 0;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.console-panel {
+  margin-top: 18px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.console-panel iframe {
+  display: block;
+  width: 100%;
+  min-height: 430px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0e1726;
+}
+
 .panel-heading {
   display: flex;
   justify-content: space-between;
@@ -303,6 +366,10 @@ select {
   }
 
   .chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .credentials-grid {
     grid-template-columns: 1fr;
   }
 }
