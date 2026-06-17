@@ -10,14 +10,23 @@ from django.views.generic import TemplateView
 
 from metrics.models import MetricSample
 
-from .forms import ROLE_NAMES, UserCreateForm, UserEditForm, ensure_base_roles
-from .models import AgentToken, DeviceGroup, Server
+from .forms import MachineCredentialForm, ROLE_NAMES, UserCreateForm, UserEditForm, ensure_base_roles
+from .models import AgentToken, DeviceGroup, MachineCredential, Server
 
 
 def sidebar_context():
     return {
         "device_groups": DeviceGroup.objects.annotate(server_count=Count("servers")).order_by("name"),
     }
+
+
+def user_can_manage_credentials(user):
+    return user.is_superuser or user.groups.filter(name="Administrador").exists()
+
+
+class AdminRoleRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return user_can_manage_credentials(self.request.user)
 
 
 class DeviceListView(LoginRequiredMixin, TemplateView):
@@ -114,6 +123,10 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "disk_count": disk_count,
                 "disk_details": disk_details,
                 "chart_series": self.chart_series(samples),
+                "credential_form": MachineCredentialForm(),
+                "credentials": server.credentials.all(),
+                "can_manage_credentials": user_can_manage_credentials(self.request.user),
+                "is_linux": server.os_type == Server.OS_LINUX,
             }
         )
         context.update(sidebar_context())
@@ -168,6 +181,94 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             except (TypeError, ValueError):
                 pass
         return len(disk_details)
+
+
+class MachineCredentialCreateView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
+    def post(self, request, pk):
+        server = get_object_or_404(Server, id=pk)
+        form = MachineCredentialForm(request.POST)
+        if form.is_valid():
+            credential = form.save(commit=False)
+            credential.server = server
+            credential.save()
+            messages.success(request, "Credencial agregada correctamente.")
+        else:
+            messages.error(request, "No se pudo guardar la credencial. Revisa los campos.")
+        return redirect("device-detail", pk=server.id)
+
+
+class MachineCredentialDeleteView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
+    def post(self, request, pk, credential_id):
+        server = get_object_or_404(Server, id=pk)
+        credential = get_object_or_404(MachineCredential, id=credential_id, server=server)
+        credential.delete()
+        messages.success(request, "Credencial eliminada correctamente.")
+        return redirect("device-detail", pk=server.id)
+
+
+class DeviceConsoleView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
+    template_name = "inventory/device_console.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        server = get_object_or_404(Server, id=kwargs["pk"])
+        context["server"] = server
+        context["credentials"] = server.credentials.filter(is_active=True)
+        context["is_linux"] = server.os_type == Server.OS_LINUX
+        context["command"] = ""
+        context["output"] = ""
+        context["error"] = ""
+        return context
+
+    def post(self, request, pk):
+        context = self.get_context_data(pk=pk)
+        server = context["server"]
+        credential_id = request.POST.get("credential")
+        command = request.POST.get("command", "").strip()
+        context["command"] = command
+
+        if server.os_type != Server.OS_LINUX:
+            context["error"] = "La consola embebida esta disponible solo para equipos Linux."
+            return self.render_to_response(context)
+        if not command:
+            context["error"] = "Ingresa un comando para ejecutar."
+            return self.render_to_response(context)
+
+        credential = get_object_or_404(MachineCredential, id=credential_id, server=server, is_active=True)
+        try:
+            import paramiko
+        except ImportError:
+            context["error"] = "Falta instalar paramiko en el servidor de monitoreo."
+            return self.render_to_response(context)
+
+        host = str(server.ip_address or server.hostname)
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            client.connect(
+                hostname=host,
+                port=credential.port,
+                username=credential.username,
+                password=credential.get_secret(),
+                timeout=10,
+                banner_timeout=10,
+                auth_timeout=10,
+                look_for_keys=False,
+                allow_agent=False,
+            )
+            _, stdout, stderr = client.exec_command(command, timeout=30)
+            output = stdout.read().decode("utf-8", errors="replace")
+            error = stderr.read().decode("utf-8", errors="replace")
+            context["output"] = output
+            context["error"] = error
+            credential.last_used_at = timezone.now()
+            credential.save(update_fields=["last_used_at"])
+        except Exception as exc:
+            context["error"] = f"No se pudo ejecutar el comando: {exc}"
+        finally:
+            client.close()
+
+        return self.render_to_response(context)
 
 
 class AgentInstallWizardView(LoginRequiredMixin, TemplateView):
@@ -300,12 +401,6 @@ Register-ScheduledTask -TaskName "MonitoringAgent" -Action $Action -Trigger $Tri
 Start-ScheduledTask -TaskName "MonitoringAgent"
 Get-ScheduledTaskInfo -TaskName "MonitoringAgent"
 """
-
-
-class AdminRoleRequiredMixin(UserPassesTestMixin):
-    def test_func(self):
-        user = self.request.user
-        return user.is_superuser or user.groups.filter(name="Administrador").exists()
 
 
 class UserListView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
