@@ -226,7 +226,7 @@
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -416,52 +416,99 @@
   font-weight: 500;
 }
 
-.disk-list {
-  display: grid;
-  gap: 10px;
-}
-
-.disk-item {
-  padding: 12px;
-  border: 1px solid #edf1f7;
-  border-radius: 12px;
-  background: #fbfdff;
-}
-
-.disk-head {
+.storage-title {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-}
-
-.disk-head strong {
-  color: var(--detail-text);
-}
-
-.disk-head span {
-  color: var(--detail-primary);
-  font-weight: 600;
-}
-
-.disk-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 10px;
+  margin-bottom: 14px;
 }
 
-.disk-stats span {
-  color: var(--detail-muted);
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.disk-stats strong {
-  display: block;
-  margin-top: 2px;
+.storage-title h2 {
+  margin: 0;
   color: var(--detail-text);
+  font-size: 14px;
   font-weight: 600;
+}
+
+.storage-icon {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  color: var(--detail-primary);
+}
+
+.storage-icon::before {
+  position: absolute;
+  inset: 3px 4px;
+  border: 1.7px solid currentColor;
+  border-radius: 999px / 45%;
+  content: "";
+}
+
+.storage-icon::after {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  height: 7px;
+  border: 1.7px solid currentColor;
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  content: "";
+}
+
+.storage-list {
+  display: grid;
+  gap: 13px;
+}
+
+.storage-row {
+  display: grid;
+  gap: 6px;
+}
+
+.storage-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--detail-text);
+  font-size: 11px;
+}
+
+.storage-name {
+  color: #334155;
+  font-weight: 600;
+}
+
+.storage-name::before {
+  margin-right: 4px;
+  color: #cbd5e1;
+  content: "";
+}
+
+.storage-capacity {
+  color: #64748b;
+  font-weight: 600;
+  text-align: right;
+}
+
+.storage-progress {
+  height: 8px;
+  overflow: hidden;
+  background: #dbeafe;
+  border-radius: 999px;
+}
+
+.storage-progress::before {
+  display: block;
+  width: var(--value, 0%);
+  height: 100%;
+  background: #2563eb;
+  border-radius: inherit;
+  animation: progress-fill .75s ease both;
+  content: "";
 }
 
 .table-wrap {
@@ -485,7 +532,6 @@
   font-weight: 600;
 }
 
-.disk-head strong,
 .chart-title strong {
   font-weight: 600;
 }
@@ -795,12 +841,23 @@
   .server-meta span,
   .range-tabs,
   .info-list div,
-  .disk-item,
   .chart-card,
   .empty-chart,
   .empty-compact {
     background: #111827;
     border-color: #1e293b;
+  }
+
+  .storage-name {
+    color: #e2e8f0;
+  }
+
+  .storage-capacity {
+    color: #94a3b8;
+  }
+
+  .storage-progress {
+    background: #1e3a8a;
   }
 
   .btn.secondary,
@@ -862,10 +919,6 @@
 
   .kpi-grid,
   .chart-grid-main {
-    grid-template-columns: 1fr;
-  }
-
-  .disk-stats {
     grid-template-columns: 1fr;
   }
 
