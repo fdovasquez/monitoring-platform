@@ -1,0 +1,13 @@
+[Unit]
+Description=Monitoring Agent Linux
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/monitoring-agent.env
+ExecStart=/opt/monitoring-agent/.venv/bin/python /opt/monitoring-agent/agent.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
