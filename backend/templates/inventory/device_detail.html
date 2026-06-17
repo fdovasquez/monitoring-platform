@@ -9,25 +9,22 @@
   <link rel="stylesheet" href="{% static 'inventory/device_detail.css' %}">
 </head>
 <body class="detail-body">
-  <aside class="sidebar">
-    <div class="brand brand-logo">
+  <header class="app-header">
+    <a class="app-brand" href="{% url 'device-list' %}">
       <img src="{% static 'inventory/logo.png' %}" alt="AGFA HealthCare">
       <span>Monitor de servidores</span>
-    </div>
-    <nav class="nav-section">
-      <a class="nav-item" href="{% url 'device-list' %}"><span>Todos los dispositivos</span></a>
-      <a class="nav-item" href="{% url 'user-list' %}"><span>Usuarios</span></a>
-      <a class="nav-item" href="{% url 'admin:index' %}"><span>Admin</span></a>
+    </a>
+    <nav class="app-nav" aria-label="Menu principal">
+      <a class="active" href="{% url 'device-list' %}">Dispositivos</a>
+      <a href="{% url 'agent-install' %}">Instalar agente</a>
+      <a href="{% url 'user-list' %}">Usuarios</a>
+      <a href="{% url 'admin:index' %}">Admin</a>
     </nav>
-    <div class="group-title">Grupos de dispositivos</div>
-    <div class="group-list">
-      {% for group in device_groups %}
-        <a class="group-row" href="{% url 'device-list' %}?group={{ group.id }}"><span>{{ group.name }}</span><strong>{{ group.server_count }}</strong></a>
-      {% empty %}
-        <div class="group-row muted"><span>Sin grupos creados</span></div>
-      {% endfor %}
+    <div class="app-actions">
+      <a href="{% url 'device-list' %}">Volver</a>
+      <span class="user-chip">{{ request.user.username }}</span>
     </div>
-  </aside>
+  </header>
 
   <main class="content detail-shell">
     <header class="detail-header card">
