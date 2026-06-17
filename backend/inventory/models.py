@@ -4,6 +4,7 @@ import hashlib
 
 from cryptography.fernet import Fernet
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -17,6 +18,25 @@ class DeviceGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+
+def profile_photo_path(instance, filename):
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else "jpg"
+    return f"profiles/user-{instance.user_id}/avatar.{extension}"
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    phone = models.CharField(max_length=40, blank=True)
+    position = models.CharField(max_length=120, blank=True)
+    photo = models.ImageField(upload_to=profile_photo_path, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["user__username"]
+
+    def __str__(self):
+        return f"Perfil {self.user.username}"
 
 
 class Server(models.Model):
