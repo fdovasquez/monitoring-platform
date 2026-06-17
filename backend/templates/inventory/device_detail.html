@@ -4,11 +4,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ server.hostname }}</title>
+  <title>{{ server.name|default:server.hostname }} | Detalle</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
-  <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/device_detail.css' %}">
 </head>
-<body>
+<body class="detail-body">
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-mark">MP</div>
@@ -29,119 +29,215 @@
     </div>
   </aside>
 
-  <main class="content">
-    <header class="topbar">
-      <div>
-        <h1>{{ server.name|default:server.hostname }}</h1>
-        <p>{{ server.hostname }} / {{ server.ip_address|default:"sin IP" }}</p>
+  <main class="content detail-shell">
+    <header class="detail-header card">
+      <div class="server-identity">
+        <div class="server-icon">
+          {% if server.os_type == "windows" %}WIN{% elif server.os_type == "linux" %}LIN{% else %}SRV{% endif %}
+        </div>
+        <div class="server-title">
+          <div class="eyebrow">Detalle del servidor</div>
+          <h1>{{ server.name|default:server.hostname }}</h1>
+          <div class="server-meta">
+            <span>{{ server.ip_address|default:"Sin IP" }}</span>
+            <span>{{ server.get_os_type_display }}</span>
+            <span>{{ server.environment|default:"Sin ambiente" }}</span>
+            <span>{{ server.group.name|default:"Sin grupo" }}</span>
+            <span>{{ server.owner|default:"Sin responsable" }}</span>
+          </div>
+        </div>
       </div>
-      <div class="top-actions">
-        <a href="{% url 'admin:inventory_server_change' server.id %}">Editar servidor</a>
-        {% if online %}<span class="status online">En linea</span>{% else %}<span class="status offline">Fuera de linea</span>{% endif %}
+      <div class="header-actions">
+        {% if online %}<span class="status online">Online</span>{% else %}<span class="status offline">Offline</span>{% endif %}
+        <a class="btn secondary" href="{% url 'admin:inventory_server_change' server.id %}">
+          <span class="icon">EDIT</span> Editar
+        </a>
+        <button class="btn secondary" type="button" onclick="window.location.reload()">
+          <span class="icon">SYNC</span> Actualizar
+        </button>
+        {% if is_linux and can_manage_credentials %}
+          <a class="btn primary" href="#linux-terminal"><span class="icon">CLI</span> Terminal</a>
+        {% endif %}
+        <a class="btn danger" href="{% url 'admin:inventory_server_delete' server.id %}">
+          <span class="icon">DEL</span> Eliminar
+        </a>
       </div>
     </header>
 
     {% if messages %}
-      <section class="messages-row">
+      <section class="messages-row detail-messages">
         {% for message in messages %}<div class="message success">{{ message }}</div>{% endfor %}
       </section>
     {% endif %}
 
-    <section class="detail-grid">
-      <article class="wizard-card"><div class="step-label">CPU</div><h2>{{ latest.cpu_percent|default:"-" }}{% if latest %}%{% endif %}</h2></article>
-      <article class="wizard-card"><div class="step-label">Memoria</div><h2>{{ latest.memory_percent|default:"-" }}{% if latest %}%{% endif %}</h2></article>
-      <article class="wizard-card"><div class="step-label">Disco</div><h2>{{ latest.disk_percent|default:"-" }}{% if latest %}%{% endif %}</h2></article>
-      <article class="wizard-card"><div class="step-label">Discos</div><h2>{{ disk_count }}</h2></article>
+    <section class="kpi-grid">
+      <article class="kpi-card card">
+        <div class="kpi-top"><span class="kpi-icon cpu">CPU</span><strong>{{ cpu_display }}</strong></div>
+        <p>Procesador</p>
+        <div class="progress {{ cpu_tone }}" style="--value: {{ latest.cpu_percent|default:0 }}%;"></div>
+      </article>
+      <article class="kpi-card card">
+        <div class="kpi-top"><span class="kpi-icon memory">RAM</span><strong>{{ memory_display }}</strong></div>
+        <p>Memoria</p>
+        <div class="progress {{ memory_tone }}" style="--value: {{ latest.memory_percent|default:0 }}%;"></div>
+      </article>
+      <article class="kpi-card card">
+        <div class="kpi-top"><span class="kpi-icon disk">DSK</span><strong>{{ disk_display }}</strong></div>
+        <p>Disco</p>
+        <div class="progress {{ disk_tone }}" style="--value: {{ latest.disk_percent|default:0 }}%;"></div>
+      </article>
+      <article class="kpi-card card">
+        <div class="kpi-top"><span class="kpi-icon uptime">UP</span><strong>{{ uptime }}</strong></div>
+        <p>Uptime</p>
+        <div class="progress success" style="--value: 100%;"></div>
+      </article>
+      <article class="kpi-card card">
+        <div class="kpi-top"><span class="kpi-icon check">CHK</span><strong>{{ server.last_seen|default:"-" }}</strong></div>
+        <p>Ultimo check</p>
+        <div class="progress primary" style="--value: 100%;"></div>
+      </article>
+      <article class="kpi-card card">
+        <div class="kpi-top"><span class="kpi-icon security">SEC</span><strong>{{ security_score }}/100</strong></div>
+        <p>Puntaje seguridad</p>
+        <div class="progress {{ cpu_tone }}" style="--value: {{ security_score }}%;"></div>
+      </article>
     </section>
 
-    <section class="wizard-grid">
-      <article class="wizard-card">
-        <h2>Informacion del servidor</h2>
-        <dl class="detail-list">
-          <dt>Grupo</dt><dd>{{ server.group.name|default:"Sin grupo" }}</dd>
-          <dt>Sistema operativo</dt><dd>{{ server.get_os_type_display }}</dd>
-          <dt>Ambiente</dt><dd>{{ server.environment|default:"-" }}</dd>
-          <dt>Responsable</dt><dd>{{ server.owner|default:"-" }}</dd>
-          <dt>Ultima conexion</dt><dd>{{ server.last_seen|default:"-" }}</dd>
-          <dt>Uptime</dt><dd>{{ uptime }}</dd>
-          <dt>Puntaje seguridad</dt><dd>{{ security_score }} / 100</dd>
+    <section class="detail-grid-12">
+      <article class="card info-card span-7">
+        <div class="section-title">
+          <div>
+            <h2>Informacion General</h2>
+            <p>Datos tecnicos y administrativos del equipo.</p>
+          </div>
+        </div>
+        <dl class="info-list">
+          <div><dt>Hostname</dt><dd>{{ server.hostname }}</dd></div>
+          <div><dt>Sistema Operativo</dt><dd>{{ server.get_os_type_display }}</dd></div>
+          <div><dt>Kernel</dt><dd>{% if latest.payload.metrics.kernel %}{{ latest.payload.metrics.kernel }}{% else %}-{% endif %}</dd></div>
+          <div><dt>Version</dt><dd>{% if latest.agent_version %}Agente {{ latest.agent_version }}{% else %}-{% endif %}</dd></div>
+          <div><dt>IP</dt><dd>{{ server.ip_address|default:"-" }}</dd></div>
+          <div><dt>Grupo</dt><dd>{{ server.group.name|default:"Sin grupo" }}</dd></div>
+          <div><dt>Responsable</dt><dd>{{ server.owner|default:"-" }}</dd></div>
+          <div><dt>Fecha creacion</dt><dd>{{ server.created_at }}</dd></div>
+          <div><dt>Ultimo monitoreo</dt><dd>{{ server.last_seen|default:"-" }}</dd></div>
+          <div><dt>Estado Agente</dt><dd>{% if online %}Activo{% else %}Sin reporte{% endif %}</dd></div>
         </dl>
       </article>
 
-      <article class="wizard-card">
-        <h2>Discos detectados</h2>
-        <dl class="detail-list">
+      <article class="card disks-card span-5">
+        <div class="section-title">
+          <div>
+            <h2>Discos</h2>
+            <p>{{ disk_count }} disco{% if disk_count != 1 %}s{% endif %} detectado{% if disk_count != 1 %}s{% endif %}.</p>
+          </div>
+        </div>
+        <div class="disk-list">
           {% for disk in disk_details %}
-            <dt>{% if disk.mountpoint %}{{ disk.mountpoint }}{% elif disk.device %}{{ disk.device }}{% else %}Disco{% endif %}</dt>
-            <dd>{{ disk.percent|default:"-" }}{% if disk.percent %}%{% endif %}</dd>
-          {% empty %}
-            <dt>Sin datos</dt><dd>El agente aun no ha reportado discos.</dd>
-          {% endfor %}
-        </dl>
-      </article>
-    </section>
-
-    <section class="credentials-grid">
-      <article class="wizard-card">
-        <h2>Usuarios de conexion</h2>
-        <p>Credenciales registradas para ingresar a esta maquina.</p>
-        <div class="credential-list">
-          {% for credential in credentials %}
-            <div class="credential-row">
-              <div>
-                <strong>{{ credential.label }}</strong>
-                <span>{{ credential.username }}@{{ server.ip_address|default:server.hostname }}:{{ credential.port }}</span>
+            <div class="disk-item">
+              <div class="disk-head">
+                <strong>{{ disk.label }}</strong>
+                <span>{{ disk.percent_display }}</span>
               </div>
-              {% if can_manage_credentials %}
-                <form method="post" action="{% url 'machine-credential-delete' server.id credential.id %}">
-                  {% csrf_token %}
-                  <button class="text-danger" type="submit">Eliminar</button>
-                </form>
-              {% endif %}
+              <div class="progress {{ disk.tone }}" style="--value: {{ disk.percent|default:0 }}%;"></div>
+              <div class="disk-stats">
+                <span>Capacidad <strong>{% if disk.total_gb %}{{ disk.total_gb }} GB{% else %}-{% endif %}</strong></span>
+                <span>Usado <strong>{% if disk.used_gb %}{{ disk.used_gb }} GB{% else %}-{% endif %}</strong></span>
+                <span>Libre <strong>{% if disk.free_gb %}{{ disk.free_gb }} GB{% else %}-{% endif %}</strong></span>
+              </div>
             </div>
           {% empty %}
-            <div class="group-row muted"><span>Sin credenciales registradas</span></div>
+            <div class="empty-compact">El agente aun no ha reportado discos.</div>
           {% endfor %}
         </div>
       </article>
+    </section>
 
-      {% if can_manage_credentials %}
-        <form class="wizard-card credential-form" method="post" action="{% url 'machine-credential-create' server.id %}">
-          {% csrf_token %}
-          <h2>Agregar usuario</h2>
-          {% for field in credential_form %}
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% for error in field.errors %}<div class="message">{{ error }}</div>{% endfor %}
-          {% endfor %}
-          <button class="submit-button" type="submit">Guardar credencial</button>
-        </form>
-      {% endif %}
+    <section class="card credentials-card">
+      <div class="section-title">
+        <div>
+          <h2>Credenciales SSH</h2>
+          <p>Usuarios registrados para ingresar a esta maquina.</p>
+        </div>
+        {% if can_manage_credentials %}
+          <button class="btn primary" type="button" data-open-modal="credential-modal"><span class="icon">+</span> Agregar credencial</button>
+        {% endif %}
+      </div>
+      <div class="table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Puerto</th>
+              <th>Ultima validacion</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for credential in credentials %}
+              <tr>
+                <td><strong>{{ credential.label }}</strong><span>{{ credential.username }}@{{ server.ip_address|default:server.hostname }}</span></td>
+                <td>{{ credential.port }}</td>
+                <td>{{ credential.last_used_at|default:"Sin uso registrado" }}</td>
+                <td>{% if credential.is_active %}<span class="pill success">Activa</span>{% else %}<span class="pill muted">Inactiva</span>{% endif %}</td>
+                <td>
+                  <div class="row-actions">
+                    <a class="text-action" href="#linux-terminal">Probar conexion</a>
+                    {% if can_manage_credentials %}
+                      <form method="post" action="{% url 'machine-credential-delete' server.id credential.id %}">
+                        {% csrf_token %}
+                        <button class="text-danger" type="submit">Eliminar</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">Sin credenciales registradas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </section>
 
     {% if is_linux and can_manage_credentials %}
-      <section class="console-panel">
-        <div class="panel-heading">
+      <section id="linux-terminal" class="terminal-card card">
+        <div class="terminal-head">
           <div>
-            <h2>Consola Linux</h2>
-            <p>Ejecuta comandos por SSH usando una credencial registrada.</p>
+            <h2>Terminal Linux</h2>
+            <p>Consola embebida para ejecutar comandos SSH usando una credencial registrada.</p>
+          </div>
+          <div class="terminal-actions">
+            <button class="btn dark" type="button" data-copy-console>Copiar salida</button>
+            <button class="btn dark" type="button" data-download-console>Descargar salida</button>
           </div>
         </div>
-        <iframe src="{% url 'device-console' server.id %}" title="Consola Linux {{ server.hostname }}"></iframe>
+        <iframe id="console-frame" src="{% url 'device-console' server.id %}" title="Consola Linux {{ server.hostname }}"></iframe>
       </section>
     {% endif %}
 
-    <section class="metrics-panel metrics-panel-main">
-      <div class="panel-heading">
+    <section class="card metrics-panel-main">
+      <div class="section-title">
         <div>
-          <h2>Graficos de metricas</h2>
-          <p>Ultimas {{ samples|length }} muestras recibidas por el agente. La linea muestra la evolucion historica de cada recurso.</p>
+          <h2>Graficos</h2>
+          <p>Ultimas {{ samples|length }} muestras recibidas por el agente.</p>
+        </div>
+        <div class="range-tabs" aria-label="Rango de tiempo">
+          <button class="active" type="button">1h</button>
+          <button type="button">6h</button>
+          <button type="button">24h</button>
+          <button type="button">7 dias</button>
+          <button type="button">30 dias</button>
         </div>
       </div>
-      <div class="chart-grid chart-grid-main">
+      <div class="chart-grid-main">
         {% for serie in chart_series %}
           <article class="chart-card">
-            <div class="chart-title">{{ serie.label }}</div>
+            <div class="chart-title">
+              <strong>{{ serie.label }}</strong>
+              <span>{% if serie.points %}Historico{% else %}Sin datos{% endif %}</span>
+            </div>
             {% if serie.points %}
               <svg viewBox="0 0 300 100" role="img" aria-label="Grafico {{ serie.label }}">
                 <line x1="0" y1="80" x2="300" y2="80"></line>
@@ -150,12 +246,121 @@
               </svg>
               <div class="chart-scale"><span>0%</span><span>50%</span><span>100%</span></div>
             {% else %}
-              <p>No hay datos para graficar.</p>
+              <div class="empty-chart">No hay datos para graficar.</div>
             {% endif %}
           </article>
         {% endfor %}
       </div>
     </section>
+
+    <section class="card events-card">
+      <div class="section-title">
+        <div>
+          <h2>Eventos recientes</h2>
+          <p>Actividad y alertas generadas desde las ultimas metricas.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Severidad</th>
+              <th>Mensaje</th>
+              <th>Icono</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for event in recent_events %}
+              <tr>
+                <td>{{ event.date }}</td>
+                <td>{{ event.type }}</td>
+                <td><span class="pill severity-{{ event.severity|lower }}">{{ event.severity }}</span></td>
+                <td>{{ event.message }}</td>
+                <td><span class="event-icon">{{ event.icon }}</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">Sin eventos recientes.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
+
+  {% if can_manage_credentials %}
+    <div id="credential-modal" class="modal-backdrop" hidden>
+      <form class="modal-card card" method="post" action="{% url 'machine-credential-create' server.id %}">
+        {% csrf_token %}
+        <div class="modal-head">
+          <div>
+            <h2>Agregar credencial SSH</h2>
+            <p>La clave se almacena cifrada en la plataforma.</p>
+          </div>
+          <button class="icon-button" type="button" data-close-modal="credential-modal">x</button>
+        </div>
+        <div class="modal-fields">
+          {% for field in credential_form %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="message">{{ error }}</div>{% endfor %}
+          {% endfor %}
+        </div>
+        <div class="modal-actions">
+          <button class="btn secondary" type="button" data-close-modal="credential-modal">Cancelar</button>
+          <button class="btn primary" type="submit">Guardar credencial</button>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+
+  <script>
+    document.querySelectorAll("[data-open-modal]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const modal = document.getElementById(button.dataset.openModal);
+        if (modal) modal.hidden = false;
+      });
+    });
+
+    document.querySelectorAll("[data-close-modal]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const modal = document.getElementById(button.dataset.closeModal);
+        if (modal) modal.hidden = true;
+      });
+    });
+
+    document.querySelectorAll(".modal-backdrop").forEach((modal) => {
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) modal.hidden = true;
+      });
+    });
+
+    function consoleText() {
+      const frame = document.getElementById("console-frame");
+      const doc = frame && frame.contentDocument;
+      const pre = doc && doc.querySelector("pre");
+      return pre ? pre.innerText : "";
+    }
+
+    const copyButton = document.querySelector("[data-copy-console]");
+    if (copyButton) {
+      copyButton.addEventListener("click", () => {
+        navigator.clipboard.writeText(consoleText());
+      });
+    }
+
+    const downloadButton = document.querySelector("[data-download-console]");
+    if (downloadButton) {
+      downloadButton.addEventListener("click", () => {
+        const blob = new Blob([consoleText()], { type: "text/plain" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "{{ server.hostname }}-terminal.txt";
+        link.click();
+        URL.revokeObjectURL(link.href);
+      });
+    }
+  </script>
 </body>
 </html>
