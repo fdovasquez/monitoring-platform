@@ -48,6 +48,8 @@ class SiteSettings(models.Model):
     site_name = models.CharField(max_length=120, default="AGFA HealthCare")
     subtitle = models.CharField(max_length=160, default="Monitor de servidores")
     logo = models.ImageField(upload_to=site_logo_path, blank=True, null=True)
+    logo_width = models.PositiveIntegerField(default=126)
+    logo_height = models.PositiveIntegerField(default=38)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
