@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0e1726;
+      --panel: #111d2e;
+      --line: #26384f;
+      --text: #e8f1ff;
+      --muted: #8ea4be;
+      --red: #ff6b7a;
+      --blue: #6ea8fe;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: minmax(180px, 260px) 1fr auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-family: system-ui, sans-serif;
+      font-weight: 700;
+    }
+
+    select,
+    input,
+    button {
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 10px;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    button {
+      color: #08111f;
+      background: var(--blue);
+      border-color: var(--blue);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    pre {
+      min-height: 220px;
+      max-height: 360px;
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      white-space: pre-wrap;
+      background: #08111f;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .error {
+      color: var(--red);
+    }
+
+    .hint {
+      color: var(--muted);
+    }
+
+    @media (max-width: 760px) {
+      form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% if not is_linux %}
+    <pre class="error">La consola embebida esta disponible solo para equipos Linux.</pre>
+  {% elif not credentials %}
+    <pre class="hint">Primero registra una credencial SSH en el detalle del equipo.</pre>
+  {% else %}
+    <form method="post">
+      {% csrf_token %}
+      <div>
+        <label for="credential">Credencial</label>
+        <select id="credential" name="credential">
+          {% for credential in credentials %}
+            <option value="{{ credential.id }}">{{ credential.label }} / {{ credential.username }}:{{ credential.port }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="command">Comando</label>
+        <input id="command" name="command" value="{{ command }}" placeholder="uptime">
+      </div>
+      <button type="submit">Ejecutar</button>
+    </form>
+    <pre>{% if error %}<span class="error">{{ error }}</span>{% endif %}{% if output %}{{ output }}{% elif not error %}<span class="hint">La salida del comando aparecera aqui.</span>{% endif %}</pre>
+  {% endif %}
+</body>
+</html>
