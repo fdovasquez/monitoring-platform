@@ -1,7 +1,8 @@
 from django import forms
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import Group, User
 
-from .models import MachineCredential
+from .models import MachineCredential, UserProfile
 
 
 ROLE_NAMES = ["Administrador", "Editor", "Visualizador"]
@@ -81,15 +82,109 @@ class UserEditForm(forms.ModelForm):
         return user
 
 
-class ProfileForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ["first_name", "last_name", "email"]
-        labels = {
-            "first_name": "Nombre",
-            "last_name": "Apellido",
-            "email": "Email",
-        }
+class ProfileForm(forms.Form):
+    first_name = forms.CharField(label="Nombre", max_length=150)
+    last_name = forms.CharField(label="Apellido", max_length=150)
+    email = forms.EmailField(label="Correo electrónico")
+    phone = forms.CharField(label="Teléfono", max_length=40, required=False)
+    position = forms.CharField(label="Cargo", max_length=120, required=False)
+    photo = forms.ImageField(label="Foto de perfil", required=False)
+    delete_photo = forms.BooleanField(label="Eliminar foto actual", required=False)
+
+    allowed_content_types = {"image/jpeg", "image/png", "image/webp"}
+    max_photo_size = 2 * 1024 * 1024
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user")
+        self.profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        initial = kwargs.pop("initial", {})
+        initial.update(
+            {
+                "first_name": self.user.first_name,
+                "last_name": self.user.last_name,
+                "email": self.user.email,
+                "phone": self.profile.phone,
+                "position": self.profile.position,
+            }
+        )
+        super().__init__(*args, initial=initial, **kwargs)
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get("photo")
+        if not photo:
+            return photo
+        if photo.size > self.max_photo_size:
+            raise forms.ValidationError("La foto no puede superar 2 MB.")
+        if getattr(photo, "content_type", "") not in self.allowed_content_types:
+            raise forms.ValidationError("Solo se permiten imagenes JPG, PNG o WEBP.")
+        return photo
+
+    def save(self):
+        self.user.first_name = self.cleaned_data["first_name"].strip()
+        self.user.last_name = self.cleaned_data["last_name"].strip()
+        self.user.email = self.cleaned_data["email"].strip()
+        self.user.save(update_fields=["first_name", "last_name", "email"])
+
+        self.profile.phone = self.cleaned_data.get("phone", "").strip()
+        self.profile.position = self.cleaned_data.get("position", "").strip()
+        if self.cleaned_data.get("delete_photo") and self.profile.photo:
+            self.profile.photo.delete(save=False)
+            self.profile.photo = None
+        if self.cleaned_data.get("photo"):
+            if self.profile.photo:
+                self.profile.photo.delete(save=False)
+            self.profile.photo = self.cleaned_data["photo"]
+        self.profile.save()
+        return self.user
+
+
+class AccountPasswordChangeForm(forms.Form):
+    current_password = forms.CharField(label="Contraseña actual", widget=forms.PasswordInput)
+    new_password = forms.CharField(label="Nueva contraseña", widget=forms.PasswordInput)
+    confirm_password = forms.CharField(label="Confirmar nueva contraseña", widget=forms.PasswordInput)
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user")
+        super().__init__(*args, **kwargs)
+
+    def clean_current_password(self):
+        current_password = self.cleaned_data.get("current_password", "")
+        if not self.user.check_password(current_password):
+            raise forms.ValidationError("La contraseña actual no es correcta.")
+        return current_password
+
+    def clean(self):
+        cleaned_data = super().clean()
+        current_password = cleaned_data.get("current_password", "")
+        new_password = cleaned_data.get("new_password", "")
+        confirm_password = cleaned_data.get("confirm_password", "")
+
+        if not new_password or not confirm_password:
+            return cleaned_data
+        if new_password != confirm_password:
+            self.add_error("confirm_password", "La confirmación no coincide con la nueva contraseña.")
+        if current_password and current_password == new_password:
+            self.add_error("new_password", "La nueva contraseña debe ser distinta a la actual.")
+        if not any(character.isupper() for character in new_password):
+            self.add_error("new_password", "La nueva contraseña debe incluir al menos una mayúscula.")
+        if not any(character.islower() for character in new_password):
+            self.add_error("new_password", "La nueva contraseña debe incluir al menos una minúscula.")
+        if not any(character.isdigit() for character in new_password):
+            self.add_error("new_password", "La nueva contraseña debe incluir al menos un número.")
+        if not any(not character.isalnum() for character in new_password):
+            self.add_error("new_password", "La nueva contraseña debe incluir al menos un carácter especial.")
+        if len(new_password) < 8:
+            self.add_error("new_password", "La nueva contraseña debe tener al menos 8 caracteres.")
+        try:
+            validate_password(new_password, self.user)
+        except forms.ValidationError as error:
+            self.add_error("new_password", error)
+        return cleaned_data
+
+    def save(self):
+        self.user.set_password(self.cleaned_data["new_password"])
+        self.user.save(update_fields=["password"])
+        return self.user
 
 
 class MachineCredentialForm(forms.ModelForm):
