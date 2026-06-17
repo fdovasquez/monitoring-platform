@@ -17,6 +17,9 @@ class SiteSettingsForm(forms.ModelForm):
             "subtitle": "Texto inferior",
             "logo": "Logo",
         }
+        widgets = {
+            "logo": forms.FileInput(attrs={"class": "logo-input"}),
+        }
         help_texts = {
             "subtitle": "Texto pequeno que aparece bajo el logo en la cabecera.",
         }
