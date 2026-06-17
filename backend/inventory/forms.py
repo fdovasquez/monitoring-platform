@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import Group, User
+from django.core.exceptions import ValidationError
 
 from .models import MachineCredential, UserProfile
 
@@ -116,7 +117,7 @@ class ProfileForm(forms.Form):
         if photo.size > self.max_photo_size:
             raise forms.ValidationError("La foto no puede superar 2 MB.")
         if getattr(photo, "content_type", "") not in self.allowed_content_types:
-            raise forms.ValidationError("Solo se permiten imagenes JPG, PNG o WEBP.")
+            raise forms.ValidationError("Solo se permiten imágenes JPG, PNG o WEBP.")
         return photo
 
     def save(self):
@@ -177,7 +178,7 @@ class AccountPasswordChangeForm(forms.Form):
             self.add_error("new_password", "La nueva contraseña debe tener al menos 8 caracteres.")
         try:
             validate_password(new_password, self.user)
-        except forms.ValidationError as error:
+        except ValidationError as error:
             self.add_error("new_password", error)
         return cleaned_data
 
