@@ -163,6 +163,34 @@ select {
   border-radius: 8px;
 }
 
+.user-table-panel {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-nav {
+  margin-top: 0;
+}
+
+.primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  color: #fff !important;
+  background: var(--blue-900);
+  border: 1px solid var(--blue-900);
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.primary-action:hover {
+  background: var(--blue-700);
+  border-color: var(--blue-700);
+}
+
 .metrics-panel {
   margin-top: 18px;
   padding: 20px;
