@@ -163,6 +163,86 @@ select {
   border-radius: 8px;
 }
 
+.metrics-panel {
+  margin-top: 18px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.panel-heading h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.panel-heading p {
+  margin: 0;
+  color: var(--ink-500);
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.chart-card {
+  padding: 14px;
+  background: #fbfdff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.chart-title {
+  margin-bottom: 10px;
+  color: var(--ink-700);
+  font-weight: 800;
+}
+
+.chart-card svg {
+  width: 100%;
+  height: 130px;
+}
+
+.chart-card line {
+  stroke: #d8e1ed;
+  stroke-width: 1;
+}
+
+.chart-card polyline {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-card polyline.cpu {
+  stroke: var(--blue-700);
+}
+
+.chart-card polyline.memory {
+  stroke: var(--green-600);
+}
+
+.chart-card polyline.disk {
+  stroke: var(--red-600);
+}
+
+.chart-scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-500);
+  font-size: 12px;
+}
+
 .group-row.active {
   color: var(--blue-900);
   background: #e8f1ff;
@@ -219,6 +299,10 @@ select {
   }
 
   .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-grid {
     grid-template-columns: 1fr;
   }
 }
