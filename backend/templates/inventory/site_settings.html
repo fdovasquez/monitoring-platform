@@ -13,9 +13,9 @@
   <header class="app-header">
     <a class="app-brand" href="{% url 'device-list' %}">
       {% if site_settings.logo %}
-        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="width: {{ site_settings.logo_width }}px; height: {{ site_settings.logo_height }}px;">
       {% else %}
-        <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}">
+        <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}" style="width: {{ site_settings.logo_width }}px; height: {{ site_settings.logo_height }}px;">
       {% endif %}
       <span>{{ site_settings.subtitle }}</span>
     </a>
@@ -46,9 +46,9 @@
       <div class="profile-identity">
         <div class="site-logo-preview" data-logo-preview>
           {% if site_settings_edit.logo %}
-            <img src="{{ site_settings_edit.logo.url }}" alt="{{ site_settings_edit.site_name }}">
+            <img src="{{ site_settings_edit.logo.url }}" alt="{{ site_settings_edit.site_name }}" data-resizable-logo>
           {% else %}
-            <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings_edit.site_name }}">
+            <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings_edit.site_name }}" data-resizable-logo>
           {% endif %}
         </div>
         <div>
@@ -81,9 +81,9 @@
         <div class="brand-preview">
           <div class="brand-preview-logo" data-logo-preview-secondary>
             {% if site_settings_edit.logo %}
-              <img src="{{ site_settings_edit.logo.url }}" alt="{{ site_settings_edit.site_name }}">
+              <img src="{{ site_settings_edit.logo.url }}" alt="{{ site_settings_edit.site_name }}" data-resizable-logo>
             {% else %}
-              <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings_edit.site_name }}">
+              <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings_edit.site_name }}" data-resizable-logo>
             {% endif %}
           </div>
           <div>
@@ -102,6 +102,18 @@
             <label for="{{ settings_form.subtitle.id_for_label }}">Texto inferior</label>
             {{ settings_form.subtitle }}
             {% for error in settings_form.subtitle.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ settings_form.logo_width.id_for_label }}">Ancho del logo <span>px</span></label>
+            {{ settings_form.logo_width }}
+            {% if settings_form.logo_width.help_text %}<small>{{ settings_form.logo_width.help_text }}</small>{% endif %}
+            {% for error in settings_form.logo_width.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ settings_form.logo_height.id_for_label }}">Alto del logo <span>px</span></label>
+            {{ settings_form.logo_height }}
+            {% if settings_form.logo_height.help_text %}<small>{{ settings_form.logo_height.help_text }}</small>{% endif %}
+            {% for error in settings_form.logo_height.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
           </div>
           <div class="field field-wide">
             <label for="{{ settings_form.logo.id_for_label }}">Logo</label>
@@ -143,10 +155,25 @@
           const image = document.createElement("img");
           image.src = url;
           image.alt = "Vista previa del logo";
+          image.dataset.resizableLogo = "";
           target.appendChild(image);
         });
+        refreshLogoSize();
       });
     }
+
+    const logoWidthInput = document.getElementById("{{ settings_form.logo_width.id_for_label }}");
+    const logoHeightInput = document.getElementById("{{ settings_form.logo_height.id_for_label }}");
+    function refreshLogoSize() {
+      const width = Math.max(40, Math.min(260, Number(logoWidthInput?.value || 126)));
+      const height = Math.max(20, Math.min(120, Number(logoHeightInput?.value || 38)));
+      document.querySelectorAll("[data-resizable-logo]").forEach((image) => {
+        image.style.width = `${width}px`;
+        image.style.height = `${height}px`;
+      });
+    }
+    [logoWidthInput, logoHeightInput].forEach((input) => input?.addEventListener("input", refreshLogoSize));
+    refreshLogoSize();
 
     document.querySelectorAll("[data-loading-form]").forEach((form) => {
       form.addEventListener("submit", () => {
