@@ -21,7 +21,7 @@
     <nav class="nav-section">
       <a class="nav-item" href="{% url 'device-list' %}"><span>Todos los dispositivos</span></a>
       <a class="nav-item active" href="{% url 'agent-install' %}"><span>Asistente de agente</span></a>
-      <a class="nav-item" href="{% url 'user-roles' %}"><span>Usuarios y roles</span></a>
+      <a class="nav-item" href="{% url 'user-list' %}"><span>Usuarios</span></a>
       <a class="nav-item" href="{% url 'admin:index' %}"><span>Admin</span></a>
     </nav>
   </aside>
@@ -93,7 +93,7 @@
           <p>Servidor creado: <strong>{{ created_server.hostname }}</strong></p>
           <p>Token generado:</p>
           <code class="token">{{ agent_token.token }}</code>
-          <p>Selecciona el sistema operativo y copia solo el bloque que corresponda.</p>
+          <p>Elige el sistema operativo del cliente y copia el bloque completo en una terminal con permisos de administrador.</p>
         {% else %}
           <p>Primero crea el servidor. Luego apareceran los comandos listos para copiar.</p>
         {% endif %}
