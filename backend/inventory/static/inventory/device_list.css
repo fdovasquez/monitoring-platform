@@ -49,6 +49,27 @@ a {
   margin-bottom: 18px;
 }
 
+.brand-logo {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 24px;
+}
+
+.brand-logo img {
+  display: block;
+  width: 142px;
+  max-width: 100%;
+  height: auto;
+}
+
+.brand-logo span {
+  color: var(--ink-500);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+
 .brand-mark {
   display: grid;
   width: 38px;
@@ -68,6 +89,12 @@ a {
 .brand span {
   color: var(--ink-500);
   font-size: 12px;
+}
+
+.brand.brand-logo span {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .02em;
 }
 
 .primary-action {
@@ -323,7 +350,8 @@ th {
   width: 44px;
   height: 18px;
   border-radius: 4px;
-  background: linear-gradient(90deg, var(--green-600) var(--score), #d7dee8 var(--score));
+  background:
+    linear-gradient(90deg, var(--green-600) var(--score), #d7dee8 var(--score));
 }
 
 .score strong {
@@ -361,7 +389,9 @@ th {
   display: block;
   width: 150px;
   height: 18px;
-  background: linear-gradient(90deg, rgba(11, 99, 206, .15), rgba(11, 99, 206, .35));
+  background:
+    linear-gradient(90deg, rgba(11, 99, 206, .15), rgba(11, 99, 206, .35)),
+    repeating-linear-gradient(90deg, transparent 0 12px, rgba(11, 99, 206, .45) 12px 14px);
   border-radius: 2px;
 }
 
