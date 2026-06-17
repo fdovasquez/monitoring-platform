@@ -9,22 +9,22 @@
   <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="brand brand-logo">
+  <header class="app-header">
+    <a class="app-brand" href="{% url 'device-list' %}">
       <img src="{% static 'inventory/logo.png' %}" alt="AGFA HealthCare">
       <span>Monitor de servidores</span>
+    </a>
+    <nav class="app-nav" aria-label="Menu principal">
+      <a href="{% url 'device-list' %}">Dispositivos</a>
+      <a href="{% url 'agent-install' %}">Instalar agente</a>
+      <a class="active" href="{% url 'user-list' %}">Usuarios</a>
+      <a href="{% url 'admin:index' %}">Admin</a>
+    </nav>
+    <div class="app-actions">
+      <a href="{% url 'user-list' %}">Volver</a>
+      <span class="user-chip">{{ request.user.username }}</span>
     </div>
-    <nav class="nav-section">
-      <a class="nav-item" href="{% url 'device-list' %}"><span>Todos los dispositivos</span></a>
-      <a class="nav-item active" href="{% url 'user-list' %}"><span>Usuarios</span></a>
-      <a class="nav-item" href="{% url 'agent-install' %}"><span>Instalar agente</span></a>
-    </nav>
-    <div class="group-title">Administracion</div>
-    <nav class="nav-section admin-nav">
-      <a class="nav-item" href="{% url 'user-create' %}"><span>Crear usuario</span></a>
-      <a class="nav-item" href="{% url 'admin:index' %}"><span>Admin</span></a>
-    </nav>
-  </aside>
+  </header>
 
   <main class="content">
     <header class="topbar">
