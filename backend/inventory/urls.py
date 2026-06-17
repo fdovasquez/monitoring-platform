@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .views import (
+    AccountPasswordChangeDoneView,
+    AccountPasswordChangeView,
     AgentInstallWizardView,
     DeviceConsoleView,
     DeviceDetailView,
@@ -32,5 +34,7 @@ urlpatterns = [
     path("users/<int:pk>/edit/", UserEditView.as_view(), name="user-edit"),
     path("users/<int:pk>/delete/", UserDeleteView.as_view(), name="user-delete"),
     path("profile/", ProfileView.as_view(), name="profile"),
+    path("profile/password/", AccountPasswordChangeView.as_view(), name="password-change"),
+    path("profile/password/done/", AccountPasswordChangeDoneView.as_view(), name="password-change-done"),
     path("logout/", LogoutView.as_view(), name="logout"),
 ]
