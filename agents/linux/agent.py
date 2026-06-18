@@ -104,6 +104,85 @@ def collect_inventory():
     }
 
 
+def collect_services():
+    output = command_output(["systemctl", "list-units", "--type=service", "--all", "--no-legend", "--no-pager"])
+    services = []
+    for line in output.splitlines():
+        parts = line.split(None, 4)
+        if len(parts) < 4:
+            continue
+        unit = parts[0]
+        services.append(
+            {
+                "name": unit,
+                "display_name": parts[4] if len(parts) > 4 else unit,
+                "state": parts[2],
+                "sub_state": parts[3],
+                "start_type": "",
+            }
+        )
+    return services[:120]
+
+
+def process_username(process):
+    try:
+        return process.username()
+    except (psutil.AccessDenied, psutil.NoSuchProcess):
+        return ""
+
+
+def collect_processes():
+    processes = []
+    for process in psutil.process_iter(["pid", "name", "username", "memory_percent", "cpu_percent", "create_time", "exe"]):
+        try:
+            info = process.info
+            processes.append(
+                {
+                    "pid": info.get("pid"),
+                    "name": info.get("name") or "",
+                    "user": info.get("username") or process_username(process),
+                    "cpu_percent": round(float(info.get("cpu_percent") or 0), 2),
+                    "memory_percent": round(float(info.get("memory_percent") or 0), 2),
+                    "path": info.get("exe") or "",
+                }
+            )
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            continue
+    processes.sort(key=lambda item: (item["memory_percent"], item["cpu_percent"]), reverse=True)
+    return processes[:40]
+
+
+def collect_ports():
+    ports = []
+    process_names = {}
+    for connection in psutil.net_connections(kind="inet"):
+        if not connection.laddr:
+            continue
+        if connection.type == socket.SOCK_STREAM and connection.status != psutil.CONN_LISTEN:
+            continue
+        protocol = "tcp" if connection.type == socket.SOCK_STREAM else "udp"
+        process_name = ""
+        if connection.pid:
+            if connection.pid not in process_names:
+                try:
+                    process_names[connection.pid] = psutil.Process(connection.pid).name()
+                except (psutil.AccessDenied, psutil.NoSuchProcess):
+                    process_names[connection.pid] = ""
+            process_name = process_names[connection.pid]
+        ports.append(
+            {
+                "protocol": protocol.upper(),
+                "local_address": connection.laddr.ip,
+                "local_port": connection.laddr.port,
+                "status": connection.status or "LISTEN",
+                "pid": connection.pid,
+                "process": process_name,
+            }
+        )
+    ports.sort(key=lambda item: (item["protocol"], item["local_port"]))
+    return ports[:120]
+
+
 def collect_metrics():
     disk_root = psutil.disk_usage("/")
     disks = []
@@ -138,7 +217,9 @@ def collect_metrics():
             "load_1m": os.getloadavg()[0] if hasattr(os, "getloadavg") else None,
         },
         "inventory": collect_inventory(),
-        "services": [],
+        "services": collect_services(),
+        "processes": collect_processes(),
+        "ports": collect_ports(),
     }
 
 
