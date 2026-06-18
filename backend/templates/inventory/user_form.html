@@ -7,34 +7,10 @@
   <title>{{ form_title }}</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
 </head>
 <body>
-  <header class="app-header">
-    <a class="app-brand" href="{% url 'device-list' %}">
-      <img src="{% static 'inventory/logo.png' %}" alt="AGFA HealthCare">
-      <span>Monitor de servidores</span>
-    </a>
-    <nav class="app-nav" aria-label="Menu principal">
-      <a href="{% url 'device-list' %}">Dispositivos</a>
-      <a href="{% url 'agent-install' %}">Instalar agente</a>
-      <a class="active" href="{% url 'user-list' %}">Usuarios</a>
-      <a href="{% url 'admin:index' %}">Admin</a>
-    </nav>
-    <div class="app-actions">
-      <a href="{% url 'user-list' %}">Volver</a>
-      <details class="account-menu">
-        <summary>{{ request.user.username }}</summary>
-        <div class="account-dropdown">
-          <a href="{% url 'profile' %}">Editar perfil</a>
-          <a href="{% url 'password-change' %}">Cambiar contraseña</a>
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit">Cerrar sesión</button>
-          </form>
-        </div>
-      </details>
-    </div>
-  </header>
+  {% include "inventory/partials/app_header.html" with active_menu="users" %}
 
   <main class="content">
     <header class="topbar">
