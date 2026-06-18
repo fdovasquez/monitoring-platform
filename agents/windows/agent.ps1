@@ -23,6 +23,8 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 $Hostname = if ($env:MONITORING_HOSTNAME) { $env:MONITORING_HOSTNAME } else { $env:COMPUTERNAME }
 $Cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
 $Os = Get-CimInstance Win32_OperatingSystem
+$Computer = Get-CimInstance Win32_ComputerSystem
+$Bios = Get-CimInstance Win32_BIOS
 $Disk = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
 $Disks = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object {
     $Percent = if ($_.Size -gt 0) { [math]::Round((($_.Size - $_.FreeSpace) / $_.Size) * 100, 2) } else { 0 }
@@ -34,6 +36,23 @@ $Disks = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Objec
         percent = [double]$Percent
     }
 }
+$NetworkConfigs = Get-CimInstance Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True"
+$Adapters = Get-CimInstance Win32_NetworkAdapter | Where-Object { $_.NetEnabled -eq $true }
+$Interfaces = @($NetworkConfigs | ForEach-Object {
+    $config = $_
+    $adapter = $Adapters | Where-Object { $_.MACAddress -eq $config.MACAddress } | Select-Object -First 1
+    @{
+        name = $config.Description
+        is_up = $true
+        speed_mbps = if ($adapter -and $adapter.Speed) { [math]::Round($adapter.Speed / 1000000, 0) } else { $null }
+        ips = @($config.IPAddress | Where-Object { $_ -and $_ -notlike "fe80*" })
+        mac = $config.MACAddress
+    }
+})
+$PrimaryIp = ($NetworkConfigs | ForEach-Object { $_.IPAddress } | Where-Object { $_ -and $_ -match "^\d+\.\d+\.\d+\.\d+$" -and $_ -ne "127.0.0.1" } | Select-Object -First 1)
+$Gateway = ($NetworkConfigs | ForEach-Object { $_.DefaultIPGateway } | Where-Object { $_ } | Select-Object -First 1)
+$DnsServers = @($NetworkConfigs | ForEach-Object { $_.DNSServerSearchOrder } | Where-Object { $_ } | Select-Object -Unique)
+$MacAddresses = @($NetworkConfigs | ForEach-Object { $_.MACAddress } | Where-Object { $_ } | Select-Object -Unique)
 $Uptime = [int]((Get-Date) - $Os.LastBootUpTime).TotalSeconds
 $MemoryPercent = [math]::Round((($Os.TotalVisibleMemorySize - $Os.FreePhysicalMemory) / $Os.TotalVisibleMemorySize) * 100, 2)
 $DiskPercent = [math]::Round((($Disk.Size - $Disk.FreeSpace) / $Disk.Size) * 100, 2)
@@ -50,8 +69,28 @@ $Payload = @{
         disks = @($Disks)
         uptime_seconds = $Uptime
     }
+    inventory = @{
+        hostname = $Hostname
+        fqdn = ([System.Net.Dns]::GetHostEntry($env:COMPUTERNAME).HostName)
+        os_name = $Os.Caption
+        os_version = $Os.Version
+        kernel = $Os.BuildNumber
+        architecture = $Os.OSArchitecture
+        serial_number = $Bios.SerialNumber
+        model = $Computer.Model
+        manufacturer = $Computer.Manufacturer
+        domain = $Computer.Domain
+        logged_user = $Computer.UserName
+        primary_ip = $PrimaryIp
+        gateway = $Gateway
+        dns_servers = @($DnsServers)
+        mac_addresses = @($MacAddresses)
+        interfaces = @($Interfaces)
+        timezone = (Get-TimeZone).Id
+        collected_at = (Get-Date).ToUniversalTime().ToString("o")
+    }
     services = @()
-} | ConvertTo-Json -Depth 5
+} | ConvertTo-Json -Depth 8
 
 $Headers = @{
     Authorization = "Bearer $($env:MONITORING_AGENT_TOKEN)"
