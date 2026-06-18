@@ -8,9 +8,8 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.generic import TemplateView
 
-from .forms import AlertHistoryFilterForm, AlertRuleForm, SmtpSettingsForm, TestEmailForm
-from .models import AlertEmailLog, AlertRule, SmtpSettings
-from .services import send_test_email, test_smtp_connection
+from .forms import AlertHistoryFilterForm, AlertRuleForm
+from .models import AlertEmailLog, AlertRule
 
 
 def user_can_manage_alerts(user):
@@ -25,7 +24,7 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        smtp = SmtpSettings.load()
+        ensure_default_monitors()
         history_filter = AlertHistoryFilterForm(self.request.GET or None)
         logs = self.filtered_logs(history_filter)
         cutoff = timezone.now() - timezone.timedelta(days=30)
@@ -40,13 +39,10 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         AlertEmailLog.objects.filter(created_at__lt=cutoff).delete()
         context.update(
             {
-                "active_tab": kwargs.get("active_tab") or self.request.GET.get("tab", "smtp"),
-                "smtp_settings": smtp,
-                "smtp_form": kwargs.get("smtp_form") or SmtpSettingsForm(instance=smtp),
-                "test_email_form": kwargs.get("test_email_form") or TestEmailForm(),
+                "active_tab": kwargs.get("active_tab") or self.request.GET.get("tab", "monitors"),
                 "rule_form": rule_form,
                 "edit_rule": edit_rule,
-                "rules": AlertRule.objects.order_by("name"),
+                "rules": self.filtered_rules(),
                 "history_filter": history_filter,
                 "logs": logs[:200],
                 "sent_count": AlertEmailLog.objects.filter(created_at__gte=cutoff, status=AlertEmailLog.STATUS_SENT).count(),
@@ -57,58 +53,29 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def post(self, request):
         action = request.POST.get("action", "")
-        smtp = SmtpSettings.load()
-
-        if action == "save_smtp":
-            form = SmtpSettingsForm(request.POST, instance=smtp)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Configuracion SMTP guardada correctamente.")
-                return redirect("alert-settings")
-            messages.error(request, "No se pudo guardar SMTP. Revisa los campos.")
-            return self.render_to_response(self.get_context_data(smtp_form=form, active_tab="smtp"))
-
-        if action == "test_connection":
-            try:
-                test_smtp_connection(smtp)
-                messages.success(request, "Conexion SMTP exitosa.")
-            except Exception as exc:
-                messages.error(request, f"No se pudo conectar al servidor SMTP: {exc}")
-            return redirect("alert-settings")
-
-        if action == "send_test_email":
-            form = TestEmailForm(request.POST)
-            if form.is_valid():
-                try:
-                    send_test_email(smtp, form.cleaned_data["recipient"])
-                    messages.success(request, "Correo de prueba enviado correctamente.")
-                except Exception as exc:
-                    messages.error(request, f"No se pudo enviar el correo de prueba: {exc}")
-                return redirect("alert-settings")
-            return self.render_to_response(self.get_context_data(test_email_form=form, active_tab="smtp"))
 
         if action == "create_rule":
             form = AlertRuleForm(request.POST)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Alerta creada correctamente.")
-                return redirect("/app/alerts/?tab=rules")
+                return redirect("/app/alerts/?tab=monitors")
             messages.error(request, "No se pudo crear la alerta. Revisa los campos.")
-            return self.render_to_response(self.get_context_data(rule_form=form, active_tab="rules"))
+            return self.render_to_response(self.get_context_data(rule_form=form, active_tab="monitors"))
 
         if action.startswith("update_rule:"):
             rule_id = action.split(":", 1)[1]
             rule = AlertRule.objects.filter(id=rule_id).first()
             if not rule:
                 messages.error(request, "La regla seleccionada no existe.")
-                return redirect("/app/alerts/?tab=rules")
+                return redirect("/app/alerts/?tab=monitors")
             form = AlertRuleForm(request.POST, instance=rule)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Alerta actualizada correctamente.")
-                return redirect("/app/alerts/?tab=rules")
+                return redirect("/app/alerts/?tab=monitors")
             messages.error(request, "No se pudo actualizar la alerta. Revisa los campos.")
-            return self.render_to_response(self.get_context_data(rule_form=form, edit_rule=rule, active_tab="rules"))
+            return self.render_to_response(self.get_context_data(rule_form=form, edit_rule=rule, active_tab="monitors"))
 
         if action.startswith("toggle_rule:"):
             rule_id = action.split(":", 1)[1]
@@ -117,15 +84,26 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 rule.is_active = not rule.is_active
                 rule.save(update_fields=["is_active", "updated_at"])
                 messages.success(request, "Estado de la alerta actualizado.")
-            return redirect("/app/alerts/?tab=rules")
+            return redirect("/app/alerts/?tab=monitors")
 
         if action.startswith("delete_rule:"):
             rule_id = action.split(":", 1)[1]
             AlertRule.objects.filter(id=rule_id).delete()
             messages.success(request, "Alerta eliminada correctamente.")
-            return redirect("/app/alerts/?tab=rules")
+            return redirect("/app/alerts/?tab=monitors")
 
         return redirect("alert-settings")
+
+    def filtered_rules(self):
+        rules = AlertRule.objects.order_by("name")
+        query = self.request.GET.get("q", "").strip()
+        if query:
+            rules = rules.filter(
+                Q(name__icontains=query)
+                | Q(event_type__icontains=query)
+                | Q(service_name__icontains=query)
+            )
+        return rules
 
     def filtered_logs(self, form):
         cutoff = timezone.now() - timezone.timedelta(days=30)
@@ -151,6 +129,134 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                     | Q(error_message__icontains=query)
                 )
         return logs.order_by("-created_at")
+
+
+def ensure_default_monitors():
+    defaults = [
+        {
+            "name": "Servidor sin conexion",
+            "event_type": AlertRule.EVENT_OFFLINE,
+            "threshold": 1,
+            "priority": AlertRule.PRIORITY_CRITICAL,
+            "notification_frequency_minutes": 5,
+            "min_interval_minutes": 5,
+        },
+        {
+            "name": "Uso de CPU elevado",
+            "event_type": AlertRule.EVENT_CPU,
+            "threshold": 75,
+            "priority": AlertRule.PRIORITY_WARNING,
+            "notification_frequency_minutes": 10,
+            "min_interval_minutes": 10,
+        },
+        {
+            "name": "Uso de CPU critico",
+            "event_type": AlertRule.EVENT_CPU,
+            "threshold": 90,
+            "priority": AlertRule.PRIORITY_CRITICAL,
+            "notification_frequency_minutes": 5,
+            "min_interval_minutes": 5,
+        },
+        {
+            "name": "Uso de memoria elevado",
+            "event_type": AlertRule.EVENT_MEMORY,
+            "threshold": 75,
+            "priority": AlertRule.PRIORITY_WARNING,
+            "notification_frequency_minutes": 10,
+            "min_interval_minutes": 10,
+        },
+        {
+            "name": "Uso de memoria critico",
+            "event_type": AlertRule.EVENT_MEMORY,
+            "threshold": 90,
+            "priority": AlertRule.PRIORITY_CRITICAL,
+            "notification_frequency_minutes": 5,
+            "min_interval_minutes": 5,
+        },
+        {
+            "name": "Uso de disco advertencia",
+            "event_type": AlertRule.EVENT_FREE_SPACE,
+            "threshold": 20,
+            "priority": AlertRule.PRIORITY_WARNING,
+            "notification_frequency_minutes": 30,
+            "min_interval_minutes": 30,
+        },
+        {
+            "name": "Uso de disco critico",
+            "event_type": AlertRule.EVENT_FREE_SPACE,
+            "threshold": 10,
+            "priority": AlertRule.PRIORITY_CRITICAL,
+            "notification_frequency_minutes": 15,
+            "min_interval_minutes": 15,
+        },
+        {
+            "name": "Servicio critico detenido",
+            "event_type": AlertRule.EVENT_CRITICAL_SERVICE,
+            "threshold": 1,
+            "priority": AlertRule.PRIORITY_CRITICAL,
+            "notification_frequency_minutes": 5,
+            "min_interval_minutes": 5,
+            "service_name": "Servicios criticos",
+        },
+        {
+            "name": "Servicio detenido",
+            "event_type": AlertRule.EVENT_SERVICE_STOPPED,
+            "threshold": 1,
+            "priority": AlertRule.PRIORITY_WARNING,
+            "notification_frequency_minutes": 10,
+            "min_interval_minutes": 10,
+        },
+        {
+            "name": "Reinicio inesperado",
+            "event_type": AlertRule.EVENT_REBOOT,
+            "threshold": 1,
+            "priority": AlertRule.PRIORITY_WARNING,
+            "notification_frequency_minutes": 60,
+            "min_interval_minutes": 60,
+        },
+        {
+            "name": "Error en respaldos",
+            "event_type": AlertRule.EVENT_BACKUP,
+            "threshold": 1,
+            "priority": AlertRule.PRIORITY_CRITICAL,
+            "notification_frequency_minutes": 60,
+            "min_interval_minutes": 60,
+        },
+        {
+            "name": "Error de conexion a base de datos",
+            "event_type": AlertRule.EVENT_DATABASE,
+            "threshold": 1,
+            "priority": AlertRule.PRIORITY_CRITICAL,
+            "notification_frequency_minutes": 10,
+            "min_interval_minutes": 10,
+        },
+        {
+            "name": "Estado SMART de disco",
+            "event_type": AlertRule.EVENT_DISK,
+            "threshold": 95,
+            "priority": AlertRule.PRIORITY_CRITICAL,
+            "notification_frequency_minutes": 60,
+            "min_interval_minutes": 60,
+            "service_name": "SMART",
+        },
+        {
+            "name": "Tiempo encendido mayor a 30 dias",
+            "event_type": AlertRule.EVENT_REBOOT,
+            "threshold": 30,
+            "priority": AlertRule.PRIORITY_INFO,
+            "notification_frequency_minutes": 1440,
+            "min_interval_minutes": 1440,
+        },
+    ]
+    for data in defaults:
+        AlertRule.objects.get_or_create(
+            name=data["name"],
+            defaults={
+                **data,
+                "is_active": True,
+                "recipients": "",
+            },
+        )
 
 
 class AlertHistoryExportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
