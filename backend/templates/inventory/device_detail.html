@@ -142,6 +142,38 @@
       </article>
     </section>
 
+    <section class="card inventory-card">
+      <div class="section-title">
+        <div>
+          <h2>Inventario de la maquina</h2>
+          <p>Datos recolectados automaticamente por el agente.</p>
+        </div>
+      </div>
+      {% if inventory %}
+        <dl class="info-list inventory-list">
+          {% for label, value in inventory.items %}
+            <div><dt>{{ label }}</dt><dd>{{ value|default:"-" }}</dd></div>
+          {% endfor %}
+        </dl>
+        <div class="inventory-network">
+          <h3>Interfaces de red</h3>
+          <div class="inventory-interface-list">
+            {% for interface in inventory.interfaces %}
+              <article class="inventory-interface">
+                <strong>{{ interface.name|default:"Interfaz" }}</strong>
+                <span>{% if interface.ips %}{{ interface.ips|join:", " }}{% else %}Sin IP{% endif %}</span>
+                <small>{{ interface.mac|default:"Sin MAC" }}{% if interface.speed_mbps %} / {{ interface.speed_mbps }} Mbps{% endif %}</small>
+              </article>
+            {% empty %}
+              <div class="empty-compact">El agente aun no ha reportado interfaces de red.</div>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-compact">El inventario se completara cuando el agente envie su siguiente reporte.</div>
+      {% endif %}
+    </section>
+
     <section class="card credentials-card">
       <div class="section-title">
         <div>
