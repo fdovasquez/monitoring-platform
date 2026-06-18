@@ -95,14 +95,21 @@
 
     {% if active_tab == 'rules' %}
       <section class="alerts-grid">
-        <form class="profile-card" method="post" data-confirm="Crear alerta?">
+        <form class="profile-card" method="post" data-confirm="{% if edit_rule %}Guardar cambios de la alerta?{% else %}Crear alerta?{% endif %}">
           {% csrf_token %}
-          <input type="hidden" name="action" value="create_rule">
+          {% if edit_rule %}
+            <input type="hidden" name="action" value="update_rule:{{ edit_rule.id }}">
+          {% else %}
+            <input type="hidden" name="action" value="create_rule">
+          {% endif %}
           <div class="profile-card-head">
             <div>
-              <h2>Nueva alerta</h2>
-              <p>Define evento, umbral, prioridad y destinatarios.</p>
+              <h2>{% if edit_rule %}Editar alerta{% else %}Nueva alerta{% endif %}</h2>
+              <p>{% if edit_rule %}Actualiza evento, umbral, prioridad y destinatarios.{% else %}Define evento, umbral, prioridad y destinatarios.{% endif %}</p>
             </div>
+            {% if edit_rule %}
+              <a class="ghost-button" href="{% url 'alert-settings' %}?tab=rules">Cancelar edicion</a>
+            {% endif %}
           </div>
           <div class="form-grid">
             {% for field in rule_form %}
@@ -114,7 +121,10 @@
             {% endfor %}
           </div>
           <div class="form-actions">
-            <button class="submit-button" type="submit">Crear alerta</button>
+            {% if edit_rule %}
+              <a class="ghost-button" href="{% url 'alert-settings' %}?tab=rules">Cancelar</a>
+            {% endif %}
+            <button class="submit-button" type="submit">{% if edit_rule %}Guardar cambios{% else %}Crear alerta{% endif %}</button>
           </div>
         </form>
 
@@ -133,11 +143,14 @@
                   <span>{{ rule.get_event_type_display }} / {{ rule.threshold }}%</span>
                   <small>{{ rule.get_priority_display }} - cada {{ rule.min_interval_minutes }} min minimo</small>
                 </div>
-                <form method="post">
+                <div class="rule-actions">
+                  <a class="ghost-button" href="{% url 'alert-settings' %}?tab=rules&edit_rule={{ rule.id }}">Editar</a>
+                  <form method="post">
                   {% csrf_token %}
-                  <button class="ghost-button" type="submit" name="action" value="toggle_rule:{{ rule.id }}">{% if rule.is_active %}Deshabilitar{% else %}Habilitar{% endif %}</button>
-                  <button class="danger-button" type="submit" name="action" value="delete_rule:{{ rule.id }}">Eliminar</button>
-                </form>
+                    <button class="ghost-button" type="submit" name="action" value="toggle_rule:{{ rule.id }}">{% if rule.is_active %}Deshabilitar{% else %}Habilitar{% endif %}</button>
+                    <button class="danger-button" type="submit" name="action" value="delete_rule:{{ rule.id }}">Eliminar</button>
+                  </form>
+                </div>
               </article>
             {% empty %}
               <div class="empty-state"><strong>Sin alertas</strong><span>Crea la primera regla de notificacion.</span></div>
