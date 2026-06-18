@@ -1,0 +1,65 @@
+:root {
+  --app-max-width: 1640px;
+  --app-page-padding: 24px;
+}
+
+.app-header-inner,
+.content,
+.agent-modal-shell {
+  width: 100% !important;
+  max-width: var(--app-max-width) !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  padding-right: var(--app-page-padding) !important;
+  padding-left: var(--app-page-padding) !important;
+}
+
+.app-header-inner {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.content {
+  padding-top: 24px !important;
+  padding-bottom: 24px !important;
+}
+
+.agent-modal-shell {
+  padding-top: 28px !important;
+  padding-bottom: 28px !important;
+}
+
+.agent-modal {
+  width: 100% !important;
+  max-width: 1320px !important;
+}
+
+.agent-modal-header p {
+  max-width: 920px !important;
+}
+
+.agent-modal-grid {
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr) !important;
+  gap: 24px !important;
+}
+
+@media (max-width: 980px) {
+  .agent-modal {
+    max-width: none !important;
+  }
+
+  .agent-modal-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 860px) {
+  :root {
+    --app-page-padding: 14px;
+  }
+
+  .app-header-inner {
+    flex-wrap: wrap !important;
+    padding-bottom: 10px !important;
+  }
+}
