@@ -4,30 +4,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Alertas y Umbrales</title>
+  <title>Alertas</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/profile.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
   <link rel="stylesheet" href="{% static 'alerts/alerts.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/layout_width.css' %}">
 </head>
 <body>
   {% include "inventory/partials/app_header.html" with active_menu="alerts" %}
 
-  <main class="content alerts-shell">
-    <header class="profile-hero">
-      <div>
-        <p class="eyebrow">Configuracion</p>
-        <h1>Alertas y Umbrales</h1>
-        <p>Configura SMTP, define eventos criticos y revisa el historial de correos enviados.</p>
+  <main class="content alerts-shell monitors-shell">
+    <header class="monitor-hero">
+      <div class="monitor-identity">
+        <div class="monitor-icon">AL</div>
+        <div>
+          <div class="monitor-title-line">
+            <h1>Alertas</h1>
+            <span class="status online">En linea</span>
+          </div>
+          <span class="monitor-kind">MONITOREO GLOBAL</span>
+        </div>
       </div>
-      <div class="alert-health">
-        {% if smtp_settings.is_configured %}
-          <span class="health-ok">SMTP configurado</span>
-        {% else %}
-          <span class="health-warn">SMTP incompleto</span>
-        {% endif %}
+      <div class="monitor-actions">
+        <a class="ghost-button" href="{% url 'site-settings' %}?tab=smtp">Configurar SMTP</a>
+        <button class="ghost-button" type="button">Columnas</button>
       </div>
     </header>
+
+    <nav class="monitor-tabs" aria-label="Secciones de alertas">
+      <a class="{% if active_tab == 'monitors' %}active{% endif %}" href="?tab=monitors">Monitores</a>
+      <a class="{% if active_tab == 'history' %}active{% endif %}" href="?tab=history">Historial de alertas</a>
+    </nav>
 
     {% if messages %}
       <section class="messages-row profile-messages">
@@ -37,167 +45,117 @@
       </section>
     {% endif %}
 
-    <nav class="alert-tabs" aria-label="Secciones de alertas">
-      <a class="{% if active_tab == 'smtp' %}active{% endif %}" href="?tab=smtp">Configuracion SMTP</a>
-      <a class="{% if active_tab == 'rules' %}active{% endif %}" href="?tab=rules">Alertas y Umbrales</a>
-      <a class="{% if active_tab == 'history' %}active{% endif %}" href="?tab=history">Historial de Alertas</a>
-    </nav>
-
-    {% if active_tab == 'smtp' %}
-      <section class="alerts-grid">
-        <form class="profile-card" method="post" data-confirm="Guardar configuracion SMTP?">
+    {% if active_tab == 'monitors' %}
+      {% if edit_rule %}
+        <form class="profile-card alert-rule-form compact-edit-form" method="post" data-confirm="Guardar cambios de la regla?">
           {% csrf_token %}
-          <input type="hidden" name="action" value="save_smtp">
+          <input type="hidden" name="action" value="update_rule:{{ edit_rule.id }}">
           <div class="profile-card-head">
             <div>
-              <h2>Servidor de correo</h2>
-              <p>Define el servidor usado para enviar notificaciones.</p>
+              <h2>Editar monitor</h2>
+              <p>Actualiza umbral, gravedad, destinatarios y frecuencia.</p>
             </div>
+            <a class="ghost-button" href="{% url 'alert-settings' %}?tab=monitors">Cancelar edicion</a>
           </div>
-          <div class="form-grid">
-            {% for field in smtp_form %}
-              <div class="field {% if field.name == 'require_auth' %}field-check{% endif %}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
+          <div class="alert-rule-grid">
+            {% for field in rule_form %}
+              <div class="field {% if field.name == 'recipients' %}field-wide{% endif %} {% if field.name == 'is_active' %}alert-rule-status{% endif %}">
+                {% if field.name == 'is_active' %}
+                  <span class="field-label">{{ field.label }}</span>
+                  <label class="inline-check compact-check" for="{{ field.id_for_label }}">
+                    {{ field }}
+                    <span>Monitor habilitado</span>
+                  </label>
+                {% else %}
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                {% endif %}
                 {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
               </div>
             {% endfor %}
           </div>
           <div class="form-actions">
-            <button class="submit-button" type="submit">Guardar SMTP</button>
+            <a class="ghost-button" href="{% url 'alert-settings' %}?tab=monitors">Cancelar</a>
+            <button class="submit-button" type="submit">Guardar cambios</button>
           </div>
         </form>
+      {% endif %}
 
-        <section class="profile-card">
-          <div class="profile-card-head">
-            <div>
-              <h2>Pruebas</h2>
-              <p>Valida conectividad y envio real antes de activar reglas criticas.</p>
-            </div>
-          </div>
-          <form method="post" class="test-actions">
-            {% csrf_token %}
-            <button class="ghost-button" type="submit" name="action" value="test_connection">Probar conexion</button>
-          </form>
-          <form method="post" class="test-actions">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="send_test_email">
-            <div class="field">
-              <label for="{{ test_email_form.recipient.id_for_label }}">Correo de prueba</label>
-              {{ test_email_form.recipient }}
-              {% for error in test_email_form.recipient.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <button class="submit-button" type="submit">Enviar correo de prueba</button>
-          </form>
-        </section>
+      <section class="monitor-toolbar">
+        <form class="monitor-search" method="get">
+          <input type="hidden" name="tab" value="monitors">
+          <span aria-hidden="true">Buscar</span>
+          <input name="q" value="{{ request.GET.q }}" placeholder="Buscar">
+        </form>
+        <a class="ghost-button" href="{% url 'alert-settings' %}?tab=monitors">Limpiar</a>
       </section>
-    {% endif %}
 
-    {% if active_tab == 'rules' %}
-      <section class="alerts-grid">
-        <form class="profile-card alert-rule-form" method="post" data-confirm="{% if edit_rule %}Guardar cambios de la alerta?{% else %}Crear alerta?{% endif %}">
-          {% csrf_token %}
-          {% if edit_rule %}
-            <input type="hidden" name="action" value="update_rule:{{ edit_rule.id }}">
-          {% else %}
-            <input type="hidden" name="action" value="create_rule">
-          {% endif %}
-          <div class="profile-card-head">
-            <div>
-              <h2>{% if edit_rule %}Editar alerta{% else %}Nueva alerta{% endif %}</h2>
-              <p>{% if edit_rule %}Actualiza evento, umbral, prioridad y destinatarios.{% else %}Define evento, umbral, prioridad y destinatarios.{% endif %}</p>
-            </div>
-            {% if edit_rule %}
-              <a class="ghost-button" href="{% url 'alert-settings' %}?tab=rules">Cancelar edicion</a>
-            {% endif %}
-          </div>
-          <div class="alert-rule-grid">
-            <div class="field">
-              <label for="{{ rule_form.name.id_for_label }}">{{ rule_form.name.label }}</label>
-              {{ rule_form.name }}
-              {% for error in rule_form.name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="field">
-              <label for="{{ rule_form.event_type.id_for_label }}">{{ rule_form.event_type.label }}</label>
-              {{ rule_form.event_type }}
-              {% for error in rule_form.event_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="field">
-              <label for="{{ rule_form.threshold.id_for_label }}">{{ rule_form.threshold.label }}</label>
-              {{ rule_form.threshold }}
-              {% for error in rule_form.threshold.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="field">
-              <label for="{{ rule_form.priority.id_for_label }}">{{ rule_form.priority.label }}</label>
-              {{ rule_form.priority }}
-              {% for error in rule_form.priority.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="field field-wide">
-              <label for="{{ rule_form.recipients.id_for_label }}">{{ rule_form.recipients.label }}</label>
-              {{ rule_form.recipients }}
-              {% for error in rule_form.recipients.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="field">
-              <label for="{{ rule_form.notification_frequency_minutes.id_for_label }}">{{ rule_form.notification_frequency_minutes.label }}</label>
-              {{ rule_form.notification_frequency_minutes }}
-              {% for error in rule_form.notification_frequency_minutes.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="field">
-              <label for="{{ rule_form.min_interval_minutes.id_for_label }}">{{ rule_form.min_interval_minutes.label }}</label>
-              {{ rule_form.min_interval_minutes }}
-              {% for error in rule_form.min_interval_minutes.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="field">
-              <label for="{{ rule_form.service_name.id_for_label }}">{{ rule_form.service_name.label }}</label>
-              {{ rule_form.service_name }}
-              {% for error in rule_form.service_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="field alert-rule-status">
-              <span class="field-label">{{ rule_form.is_active.label }}</span>
-              <label class="inline-check compact-check" for="{{ rule_form.is_active.id_for_label }}">
-                {{ rule_form.is_active }}
-                <span>Regla habilitada</span>
-              </label>
-              {% for error in rule_form.is_active.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-          </div>
-          <div class="form-actions">
-            {% if edit_rule %}
-              <a class="ghost-button" href="{% url 'alert-settings' %}?tab=rules">Cancelar</a>
-            {% endif %}
-            <button class="submit-button" type="submit">{% if edit_rule %}Guardar cambios{% else %}Crear alerta{% endif %}</button>
-          </div>
-        </form>
-
-        <section class="profile-card alert-rules-card">
-          <div class="profile-card-head">
-            <div>
-              <h2>Reglas activas</h2>
-              <p>{{ rules|length }} reglas configuradas.</p>
-            </div>
-          </div>
-          <div class="rule-list">
+      <section class="monitor-table-card">
+        <table class="monitor-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Politica</th>
+              <th>Tipo</th>
+              <th>Umbral / Duracion</th>
+              <th>Gravedad</th>
+              <th>Remediaciones</th>
+              <th>Auto-resolve</th>
+              <th>Notificaciones</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
             {% for rule in rules %}
-              <article class="rule-item">
-                <div>
-                  <strong>{{ rule.name }}</strong>
-                  <span>{{ rule.get_event_type_display }} / {{ rule.threshold }}%</span>
-                  <small>{{ rule.get_priority_display }} - cada {{ rule.min_interval_minutes }} min minimo</small>
-                </div>
-                <div class="rule-actions">
-                  <a class="ghost-button" href="{% url 'alert-settings' %}?tab=rules&edit_rule={{ rule.id }}">Editar</a>
-                  <form method="post">
-                  {% csrf_token %}
-                    <button class="ghost-button" type="submit" name="action" value="toggle_rule:{{ rule.id }}">{% if rule.is_active %}Deshabilitar{% else %}Habilitar{% endif %}</button>
-                    <button class="danger-button" type="submit" name="action" value="delete_rule:{{ rule.id }}">Eliminar</button>
-                  </form>
-                </div>
-              </article>
+              <tr>
+                <td>
+                  <div class="monitor-name">
+                    <span>{{ rule.name }}</span>
+                    {% if not rule.is_active %}<small>Deshabilitado</small>{% endif %}
+                  </div>
+                </td>
+                <td>Monitoreo - Global</td>
+                <td>{{ rule.get_event_type_display }}</td>
+                <td>
+                  <div class="threshold-copy">
+                    {% if rule.event_type == "cpu_percent" or rule.event_type == "memory_percent" or rule.event_type == "disk_percent" %}
+                      Mayor que {{ rule.threshold|floatformat:"0" }}%
+                    {% elif rule.event_type == "free_space_percent" %}
+                      Menos de {{ rule.threshold|floatformat:"0" }}% libre
+                    {% elif rule.event_type == "server_offline" %}
+                      Sin reporte por {{ rule.threshold|floatformat:"0" }} minuto(s)
+                    {% elif rule.event_type == "unexpected_reboot" and rule.threshold == 30 %}
+                      {{ rule.threshold|floatformat:"0" }} dias
+                    {% else %}
+                      {{ rule.threshold|floatformat:"0" }} vez
+                    {% endif %}
+                    <small>Cada {{ rule.min_interval_minutes }} min minimo</small>
+                  </div>
+                </td>
+                <td><span class="severity-pill {{ rule.priority }}">{{ rule.get_priority_display }}</span></td>
+                <td><span class="check-muted">-</span></td>
+                <td><span class="check-ok">OK</span></td>
+                <td><span class="check-ok">OK</span></td>
+                <td>
+                  <div class="monitor-row-actions">
+                    <a href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ rule.id }}">Editar</a>
+                    <form method="post">
+                      {% csrf_token %}
+                      <button type="submit" name="action" value="toggle_rule:{{ rule.id }}">{% if rule.is_active %}Deshabilitar{% else %}Habilitar{% endif %}</button>
+                      <button class="danger-link" type="submit" name="action" value="delete_rule:{{ rule.id }}">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
             {% empty %}
-              <div class="empty-state"><strong>Sin alertas</strong><span>Crea la primera regla de notificacion.</span></div>
+              <tr>
+                <td colspan="9">
+                  <div class="empty-state"><strong>Sin monitores</strong><span>No hay reglas configuradas.</span></div>
+                </td>
+              </tr>
             {% endfor %}
-          </div>
-        </section>
+          </tbody>
+        </table>
       </section>
     {% endif %}
 
@@ -205,7 +163,7 @@
       <section class="profile-card">
         <div class="profile-card-head">
           <div>
-            <h2>Historial de Alertas</h2>
+            <h2>Historial de alertas</h2>
             <p>Registro de los ultimos 30 dias. Enviados: {{ sent_count }} / Errores: {{ error_count }}</p>
           </div>
           <a class="ghost-button" href="{% url 'alert-history-export' %}?{{ request.GET.urlencode }}">Exportar CSV</a>
