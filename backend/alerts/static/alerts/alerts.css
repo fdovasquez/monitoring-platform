@@ -53,9 +53,110 @@
 
 .alerts-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, .8fr);
+  grid-template-columns: minmax(560px, 1fr) minmax(360px, .8fr);
   gap: 16px;
   align-items: start;
+}
+
+.alert-rule-form {
+  gap: 16px !important;
+}
+
+.alert-rule-form .profile-card-head {
+  align-items: center;
+  padding-bottom: 2px;
+}
+
+.alert-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.alert-rule-grid .field {
+  min-width: 0;
+}
+
+.alert-rule-grid .field > label,
+.alert-rule-grid .field-label {
+  display: block;
+  margin: 0 !important;
+  color: var(--ink-700);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.alert-rule-grid input,
+.alert-rule-grid select,
+.alert-rule-grid textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px !important;
+  margin: 0 !important;
+  font-size: 14px;
+}
+
+.alert-rule-grid textarea {
+  min-height: 64px !important;
+  resize: vertical;
+}
+
+.alert-rule-grid .field-wide {
+  grid-column: 1 / -1;
+}
+
+.alert-rule-status {
+  align-self: end;
+}
+
+.compact-check {
+  box-sizing: border-box;
+  width: 100%;
+  height: 42px;
+  min-height: 42px;
+  margin: 0 !important;
+  padding: 0 12px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.compact-check input[type="checkbox"] {
+  flex: 0 0 16px;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  accent-color: var(--blue-700);
+  appearance: auto !important;
+}
+
+.alert-rule-form .form-actions {
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.alert-rule-form .form-actions .ghost-button,
+.alert-rule-form .form-actions .submit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 140px;
+  height: 40px;
+  min-height: 40px;
+  margin: 0 !important;
+  padding: 0 16px;
+  line-height: 1;
 }
 
 .field-check input {
@@ -75,9 +176,9 @@
 }
 
 .rule-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   padding: 12px;
   background: #f8fafc;
@@ -111,8 +212,15 @@
 
 .rule-actions .ghost-button,
 .rule-actions .danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 94px;
   min-height: 36px;
   padding: 0 12px;
+  margin: 0 !important;
+  line-height: 1;
 }
 
 .danger-button {
@@ -146,7 +254,13 @@
     grid-template-columns: 1fr;
   }
 
+  .alert-rule-grid,
   .rule-item,
+  .rule-actions,
+  .rule-item form {
+    grid-template-columns: 1fr;
+  }
+
   .rule-actions,
   .rule-item form {
     align-items: stretch;
