@@ -11,7 +11,7 @@
   padding: 0 10px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .health-ok,
@@ -41,7 +41,7 @@
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-weight: 750;
+  font-weight: 400;
   white-space: nowrap;
 }
 
@@ -97,9 +97,22 @@
   color: var(--ink-500);
 }
 
+.rule-actions,
 .rule-item form {
   display: flex;
   gap: 8px;
+}
+
+.rule-actions {
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.rule-actions .ghost-button,
+.rule-actions .danger-button {
+  min-height: 36px;
+  padding: 0 12px;
 }
 
 .danger-button {
@@ -109,7 +122,7 @@
   background: #fff7f7;
   border: 1px solid #fecaca;
   border-radius: 6px;
-  font-weight: 750;
+  font-weight: 400;
 }
 
 .history-filters {
@@ -134,8 +147,13 @@
   }
 
   .rule-item,
+  .rule-actions,
   .rule-item form {
     align-items: stretch;
     flex-direction: column;
   }
+}
+
+body :where(h1, h2, h3, h4, h5, h6, strong, b, th, label, button, summary, .tabs a, .submit-button, .ghost-button, .danger-button, .alert-pill, .stat-card strong) {
+  font-weight: 400 !important;
 }
