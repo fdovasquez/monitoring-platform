@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .auth_views import CorporateLoginView, CorporateLogoutView, LoginCodeVerifyView
 from .views import (
     AccountPasswordChangeDoneView,
     AccountPasswordChangeView,
@@ -7,7 +8,6 @@ from .views import (
     DeviceConsoleView,
     DeviceDetailView,
     DeviceListView,
-    LogoutView,
     MachineCredentialCreateView,
     MachineCredentialDeleteView,
     ProfileView,
@@ -20,6 +20,8 @@ from .site_views import SiteSettingsView
 
 
 urlpatterns = [
+    path("login/", CorporateLoginView.as_view(), name="login"),
+    path("login/verify/", LoginCodeVerifyView.as_view(), name="login-verify"),
     path("devices/", DeviceListView.as_view(), name="device-list"),
     path("devices/<int:pk>/", DeviceDetailView.as_view(), name="device-detail"),
     path("devices/<int:pk>/console/", DeviceConsoleView.as_view(), name="device-console"),
@@ -38,5 +40,5 @@ urlpatterns = [
     path("profile/password/", AccountPasswordChangeView.as_view(), name="password-change"),
     path("profile/password/done/", AccountPasswordChangeDoneView.as_view(), name="password-change-done"),
     path("settings/", SiteSettingsView.as_view(), name="site-settings"),
-    path("logout/", LogoutView.as_view(), name="logout"),
+    path("logout/", CorporateLogoutView.as_view(), name="logout"),
 ]
