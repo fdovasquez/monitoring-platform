@@ -16,12 +16,19 @@
     <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
     <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
     <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}">Alertas</a>
-    <a href="{% url 'admin:inventory_server_changelist' %}">Servidores</a>
-    <a href="{% url 'admin:metrics_metricsample_changelist' %}">Metricas</a>
   </nav>
   <div class="app-actions">
     <details class="account-menu">
-      <summary>{{ request.user.username }}</summary>
+      <summary>
+        <span class="user-avatar">
+          {% if request.user.profile.photo %}
+            <img src="{{ request.user.profile.photo.url }}" alt="Foto de {{ request.user.username }}">
+          {% else %}
+            <span>{{ request.user.username|slice:":1"|upper }}</span>
+          {% endif %}
+        </span>
+        <span class="user-name">{{ request.user.username }}</span>
+      </summary>
       <div class="account-dropdown">
         <a href="{% url 'profile' %}">Editar perfil</a>
         <a href="{% url 'password-change' %}">Cambiar contrasena</a>
