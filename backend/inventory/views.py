@@ -22,7 +22,7 @@ from .forms import (
     UserEditForm,
     ensure_base_roles,
 )
-from .models import AgentToken, DeviceGroup, MachineCredential, Server, UserProfile
+from .models import AgentToken, DeviceGroup, MachineCredential, Server, ServerInventory, UserProfile
 
 
 def sidebar_context():
@@ -35,9 +35,18 @@ def user_can_manage_credentials(user):
     return user.is_superuser or user.groups.filter(name="Administrador").exists()
 
 
+def user_can_manage_devices(user):
+    return user.is_superuser or user.groups.filter(name__in=["Administrador", "Editor"]).exists()
+
+
 class AdminRoleRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return user_can_manage_credentials(self.request.user)
+
+
+class DeviceManagerRoleRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return user_can_manage_devices(self.request.user)
 
 
 class DeviceListView(LoginRequiredMixin, TemplateView):
@@ -79,6 +88,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
         context["windows_devices"] = sum(1 for device in devices if device["server"].os_type == Server.OS_WINDOWS)
         context["linux_devices"] = sum(1 for device in devices if device["server"].os_type == Server.OS_LINUX)
         context["selected_group"] = group_id
+        context["can_manage_devices"] = user_can_manage_devices(self.request.user)
         context.update(sidebar_context())
         return context
 
@@ -123,6 +133,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         online = bool(server.last_seen and server.last_seen >= timezone.now() - timedelta(minutes=5))
         disk_details = self.disk_details(latest)
         disk_count = self.disk_count(latest, disk_details)
+        inventory = self.inventory_snapshot(server)
         context.update(
             {
                 "server": server,
@@ -139,16 +150,47 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "disk_tone": self.utilization_tone(latest.disk_percent if latest else None),
                 "disk_count": disk_count,
                 "disk_details": disk_details,
+                "inventory": inventory,
                 "chart_series": self.chart_series(samples),
                 "recent_events": self.recent_events(server, samples, latest, online),
                 "credential_form": MachineCredentialForm(),
                 "credentials": server.credentials.all(),
                 "can_manage_credentials": user_can_manage_credentials(self.request.user),
+                "can_manage_devices": user_can_manage_devices(self.request.user),
                 "is_linux": server.os_type == Server.OS_LINUX,
             }
         )
         context.update(sidebar_context())
         return context
+
+    @staticmethod
+    def inventory_snapshot(server):
+        try:
+            inventory = server.inventory
+        except ServerInventory.DoesNotExist:
+            return None
+        return {
+            "record": inventory,
+            "items": [
+                ("FQDN", inventory.fqdn),
+                ("SO detectado", inventory.os_name),
+                ("Version SO", inventory.os_version),
+                ("Kernel / Build", inventory.kernel),
+                ("Arquitectura", inventory.architecture),
+                ("Fabricante", inventory.manufacturer),
+                ("Modelo", inventory.model),
+                ("Serie", inventory.serial_number),
+                ("Dominio", inventory.domain),
+                ("Usuario conectado", inventory.logged_user),
+                ("IP principal", inventory.primary_ip),
+                ("Gateway", inventory.gateway),
+                ("DNS", ", ".join(inventory.dns_servers or [])),
+                ("Zona horaria", inventory.timezone),
+                ("Recolectado", inventory.collected_at),
+            ],
+            "interfaces": inventory.interfaces or [],
+            "mac_addresses": inventory.mac_addresses or [],
+        }
 
     @staticmethod
     def chart_series(samples):
@@ -438,7 +480,7 @@ class DeviceConsoleView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView
         return self.render_to_response(context)
 
 
-class AgentInstallWizardView(LoginRequiredMixin, TemplateView):
+class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin, TemplateView):
     template_name = "inventory/agent_install_wizard.html"
 
     def get_context_data(self, **kwargs):
@@ -688,9 +730,9 @@ class AccountPasswordChangeView(LoginRequiredMixin, TemplateView):
         if form.is_valid():
             form.save()
             update_session_auth_hash(request, request.user)
-            messages.success(request, "Contraseña actualizada correctamente.")
+            messages.success(request, "Contrasena actualizada correctamente.")
             return redirect("password-change-done")
-        messages.error(request, "No se pudo cambiar la contraseña. Revisa los campos indicados.")
+        messages.error(request, "No se pudo cambiar la contrasena. Revisa los campos indicados.")
         return self.render_to_response(self.get_context_data(password_form=form))
 
 
@@ -701,4 +743,4 @@ class AccountPasswordChangeDoneView(LoginRequiredMixin, TemplateView):
 class LogoutView(LoginRequiredMixin, TemplateView):
     def post(self, request):
         logout(request)
-        return redirect("admin:login")
+        return redirect("login")
