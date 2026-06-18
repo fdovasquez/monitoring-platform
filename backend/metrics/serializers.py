@@ -8,3 +8,5 @@ class MetricIngestSerializer(serializers.Serializer):
     metrics = serializers.DictField()
     inventory = serializers.DictField(required=False)
     services = serializers.ListField(required=False)
+    processes = serializers.ListField(required=False)
+    ports = serializers.ListField(required=False)
