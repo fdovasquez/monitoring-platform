@@ -127,6 +127,22 @@ class ServerInventory(models.Model):
         return f"Inventario {self.server.hostname}"
 
 
+class ServerRuntimeSnapshot(models.Model):
+    server = models.OneToOneField(Server, on_delete=models.CASCADE, related_name="runtime_snapshot")
+    services = models.JSONField(default=list, blank=True)
+    processes = models.JSONField(default=list, blank=True)
+    ports = models.JSONField(default=list, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    collected_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["server__hostname"]
+
+    def __str__(self):
+        return f"Runtime {self.server.hostname}"
+
+
 def credential_cipher():
     digest = hashlib.sha256(settings.SECRET_KEY.encode("utf-8")).digest()
     return Fernet(base64.urlsafe_b64encode(digest))
