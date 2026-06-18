@@ -5,6 +5,9 @@
 
 .app-header-inner,
 .content,
+.detail-shell,
+.profile-shell,
+.alerts-shell,
 .agent-modal-shell {
   width: 100% !important;
   max-width: var(--app-max-width) !important;
