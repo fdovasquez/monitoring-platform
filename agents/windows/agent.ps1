@@ -117,6 +117,48 @@ $UdpPorts = @(Get-NetUDPEndpoint -ErrorAction SilentlyContinue | Select-Object -
         process = $ProcessName
     }
 })
+$BitLockerEnabled = $false
+$BitLockerDetail = "BitLocker no disponible"
+try {
+    $BitLockerVolume = Get-BitLockerVolume -MountPoint "C:" -ErrorAction Stop
+    $BitLockerEnabled = $BitLockerVolume.ProtectionStatus -eq "On"
+    $BitLockerDetail = if ($BitLockerEnabled) { "Disco C: cifrado" } else { "Disco C: no cifrado" }
+} catch {
+    $BitLockerDetail = "BitLocker no evaluado"
+}
+
+$FirewallEnabled = $false
+$FirewallDetail = "Firewall no evaluado"
+try {
+    $FirewallProfiles = Get-NetFirewallProfile -ErrorAction Stop
+    $FirewallEnabled = -not (@($FirewallProfiles | Where-Object { $_.Enabled -ne $true }).Count -gt 0)
+    $FirewallDetail = if ($FirewallEnabled) { "Activo (Windows Firewall)" } else { "Uno o mas perfiles desactivados" }
+} catch {
+    $FirewallDetail = "Firewall no evaluado"
+}
+
+$OsSecurityEnabled = $false
+$OsSecurityDetail = "Microsoft Defender no evaluado"
+try {
+    $Defender = Get-MpComputerStatus -ErrorAction Stop
+    $OsSecurityEnabled = [bool]$Defender.RealTimeProtectionEnabled
+    $OsSecurityDetail = if ($OsSecurityEnabled) { "Activo (Defender)" } else { "Defender sin proteccion en tiempo real" }
+} catch {
+    $OsSecurityDetail = "Microsoft Defender no evaluado"
+}
+
+$PatchUpToDate = $false
+$PatchDetail = "Parches no evaluados"
+try {
+    $LastHotFix = Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 1
+    if ($LastHotFix -and $LastHotFix.InstalledOn) {
+        $DaysSincePatch = ((Get-Date) - $LastHotFix.InstalledOn).TotalDays
+        $PatchUpToDate = $DaysSincePatch -le 45
+        $PatchDetail = if ($PatchUpToDate) { "Al dia" } else { "Ultimo parche hace mas de 45 dias" }
+    }
+} catch {
+    $PatchDetail = "Parches no evaluados"
+}
 
 $Payload = @{
     hostname = $Hostname
@@ -129,6 +171,30 @@ $Payload = @{
         disk_count = @($Disks).Count
         disks = @($Disks)
         uptime_seconds = $Uptime
+        security = @{
+            disk_encryption = @{
+                enabled = $BitLockerEnabled
+                detail = $BitLockerDetail
+            }
+            firewall = @{
+                enabled = $FirewallEnabled
+                name = "Windows Firewall"
+                detail = $FirewallDetail
+            }
+            os_security = @{
+                enabled = $OsSecurityEnabled
+                name = "Microsoft Defender"
+                detail = $OsSecurityDetail
+            }
+            patch_compliance = @{
+                up_to_date = $PatchUpToDate
+                detail = $PatchDetail
+            }
+            os_version = @{
+                supported = $true
+                detail = $Os.Caption
+            }
+        }
     }
     inventory = @{
         hostname = $Hostname
