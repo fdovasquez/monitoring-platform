@@ -1,0 +1,92 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingreso seguro</title>
+  <link rel="stylesheet" href="{% static 'inventory/login.css' %}">
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-panel" aria-label="Ingreso a la plataforma">
+      <div class="brand-lockup">
+        {% if site_settings.logo %}
+          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+        {% else %}
+          <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}">
+        {% endif %}
+        <span>{{ site_settings.subtitle }}</span>
+      </div>
+
+      <div class="login-card">
+        {% if step == "code" %}
+          <p class="eyebrow">Doble factor</p>
+          <h1>Verifica tu correo</h1>
+          <p class="intro">Ingresa el codigo de 6 digitos enviado a {{ pending_user.email }}.</p>
+        {% else %}
+          <p class="eyebrow">Acceso corporativo</p>
+          <h1>Ingresa a tu cuenta</h1>
+          <p class="intro">Usa tus credenciales para acceder al monitor de servidores.</p>
+        {% endif %}
+
+        {% if messages %}
+          <div class="messages">
+            {% for message in messages %}
+              <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if form.non_field_errors %}
+          <div class="message error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {% if step == "code" %}
+          <form method="post" class="login-form" novalidate>
+            {% csrf_token %}
+            <label for="{{ form.code.id_for_label }}">Codigo de verificacion</label>
+            {{ form.code }}
+            {% for error in form.code.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            <button type="submit">Verificar e ingresar</button>
+          </form>
+          <a class="secondary-link" href="{% url 'login' %}">Volver a iniciar sesion</a>
+        {% else %}
+          <form method="post" class="login-form" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <label for="{{ form.identifier.id_for_label }}">Usuario o correo</label>
+            {{ form.identifier }}
+            {% for error in form.identifier.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+
+            <label for="{{ form.password.id_for_label }}">Contrasena</label>
+            {{ form.password }}
+            {% for error in form.password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+
+            <button type="submit">Continuar</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <footer class="login-footer">
+        <span>Plataforma de monitoreo</span>
+        <span class="status-dot">Servicio activo</span>
+      </footer>
+    </section>
+
+    <section class="visual-panel" aria-hidden="true">
+      <div class="visual-brand">
+        {% if site_settings.logo %}
+          <img src="{{ site_settings.logo.url }}" alt="">
+        {% else %}
+          <img src="{% static 'inventory/logo.png' %}" alt="">
+        {% endif %}
+      </div>
+      <div class="visual-copy">
+        <p>Infraestructura segura, visible y controlada</p>
+        <span>Monitoreo centralizado, alertas por correo y acceso protegido con doble factor.</span>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
