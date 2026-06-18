@@ -7,37 +7,103 @@
   <title>{{ form_title }}</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/profile.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
 </head>
 <body>
   {% include "inventory/partials/app_header.html" with active_menu="users" %}
 
-  <main class="content">
-    <header class="topbar">
-      <div>
-        <h1>{{ form_title }}</h1>
-        <p>Asigna un rol de Administrador, Editor o Visualizador.</p>
+  <main class="content profile-shell user-profile-shell">
+    <header class="profile-hero">
+      <div class="profile-identity">
+        <div class="avatar-preview">
+          {% if managed_user %}
+            <span>{{ managed_user.username|slice:":1"|upper }}</span>
+          {% else %}
+            <span>+</span>
+          {% endif %}
+        </div>
+        <div>
+          <p class="eyebrow">Administraci&oacute;n de usuarios</p>
+          <h1>{{ form_title }}</h1>
+          <p>Administra datos de acceso, estado de la cuenta y rol dentro de la plataforma.</p>
+        </div>
       </div>
-      <div class="top-actions">
-        <a href="{% url 'user-list' %}">Volver</a>
-      </div>
+      <a class="ghost-button" href="{% url 'user-list' %}">Volver</a>
     </header>
 
-    <form class="wizard-card user-form" method="post">
-      {% csrf_token %}
-      {% if form.non_field_errors %}
-        <div class="message">{{ form.non_field_errors }}</div>
-      {% endif %}
+    <section class="profile-grid user-editor-grid">
+      <form class="profile-card user-editor-card" method="post" data-loading-form>
+        {% csrf_token %}
+        <div class="profile-card-head">
+          <div>
+            <h2>Datos del usuario</h2>
+            <p>Define la identidad, credenciales y permisos del usuario.</p>
+          </div>
+        </div>
 
-      {% for field in form %}
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% if field.help_text %}<p class="field-help">{{ field.help_text }}</p>{% endif %}
-        {% for error in field.errors %}<div class="message">{{ error }}</div>{% endfor %}
-      {% endfor %}
+        {% if form.non_field_errors %}
+          <div class="message error">{{ form.non_field_errors }}</div>
+        {% endif %}
 
-      <button class="submit-button" type="submit">{{ submit_label }}</button>
-    </form>
+        <div class="form-grid">
+          <div class="field field-wide">
+            <label for="{{ form.username.id_for_label }}">Usuario</label>
+            {{ form.username }}
+            {% if form.username.help_text %}<p class="field-help">{{ form.username.help_text }}</p>{% endif %}
+            {% for error in form.username.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.first_name.id_for_label }}">Nombre</label>
+            {{ form.first_name }}
+            {% for error in form.first_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.last_name.id_for_label }}">Apellido</label>
+            {{ form.last_name }}
+            {% for error in form.last_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+
+          <div class="field field-wide">
+            <label for="{{ form.email.id_for_label }}">Correo electr&oacute;nico</label>
+            {{ form.email }}
+            {% for error in form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.role.id_for_label }}">Rol</label>
+            {{ form.role }}
+            {% for error in form.role.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+
+          <div class="field">
+            <label>Estado</label>
+            <label class="inline-check user-active-check" for="{{ form.is_active.id_for_label }}">
+              {{ form.is_active }}
+              <span>Usuario activo</span>
+            </label>
+            <p class="field-help">Desactiva esta opci&oacute;n para bloquear el acceso sin eliminar la cuenta.</p>
+            {% for error in form.is_active.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+
+          <div class="field field-wide">
+            <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+            {{ form.password }}
+            {% if managed_user %}
+              <p class="field-help">Completa este campo solo si necesitas cambiar la clave.</p>
+            {% endif %}
+            {% for error in form.password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a class="ghost-button" href="{% url 'user-list' %}">Cancelar</a>
+          <button class="submit-button" type="submit" data-loading-label="Guardando...">{{ submit_label }}</button>
+        </div>
+      </form>
+    </section>
   </main>
 </body>
 </html>
