@@ -1,4 +1,5 @@
 from datetime import timedelta
+import uuid
 
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
@@ -22,7 +23,15 @@ from .forms import (
     UserEditForm,
     ensure_base_roles,
 )
-from .models import AgentToken, DeviceGroup, MachineCredential, Server, ServerInventory, UserProfile
+from .models import (
+    AgentToken,
+    DeviceGroup,
+    MachineCredential,
+    Server,
+    ServerInventory,
+    ServerRuntimeSnapshot,
+    UserProfile,
+)
 
 
 def sidebar_context():
@@ -94,15 +103,93 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
 
     @staticmethod
     def security_score(sample):
+        return DeviceListView.security_assessment(sample)["score"]
+
+    @staticmethod
+    def security_assessment(sample):
         if not sample:
-            return 0
-        score = 100
-        for value in (sample.cpu_percent, sample.memory_percent, sample.disk_percent):
-            if value and value >= 90:
-                score -= 20
-            elif value and value >= 80:
-                score -= 10
-        return max(score, 0)
+            checks = [
+                DeviceListView.security_check("Disk encryption", False, "Sin datos del agente", 5),
+                DeviceListView.security_check("Firewall", False, "Sin datos del agente", 25),
+                DeviceListView.security_check("OS security", False, "Sin datos del agente", 25),
+                DeviceListView.security_check("Patch compliance", False, "Sin datos del agente", 25),
+                DeviceListView.security_check("OS version", False, "Sin datos del agente", 20),
+            ]
+            return DeviceListView.security_summary(checks)
+
+        metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
+        security = metrics.get("security", {}) if isinstance(metrics.get("security"), dict) else {}
+        inventory = sample.payload.get("inventory", {}) if isinstance(sample.payload, dict) else {}
+
+        disk_encryption = security.get("disk_encryption", {}) if isinstance(security.get("disk_encryption"), dict) else {}
+        firewall = security.get("firewall", {}) if isinstance(security.get("firewall"), dict) else {}
+        os_security = security.get("os_security", {}) if isinstance(security.get("os_security"), dict) else {}
+        patch_compliance = security.get("patch_compliance", {}) if isinstance(security.get("patch_compliance"), dict) else {}
+        os_version = security.get("os_version", {}) if isinstance(security.get("os_version"), dict) else {}
+
+        checks = [
+            DeviceListView.security_check(
+                "Disk encryption",
+                bool(disk_encryption.get("enabled")),
+                disk_encryption.get("detail") or "Primary disk not encrypted",
+                5,
+            ),
+            DeviceListView.security_check(
+                "Firewall",
+                bool(firewall.get("enabled")),
+                firewall.get("detail") or "Firewall no activo",
+                25,
+            ),
+            DeviceListView.security_check(
+                "OS security",
+                bool(os_security.get("enabled")),
+                os_security.get("detail") or "Control de seguridad no activo",
+                25,
+            ),
+            DeviceListView.security_check(
+                "Patch compliance",
+                bool(patch_compliance.get("up_to_date")),
+                patch_compliance.get("detail") or "No evaluado",
+                25,
+            ),
+            DeviceListView.security_check(
+                "OS version",
+                bool(os_version.get("supported", True)),
+                os_version.get("detail") or inventory.get("os_version") or "Version no informada",
+                20,
+            ),
+        ]
+        return DeviceListView.security_summary(checks)
+
+    @staticmethod
+    def security_check(label, passed, detail, weight):
+        return {
+            "label": label,
+            "passed": passed,
+            "detail": detail,
+            "weight": weight,
+        }
+
+    @staticmethod
+    def security_summary(checks):
+        score = sum(check["weight"] for check in checks if check["passed"])
+        score = max(0, min(score, 100))
+        if score >= 90:
+            level = "Bajo riesgo"
+            tone = "success"
+        elif score >= 70:
+            level = "Riesgo medio"
+            tone = "warning"
+        else:
+            level = "Riesgo alto"
+            tone = "danger"
+        return {
+            "score": score,
+            "level": level,
+            "tone": tone,
+            "checks": checks,
+            "gauge_rotation": round(-75 + (score * 1.5), 2),
+        }
 
     @staticmethod
     def synthetic_latency(server_id):
@@ -134,6 +221,8 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         disk_details = self.disk_details(latest)
         disk_count = self.disk_count(latest, disk_details)
         inventory = self.inventory_snapshot(server)
+        runtime = self.runtime_snapshot(server)
+        security = DeviceListView.security_assessment(latest)
         context.update(
             {
                 "server": server,
@@ -141,7 +230,8 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "latest": latest,
                 "online": online,
                 "uptime": DeviceListView.format_uptime(latest.uptime_seconds if latest else None),
-                "security_score": DeviceListView.security_score(latest),
+                "security": security,
+                "security_score": security["score"],
                 "cpu_display": self.percent_display(latest.cpu_percent if latest else None),
                 "memory_display": self.percent_display(latest.memory_percent if latest else None),
                 "disk_display": self.percent_display(latest.disk_percent if latest else None),
@@ -151,6 +241,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "disk_count": disk_count,
                 "disk_details": disk_details,
                 "inventory": inventory,
+                "runtime": runtime,
                 "chart_series": self.chart_series(samples),
                 "recent_events": self.recent_events(server, samples, latest, online),
                 "credential_form": MachineCredentialForm(),
@@ -190,6 +281,32 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             ],
             "interfaces": inventory.interfaces or [],
             "mac_addresses": inventory.mac_addresses or [],
+        }
+
+    @staticmethod
+    def runtime_snapshot(server):
+        try:
+            runtime = server.runtime_snapshot
+        except ServerRuntimeSnapshot.DoesNotExist:
+            return None
+        services = runtime.services or []
+        processes = runtime.processes or []
+        ports = runtime.ports or []
+        stopped_services = [
+            service
+            for service in services
+            if str(service.get("state", "")).lower() not in ["active", "running"]
+        ]
+        return {
+            "record": runtime,
+            "services": services[:20],
+            "stopped_services": stopped_services[:12],
+            "processes": processes[:15],
+            "ports": ports[:30],
+            "service_count": len(services),
+            "process_count": len(processes),
+            "port_count": len(ports),
+            "stopped_count": len(stopped_services),
         }
 
     @staticmethod
@@ -504,6 +621,7 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
         context = super().get_context_data(**kwargs)
         context.update(sidebar_context())
         context["groups"] = DeviceGroup.objects.all()
+        context["selected_platform"] = self.request.GET.get("platform", "windows")
         server_id = self.request.GET.get("server")
         if server_id:
             try:
@@ -525,18 +643,10 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
         return context
 
     def post(self, request):
-        hostname = request.POST.get("hostname", "").strip()
-        name = request.POST.get("name", "").strip()
-        ip_address = request.POST.get("ip_address", "").strip() or None
-        os_type = request.POST.get("os_type", Server.OS_LINUX)
-        environment = request.POST.get("environment", "produccion").strip()
-        owner = request.POST.get("owner", "").strip()
+        selected_platform = request.POST.get("platform", "windows").strip()
+        os_type = Server.OS_WINDOWS if selected_platform == "windows" else Server.OS_LINUX
         group_id = request.POST.get("group", "").strip()
         group_name = request.POST.get("group_name", "").strip()
-
-        if not hostname:
-            messages.error(request, "Ingresa el nombre del servidor.")
-            return redirect("agent-install")
 
         group = None
         if group_name:
@@ -544,31 +654,17 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
         elif group_id:
             group = DeviceGroup.objects.filter(id=group_id).first()
 
-        server, created = Server.objects.get_or_create(
-            hostname=hostname,
-            defaults={
-                "name": name,
-                "ip_address": ip_address,
-                "group": group,
-                "os_type": os_type,
-                "environment": environment,
-                "owner": owner,
-                "is_active": True,
-            },
+        server = Server.objects.create(
+            hostname=f"pendiente-{uuid.uuid4().hex[:12]}",
+            name="Agente pendiente de registro",
+            group=group,
+            os_type=os_type,
+            environment="produccion",
+            is_active=True,
         )
-
-        if not created:
-            server.name = name or server.name
-            server.ip_address = ip_address or server.ip_address
-            server.group = group or server.group
-            server.os_type = os_type
-            server.environment = environment or server.environment
-            server.owner = owner or server.owner
-            server.is_active = True
-            server.save()
-
-        AgentToken.objects.get_or_create(server=server)
-        return redirect(f"{request.path}?server={server.id}")
+        AgentToken.objects.create(server=server)
+        messages.success(request, "Token generado. Copia el comando en el servidor cliente; el equipo se registrara automaticamente.")
+        return redirect(f"{request.path}?server={server.id}&platform={selected_platform}")
 
     def api_url(self):
         return self.request.build_absolute_uri("/api/v1/metrics/ingest/")
@@ -596,7 +692,6 @@ python3 -m venv /opt/monitoring-agent/.venv
 cat >/etc/monitoring-agent.env <<'EOF'
 MONITORING_API_URL={api_url}
 MONITORING_AGENT_TOKEN={token}
-MONITORING_HOSTNAME={server.hostname}
 MONITORING_INTERVAL=60
 MONITORING_VERIFY_TLS=false
 EOF
@@ -616,7 +711,6 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/fdovasquez/monitoring-
 @'
 $env:MONITORING_API_URL = "{api_url}"
 $env:MONITORING_AGENT_TOKEN = "{token}"
-$env:MONITORING_HOSTNAME = "{server.hostname}"
 $env:MONITORING_SKIP_TLS_VERIFY = "true"
 '@ | Set-Content "C:\\ProgramData\\MonitoringAgent\\agent.env.ps1"
 

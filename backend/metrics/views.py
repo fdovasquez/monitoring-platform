@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from inventory.models import AgentToken, ServerInventory, ServerRuntimeSnapshot
+from inventory.models import AgentToken, Server, ServerInventory, ServerRuntimeSnapshot
 from alerts.services import evaluate_metric_sample
 
 from .models import MetricSample
@@ -43,10 +43,7 @@ class MetricIngestView(APIView):
             disk_percent = metrics.get("disk_c_percent")
 
         with transaction.atomic():
-            server = agent_token.server
-            server.hostname = data["hostname"]
-            server.last_seen = timezone.now()
-            server.save(update_fields=["hostname", "last_seen", "updated_at"])
+            server = resolve_server_for_token(agent_token, data)
 
             agent_token.last_used_at = timezone.now()
             agent_token.save(update_fields=["last_used_at"])
@@ -72,6 +69,36 @@ class MetricIngestView(APIView):
 
         evaluate_metric_sample(sample)
         return Response({"status": "ok", "sample_id": sample.id}, status=status.HTTP_201_CREATED)
+
+
+def resolve_server_for_token(agent_token, data):
+    server = agent_token.server
+    hostname = clean_text(data["hostname"])
+    inventory = data.get("inventory", {}) if isinstance(data.get("inventory", {}), dict) else {}
+    primary_ip = clean_ip(inventory.get("primary_ip"))
+    os_name = clean_text(inventory.get("os_name")).lower()
+    os_type = Server.OS_WINDOWS if "windows" in os_name else (Server.OS_LINUX if os_name else server.os_type)
+    is_pending = server.hostname.startswith("pendiente-")
+
+    existing = Server.objects.filter(hostname=hostname).exclude(pk=server.pk).first()
+    if is_pending and existing:
+        AgentToken.objects.filter(server=existing).exclude(pk=agent_token.pk).delete()
+        previous_server = server
+        agent_token.server = existing
+        agent_token.save(update_fields=["server"])
+        server = existing
+        previous_server.delete()
+
+    server.hostname = hostname
+    if is_pending and server.name == "Agente pendiente de registro":
+        server.name = hostname
+    if primary_ip:
+        server.ip_address = primary_ip
+    server.os_type = os_type
+    server.last_seen = timezone.now()
+    server.is_active = True
+    server.save(update_fields=["hostname", "name", "ip_address", "os_type", "last_seen", "is_active", "updated_at"])
+    return server
 
 
 def clean_text(value):
