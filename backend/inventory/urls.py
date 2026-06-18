@@ -18,6 +18,7 @@ from .views import (
     UserEditView,
     UserListView,
 )
+from .runtime_views import DeviceRuntimeView
 from .site_views import SiteSettingsView
 
 
@@ -41,6 +42,7 @@ urlpatterns = [
     path("login/verify/", LoginCodeVerifyView.as_view(), name="login-verify"),
     path("devices/", DeviceListView.as_view(), name="device-list"),
     path("devices/<int:pk>/", DeviceDetailView.as_view(), name="device-detail"),
+    path("devices/<int:pk>/runtime/", DeviceRuntimeView.as_view(), name="device-runtime"),
     path("devices/<int:pk>/delete/", DeviceDeleteView.as_view(), name="device-delete"),
     path("devices/<int:pk>/console/", DeviceConsoleView.as_view(), name="device-console"),
     path("devices/<int:pk>/credentials/new/", MachineCredentialCreateView.as_view(), name="machine-credential-create"),
