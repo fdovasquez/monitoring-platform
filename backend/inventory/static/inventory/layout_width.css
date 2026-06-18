@@ -1,16 +1,16 @@
 :root {
   --app-max-width: 1640px;
+  --app-content-width: 1320px;
   --app-page-padding: 24px;
 }
 
-.app-header-inner,
 .content,
 .detail-shell,
 .profile-shell,
 .alerts-shell,
 .agent-modal-shell {
   width: 100% !important;
-  max-width: var(--app-max-width) !important;
+  max-width: var(--app-content-width) !important;
   margin-right: auto !important;
   margin-left: auto !important;
   padding-right: var(--app-page-padding) !important;
@@ -18,6 +18,12 @@
 }
 
 .app-header-inner {
+  width: 100% !important;
+  max-width: var(--app-max-width) !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  padding-right: var(--app-page-padding) !important;
+  padding-left: var(--app-page-padding) !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
@@ -27,14 +33,22 @@
   padding-bottom: 24px !important;
 }
 
+body.agent-modal-body {
+  background: var(--corp-canvas, #f8fafc) !important;
+}
+
 .agent-modal-shell {
-  padding-top: 28px !important;
-  padding-bottom: 28px !important;
+  min-height: auto !important;
+  padding-top: 24px !important;
+  padding-bottom: 24px !important;
+  place-items: start center !important;
 }
 
 .agent-modal {
   width: 100% !important;
-  max-width: 1320px !important;
+  max-width: var(--app-content-width) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04) !important;
 }
 
 .agent-modal-header p {
