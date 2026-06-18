@@ -110,5 +110,15 @@
       </table>
     </section>
   </main>
+  <script>
+    setInterval(() => {
+      const active = document.activeElement;
+      const isEditing = active && ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName);
+      const modalOpen = document.querySelector(".modal-backdrop:not([hidden])");
+      if (!isEditing && !modalOpen) {
+        window.location.reload();
+      }
+    }, 30000);
+  </script>
 </body>
 </html>
