@@ -54,6 +54,11 @@ def agent_download(request, platform, filename):
     allowed_files = {
         ("linux", "agent.py"): settings.BASE_DIR.parent / "agents" / "linux" / "agent.py",
         ("linux", "monitoring-agent.service"): settings.BASE_DIR.parent / "agents" / "linux" / "monitoring-agent.service",
+        ("linux", "monitoring-agent-linux-x86_64"): settings.BASE_DIR.parent
+        / "agents"
+        / "dist"
+        / "linux"
+        / "monitoring-agent-linux-x86_64",
         ("windows", "agent.ps1"): settings.BASE_DIR.parent / "agents" / "windows" / "agent.ps1",
     }
     file_path = allowed_files.get((platform, filename))
@@ -692,24 +697,59 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
         return f"""#!/bin/bash
 set -e
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "ERROR: Python 3 no esta instalado. Este agente offline requiere Python 3 base en el sistema."
-  exit 1
-fi
-
 mkdir -p /opt/monitoring-agent
-python3 - <<'PY'
+AGENT_BASE_URL="{download_base_url}linux"
+AGENT_BINARY="/opt/monitoring-agent/monitoring-agent"
+AGENT_SCRIPT="/opt/monitoring-agent/agent.py"
+SERVICE_FILE="/etc/systemd/system/monitoring-agent.service"
+
+download_file() {{
+  local url="$1"
+  local destination="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$url" -o "$destination"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q "$url" -O "$destination"
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 - "$url" "$destination" <<'PY'
+import sys
 from pathlib import Path
 from urllib.request import urlopen
-
-downloads = [
-    ("{download_base_url}linux/agent.py", "/opt/monitoring-agent/agent.py"),
-    ("{download_base_url}linux/monitoring-agent.service", "/etc/systemd/system/monitoring-agent.service"),
-]
-for url, path in downloads:
-    data = urlopen(url, timeout=30).read()
-    Path(path).write_bytes(data)
+url, destination = sys.argv[1], sys.argv[2]
+Path(destination).write_bytes(urlopen(url, timeout=30).read())
 PY
+  else
+    echo "ERROR: No existe curl, wget ni python3 para descargar el agente desde el monitor."
+    exit 1
+  fi
+}}
+
+if download_file "$AGENT_BASE_URL/monitoring-agent-linux-x86_64" "$AGENT_BINARY"; then
+  chmod 755 "$AGENT_BINARY"
+  cat >"$SERVICE_FILE" <<'EOF'
+[Unit]
+Description=Monitoring Agent Linux
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/monitoring-agent.env
+ExecStart=/opt/monitoring-agent/monitoring-agent
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+else
+  echo "No se encontro binario standalone en el monitor. Usando agente Python estandar."
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "ERROR: Python 3 no esta instalado y no hay binario standalone disponible."
+    exit 1
+  fi
+  download_file "$AGENT_BASE_URL/agent.py" "$AGENT_SCRIPT"
+  download_file "$AGENT_BASE_URL/monitoring-agent.service" "$SERVICE_FILE"
+fi
 
 cat >/etc/monitoring-agent.env <<'EOF'
 MONITORING_API_URL={api_url}
