@@ -43,8 +43,8 @@
         {% if is_linux and can_manage_credentials %}
           <button class="btn primary" type="button" data-open-modal="console-modal"><span class="btn-icon terminal-icon" aria-hidden="true"></span> Abrir consola</button>
         {% endif %}
-        {% if can_manage_devices %}
-          <a class="btn danger" href="{% url 'admin:inventory_server_delete' server.id %}">
+        {% if can_manage_credentials %}
+          <a class="btn danger" href="{% url 'device-delete' server.id %}">
             <span class="btn-icon delete-icon" aria-hidden="true"></span> Eliminar
           </a>
         {% endif %}
