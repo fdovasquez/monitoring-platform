@@ -650,8 +650,8 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
                     {
                         "created_server": server,
                         "agent_token": token,
-                        "linux_script": self.linux_script(token.token, api_url, download_base_url, "dnf"),
-                        "ubuntu_script": self.linux_script(token.token, api_url, download_base_url, "apt"),
+                        "linux_script": self.linux_script(token.token, api_url, download_base_url),
+                        "ubuntu_script": self.linux_script(token.token, api_url, download_base_url),
                         "windows_script": self.windows_script(token.token, api_url, download_base_url),
                     }
                 )
@@ -688,16 +688,14 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
         return self.request.build_absolute_uri("/app/agents/download/")
 
     @staticmethod
-    def linux_script(token, api_url, download_base_url, package_manager):
-        installer = (
-            "dnf install -y python3 python3-requests python3-psutil"
-            if package_manager == "dnf"
-            else "apt update && apt install -y python3 python3-venv python3-requests python3-psutil"
-        )
+    def linux_script(token, api_url, download_base_url):
         return f"""#!/bin/bash
 set -e
 
-{installer}
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: Python 3 no esta instalado. Este agente offline requiere Python 3 base en el sistema."
+  exit 1
+fi
 
 mkdir -p /opt/monitoring-agent
 python3 - <<'PY'
@@ -712,11 +710,6 @@ for url, path in downloads:
     data = urlopen(url, timeout=30).read()
     Path(path).write_bytes(data)
 PY
-
-if ! python3 -m venv --system-site-packages /opt/monitoring-agent/.venv; then
-  mkdir -p /opt/monitoring-agent/.venv/bin
-  ln -sf /usr/bin/python3 /opt/monitoring-agent/.venv/bin/python
-fi
 
 cat >/etc/monitoring-agent.env <<'EOF'
 MONITORING_API_URL={api_url}

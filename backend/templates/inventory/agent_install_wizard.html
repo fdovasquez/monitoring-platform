@@ -175,20 +175,47 @@
       }, 1600);
     }
 
-    document.querySelectorAll("[data-copy-value]").forEach((button) => {
-      button.addEventListener("click", () => {
-        navigator.clipboard.writeText(button.dataset.copyValue);
+    function fallbackCopy(text, target) {
+      if (target && typeof target.select === "function") {
+        target.focus();
+        target.select();
+        target.setSelectionRange?.(0, target.value.length);
+        return document.execCommand("copy");
+      }
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const copied = document.execCommand("copy");
+      textarea.remove();
+      return copied;
+    }
+
+    async function copyText(text, button, target) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          fallbackCopy(text, target);
+        }
         markCopied(button);
-      });
+      } catch (error) {
+        fallbackCopy(text, target);
+        markCopied(button);
+      }
+    }
+
+    document.querySelectorAll("[data-copy-value]").forEach((button) => {
+      button.addEventListener("click", () => copyText(button.dataset.copyValue, button));
     });
 
     document.querySelectorAll("[data-copy-target]").forEach((button) => {
       button.addEventListener("click", () => {
         const target = document.getElementById(button.dataset.copyTarget);
-        if (target) {
-          navigator.clipboard.writeText(target.value);
-          markCopied(button);
-        }
+        if (target) copyText(target.value, button, target);
       });
     });
   </script>

@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 EnvironmentFile=/etc/monitoring-agent.env
-ExecStart=/opt/monitoring-agent/.venv/bin/python /opt/monitoring-agent/agent.py
+ExecStart=/usr/bin/env python3 /opt/monitoring-agent/agent.py
 Restart=always
 RestartSec=10
 
