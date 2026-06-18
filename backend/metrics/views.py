@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from inventory.models import AgentToken
+from inventory.models import AgentToken, ServerInventory
 from alerts.services import evaluate_metric_sample
 
 from .models import MetricSample
@@ -61,6 +61,44 @@ class MetricIngestView(APIView):
                 uptime_seconds=metrics.get("uptime_seconds"),
                 payload=request.data,
             )
+            update_inventory(server, data.get("inventory", {}), data["timestamp"])
 
         evaluate_metric_sample(sample)
         return Response({"status": "ok", "sample_id": sample.id}, status=status.HTTP_201_CREATED)
+
+
+def clean_text(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def clean_ip(value):
+    value = clean_text(value)
+    return value or None
+
+
+def update_inventory(server, inventory, collected_at):
+    if not isinstance(inventory, dict) or not inventory:
+        return
+    defaults = {
+        "fqdn": clean_text(inventory.get("fqdn")),
+        "os_name": clean_text(inventory.get("os_name")),
+        "os_version": clean_text(inventory.get("os_version")),
+        "kernel": clean_text(inventory.get("kernel")),
+        "architecture": clean_text(inventory.get("architecture")),
+        "serial_number": clean_text(inventory.get("serial_number")),
+        "model": clean_text(inventory.get("model")),
+        "manufacturer": clean_text(inventory.get("manufacturer")),
+        "domain": clean_text(inventory.get("domain")),
+        "logged_user": clean_text(inventory.get("logged_user")),
+        "primary_ip": clean_ip(inventory.get("primary_ip")),
+        "gateway": clean_text(inventory.get("gateway")),
+        "dns_servers": inventory.get("dns_servers") if isinstance(inventory.get("dns_servers"), list) else [],
+        "mac_addresses": inventory.get("mac_addresses") if isinstance(inventory.get("mac_addresses"), list) else [],
+        "interfaces": inventory.get("interfaces") if isinstance(inventory.get("interfaces"), list) else [],
+        "timezone": clean_text(inventory.get("timezone")),
+        "raw_data": inventory,
+        "collected_at": collected_at,
+    }
+    ServerInventory.objects.update_or_create(server=server, defaults=defaults)
