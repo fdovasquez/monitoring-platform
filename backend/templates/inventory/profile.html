@@ -61,7 +61,7 @@
           <div class="avatar-actions">
             <label class="file-button" for="{{ profile_form.photo.id_for_label }}">Subir foto</label>
             {{ profile_form.photo }}
-            <p>JPG, PNG o WEBP. TamaÃ±o mÃ¡ximo 2 MB.</p>
+            <p>JPG, PNG o WEBP. Tama&ntilde;o m&aacute;ximo 2 MB.</p>
             {% if account_profile.photo %}
               <label class="inline-check">
                 {{ profile_form.delete_photo }}
@@ -84,12 +84,12 @@
             {% for error in profile_form.last_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
           </div>
           <div class="field">
-            <label for="{{ profile_form.email.id_for_label }}">Correo electrÃ³nico</label>
+            <label for="{{ profile_form.email.id_for_label }}">Correo electr&oacute;nico</label>
             {{ profile_form.email }}
             {% for error in profile_form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
           </div>
           <div class="field">
-            <label for="{{ profile_form.phone.id_for_label }}">TelÃ©fono <span>opcional</span></label>
+            <label for="{{ profile_form.phone.id_for_label }}">Tel&eacute;fono <span>opcional</span></label>
             {{ profile_form.phone }}
             {% for error in profile_form.phone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
           </div>
@@ -111,7 +111,7 @@
         <div class="profile-card-head">
           <div>
             <h2>Seguridad</h2>
-            <p>Cambia tu contraseÃ±a con validaciÃ³n de complejidad en tiempo real.</p>
+            <p>Cambia tu contrase&ntilde;a con validaci&oacute;n de complejidad en tiempo real.</p>
           </div>
         </div>
 
@@ -120,7 +120,7 @@
         {% endif %}
 
         <div class="field password-field">
-          <label for="{{ password_form.current_password.id_for_label }}">ContraseÃ±a actual</label>
+          <label for="{{ password_form.current_password.id_for_label }}">Contrase&ntilde;a actual</label>
           <div class="password-control">
             {{ password_form.current_password }}
             <button type="button" data-toggle-password="{{ password_form.current_password.id_for_label }}">Mostrar</button>
@@ -129,7 +129,7 @@
         </div>
 
         <div class="field password-field">
-          <label for="{{ password_form.new_password.id_for_label }}">Nueva contraseÃ±a</label>
+          <label for="{{ password_form.new_password.id_for_label }}">Nueva contrase&ntilde;a</label>
           <div class="password-control">
             {{ password_form.new_password }}
             <button type="button" data-toggle-password="{{ password_form.new_password.id_for_label }}">Mostrar</button>
@@ -139,21 +139,21 @@
 
         <div class="password-strength" data-strength>
           <span></span>
-          <strong>DÃ©bil</strong>
+          <strong>Debil</strong>
         </div>
 
         <ul class="password-checklist">
-          <li data-rule="length">MÃ­nimo 8 caracteres</li>
-          <li data-rule="upper">Al menos una letra mayÃºscula</li>
-          <li data-rule="lower">Al menos una letra minÃºscula</li>
-          <li data-rule="number">Al menos un nÃºmero</li>
-          <li data-rule="special">Al menos un carÃ¡cter especial</li>
-          <li data-rule="different">Distinta a la contraseÃ±a actual</li>
-          <li data-rule="match">ConfirmaciÃ³n coincide</li>
+          <li data-rule="length">M&iacute;nimo 8 caracteres</li>
+          <li data-rule="upper">Al menos una letra may&uacute;scula</li>
+          <li data-rule="lower">Al menos una letra min&uacute;scula</li>
+          <li data-rule="number">Al menos un n&uacute;mero</li>
+          <li data-rule="special">Al menos un car&aacute;cter especial</li>
+          <li data-rule="different">Distinta a la contrase&ntilde;a actual</li>
+          <li data-rule="match">Confirmaci&oacute;n coincide</li>
         </ul>
 
         <div class="field password-field">
-          <label for="{{ password_form.confirm_password.id_for_label }}">Confirmar nueva contraseÃ±a</label>
+          <label for="{{ password_form.confirm_password.id_for_label }}">Confirmar nueva contrase&ntilde;a</label>
           <div class="password-control">
             {{ password_form.confirm_password }}
             <button type="button" data-toggle-password="{{ password_form.confirm_password.id_for_label }}">Mostrar</button>
@@ -163,7 +163,7 @@
 
         <div class="form-actions">
           <a class="ghost-button" href="{% url 'profile' %}">Cancelar</a>
-          <button class="submit-button" type="submit" data-password-submit data-loading-label="Cambiando...">Cambiar contraseÃ±a</button>
+          <button class="submit-button" type="submit" data-password-submit data-loading-label="Cambiando...">Cambiar contrase&ntilde;a</button>
         </div>
       </form>
     </section>
@@ -223,7 +223,7 @@
           if (ok) passed += 1;
           item.classList.toggle("valid", ok);
         });
-        const label = passed >= 6 ? "Fuerte" : passed >= 4 ? "Media" : "DÃ©bil";
+        const label = passed >= 6 ? "Fuerte" : passed >= 4 ? "Media" : "Debil";
         strength.dataset.level = label.toLowerCase();
         strength.querySelector("strong").textContent = label;
         strength.querySelector("span").style.width = `${Math.max(14, Math.round((passed / 7) * 100))}%`;
