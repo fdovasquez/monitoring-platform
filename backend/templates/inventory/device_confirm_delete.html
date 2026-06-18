@@ -1,0 +1,92 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eliminar dispositivo</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <style>
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0 22px;
+    }
+
+    .summary-grid div {
+      padding: 12px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+    }
+
+    .summary-grid dt {
+      margin-bottom: 4px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .summary-grid dd {
+      margin: 0;
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 400;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 720px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% include "inventory/partials/app_header.html" with active_menu="devices" %}
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <h1>Eliminar dispositivo</h1>
+        <p>Confirma la eliminacion del servidor monitoreado.</p>
+      </div>
+      <a class="action-button secondary-action" href="{% url 'device-detail' server.id %}">Volver</a>
+    </header>
+
+    <section class="wizard-card user-form">
+      <div class="step-label">Confirmacion</div>
+      <h2>{{ server.name|default:server.hostname }}</h2>
+      <p>Esta accion eliminara el servidor, su token, credenciales, inventario y metricas asociadas.</p>
+
+      <dl class="summary-grid">
+        <div>
+          <dt>Hostname</dt>
+          <dd>{{ server.hostname }}</dd>
+        </div>
+        <div>
+          <dt>IP</dt>
+          <dd>{{ server.ip_address|default:"-" }}</dd>
+        </div>
+        <div>
+          <dt>Sistema operativo</dt>
+          <dd>{{ server.get_os_type_display }}</dd>
+        </div>
+        <div>
+          <dt>Grupo</dt>
+          <dd>{{ server.group.name|default:"Sin grupo" }}</dd>
+        </div>
+      </dl>
+
+      <form method="post" class="wizard-actions">
+        {% csrf_token %}
+        <a class="cancel-button" href="{% url 'device-detail' server.id %}">Cancelar</a>
+        <button class="submit-button danger-button" type="submit">Eliminar dispositivo</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
