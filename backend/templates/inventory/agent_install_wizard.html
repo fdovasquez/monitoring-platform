@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Instalar nuevo agente</title>
+  <title>Instalar agente</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/agent_wizard.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
@@ -13,13 +13,13 @@
 <body class="agent-modal-body">
   {% include "inventory/partials/app_header.html" with active_menu="agents" %}
 
-  <main class="agent-modal-shell" aria-label="Instalar nuevo agente">
+  <main class="agent-modal-shell" aria-label="Instalar agente">
     <section class="agent-modal" role="dialog" aria-modal="true" aria-labelledby="agent-modal-title">
       <a class="agent-modal-close" href="{% url 'device-list' %}" aria-label="Cerrar">x</a>
 
       <header class="agent-modal-header">
         <h1 id="agent-modal-title">Instalar nuevo agente de monitoreo</h1>
-        <p>Selecciona el sistema operativo, crea el servidor y copia el instalador listo para pegar en el equipo cliente.</p>
+        <p>Selecciona el sistema operativo, asocia un grupo si corresponde y copia el comando en el equipo cliente. El servidor se registrara automaticamente al enviar su primer reporte.</p>
       </header>
 
       <aside class="agent-notice">
@@ -38,54 +38,38 @@
         </section>
       {% endif %}
 
-      <div class="agent-modal-grid">
+      <div class="agent-modal-grid agent-enroll-grid">
         <form class="agent-config-panel" method="post">
           {% csrf_token %}
+          <input type="hidden" name="platform" id="platform_input" value="{{ selected_platform }}">
+
           <div class="os-picker">
-            <button class="os-option {% if not created_server or created_server.os_type == 'windows' %}active{% endif %}" type="button" data-os-choice="windows">
+            <button class="os-option {% if selected_platform == 'windows' %}active{% endif %}" type="button" data-platform-choice="windows">
               <span class="os-symbol windows">W</span>
               <span>
                 <strong>Windows</strong>
                 <small>Windows Server o Windows 10/11</small>
               </span>
             </button>
-            <button class="os-option {% if created_server and created_server.os_type == 'linux' %}active{% endif %}" type="button" data-os-choice="linux">
+            <button class="os-option {% if selected_platform == 'oracle' %}active{% endif %}" type="button" data-platform-choice="oracle">
               <span class="os-symbol linux">L</span>
               <span>
-                <strong>Linux</strong>
-                <small>Oracle Linux, RHEL, CentOS, Ubuntu o Debian</small>
+                <strong>Oracle Linux / RHEL</strong>
+                <small>Oracle Linux, RHEL, Rocky o CentOS</small>
+              </span>
+            </button>
+            <button class="os-option {% if selected_platform == 'ubuntu' %}active{% endif %}" type="button" data-platform-choice="ubuntu">
+              <span class="os-symbol linux">L</span>
+              <span>
+                <strong>Ubuntu / Debian</strong>
+                <small>Ubuntu Server o Debian</small>
               </span>
             </button>
           </div>
 
-          <input type="hidden" name="os_type" id="os_type_input" value="{% if created_server %}{{ created_server.os_type }}{% else %}windows{% endif %}">
-
-          <div class="agent-form-grid">
-            <label>
-              Nombre t&eacute;cnico
-              <input name="hostname" placeholder="eidb.hospitalcurico.cl" required>
-            </label>
-            <label>
-              Nombre visible
-              <input name="name" placeholder="Base de datos EIDB">
-            </label>
-            <label>
-              IP del servidor
-              <input name="ip_address" placeholder="192.168.0.50">
-            </label>
-            <label>
-              Ambiente
-              <input name="environment" value="produccion">
-            </label>
-            <label>
-              Responsable
-              <input name="owner" placeholder="Area o persona responsable">
-            </label>
-          </div>
-
           <div class="group-selector">
             <div class="group-heading">
-              <span>Grupo de dispositivos</span>
+              <span>Grupo de dispositivos opcional</span>
               <button type="button" data-clear-group>Limpiar</button>
             </div>
             <select name="group">
@@ -97,87 +81,73 @@
             <input name="group_name" placeholder="O crear grupo nuevo">
           </div>
 
-          <button class="submit-button" type="submit">Crear servidor y generar token</button>
+          <button class="submit-button" type="submit">Generar instalador</button>
         </form>
 
         <section class="agent-install-panel">
           <div class="install-tabs" role="tablist" aria-label="Opciones de instalacion">
-            <button class="install-tab active" type="button" data-panel="installer-panel">Instalador</button>
-            <button class="install-tab" type="button" data-panel="oneline-panel">Comando &uacute;nico</button>
-            <button class="install-tab" type="button" data-panel="silent-panel">Instalaci&oacute;n silenciosa</button>
+            <button class="install-tab active" type="button" data-panel="oneline-panel">Comando unico</button>
+            <button class="install-tab" type="button" data-panel="token-panel">Token</button>
           </div>
 
-          <article class="install-panel active" id="installer-panel">
+          <article class="install-panel active" id="oneline-panel">
             {% if created_server %}
-              <p>Servidor creado: <strong>{{ created_server.hostname }}</strong>. Copia el token o usa el script seg&uacute;n el sistema operativo seleccionado.</p>
-              <div class="copy-field">
-                <input readonly value="{{ agent_token.token }}" aria-label="Token del agente">
-                <button type="button" data-copy-value="{{ agent_token.token }}">Copiar</button>
-              </div>
+              <p>Token listo. Copia este comando en el servidor cliente; el equipo aparecera en Dispositivos cuando el agente envie la primera metrica.</p>
+
+              {% if selected_platform == 'windows' %}
+                <div class="script-card active">
+                  <div class="script-card-head">
+                    <h2>Windows PowerShell</h2>
+                    <button class="copy-icon-button" type="button" data-copy-target="windows-script-text" title="Copiar comando">Copiar</button>
+                  </div>
+                  <textarea id="windows-script-text" readonly>{{ windows_script }}</textarea>
+                </div>
+              {% elif selected_platform == 'ubuntu' %}
+                <div class="script-card active">
+                  <div class="script-card-head">
+                    <h2>Ubuntu / Debian</h2>
+                    <button class="copy-icon-button" type="button" data-copy-target="ubuntu-script-text" title="Copiar comando">Copiar</button>
+                  </div>
+                  <textarea id="ubuntu-script-text" readonly>{{ ubuntu_script }}</textarea>
+                </div>
+              {% else %}
+                <div class="script-card active">
+                  <div class="script-card-head">
+                    <h2>Oracle Linux / RHEL / CentOS</h2>
+                    <button class="copy-icon-button" type="button" data-copy-target="oracle-script-text" title="Copiar comando">Copiar</button>
+                  </div>
+                  <textarea id="oracle-script-text" readonly>{{ linux_script }}</textarea>
+                </div>
+              {% endif %}
             {% else %}
-              <p>Primero completa los datos del servidor. Al guardar se generar&aacute; autom&aacute;ticamente el token de instalaci&oacute;n.</p>
-              <div class="empty-token">El token aparecer&aacute; aqu&iacute; despu&eacute;s de crear el servidor.</div>
+              <p>No es necesario escribir los datos del servidor. Solo selecciona sistema operativo y grupo opcional.</p>
+              <div class="empty-token">Presiona Generar instalador para obtener el comando listo para copiar.</div>
             {% endif %}
           </article>
 
-          {% if created_server %}
-            <article class="install-panel" id="oneline-panel">
-              <div class="script-tabs" role="tablist" aria-label="Sistema operativo">
-                <button class="script-tab active" type="button" data-target="windows-script">Windows PowerShell</button>
-                <button class="script-tab" type="button" data-target="oracle-script">Oracle Linux / RHEL / CentOS</button>
-                <button class="script-tab" type="button" data-target="ubuntu-script">Ubuntu / Debian</button>
-              </div>
-
-              <div class="script-card active" id="windows-script">
-                <div class="script-card-head">
-                  <h2>Windows PowerShell</h2>
-                  <button type="button" data-copy-target="windows-script-text">Copiar</button>
-                </div>
-                <textarea id="windows-script-text" readonly>{{ windows_script }}</textarea>
-              </div>
-              <div class="script-card" id="oracle-script">
-                <div class="script-card-head">
-                  <h2>Oracle Linux / RHEL / CentOS</h2>
-                  <button type="button" data-copy-target="oracle-script-text">Copiar</button>
-                </div>
-                <textarea id="oracle-script-text" readonly>{{ linux_script }}</textarea>
-              </div>
-              <div class="script-card" id="ubuntu-script">
-                <div class="script-card-head">
-                  <h2>Ubuntu / Debian</h2>
-                  <button type="button" data-copy-target="ubuntu-script-text">Copiar</button>
-                </div>
-                <textarea id="ubuntu-script-text" readonly>{{ ubuntu_script }}</textarea>
-              </div>
-            </article>
-
-            <article class="install-panel" id="silent-panel">
-              <p>Usa instalaci&oacute;n silenciosa para despliegues automatizados. El comando mantiene el mismo token y servidor creado.</p>
+          <article class="install-panel" id="token-panel">
+            {% if created_server %}
+              <p>Este token identifica la instalacion. El agente lo usara para registrarse automaticamente.</p>
               <div class="copy-field">
-                <input readonly value="{{ agent_token.token }}" aria-label="Token para instalacion silenciosa">
-                <button type="button" data-copy-value="{{ agent_token.token }}">Copiar token</button>
+                <input readonly value="{{ agent_token.token }}" aria-label="Token del agente">
+                <button class="copy-icon-button" type="button" data-copy-value="{{ agent_token.token }}" title="Copiar token">Copiar</button>
               </div>
-            </article>
-          {% else %}
-            <article class="install-panel" id="oneline-panel">
-              <div class="empty-token">Los comandos aparecer&aacute;n aqu&iacute; despu&eacute;s de crear el servidor.</div>
-            </article>
-            <article class="install-panel" id="silent-panel">
-              <div class="empty-token">La instalaci&oacute;n silenciosa estar&aacute; disponible despu&eacute;s de generar el token.</div>
-            </article>
-          {% endif %}
+            {% else %}
+              <div class="empty-token">El token aparecera aqui despues de generar el instalador.</div>
+            {% endif %}
+          </article>
         </section>
       </div>
     </section>
   </main>
 
   <script>
-    const osInput = document.getElementById("os_type_input");
-    document.querySelectorAll("[data-os-choice]").forEach((button) => {
+    const platformInput = document.getElementById("platform_input");
+    document.querySelectorAll("[data-platform-choice]").forEach((button) => {
       button.addEventListener("click", () => {
-        document.querySelectorAll("[data-os-choice]").forEach((item) => item.classList.remove("active"));
+        document.querySelectorAll("[data-platform-choice]").forEach((item) => item.classList.remove("active"));
         button.classList.add("active");
-        osInput.value = button.dataset.osChoice;
+        platformInput.value = button.dataset.platformChoice;
       });
     });
 
@@ -197,23 +167,28 @@
       });
     });
 
-    document.querySelectorAll(".script-tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        document.querySelectorAll(".script-tab").forEach((item) => item.classList.remove("active"));
-        document.querySelectorAll(".script-card").forEach((card) => card.classList.remove("active"));
-        tab.classList.add("active");
-        document.getElementById(tab.dataset.target)?.classList.add("active");
-      });
-    });
+    function markCopied(button) {
+      const original = button.textContent;
+      button.textContent = "Copiado";
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1600);
+    }
 
     document.querySelectorAll("[data-copy-value]").forEach((button) => {
-      button.addEventListener("click", () => navigator.clipboard.writeText(button.dataset.copyValue));
+      button.addEventListener("click", () => {
+        navigator.clipboard.writeText(button.dataset.copyValue);
+        markCopied(button);
+      });
     });
 
     document.querySelectorAll("[data-copy-target]").forEach((button) => {
       button.addEventListener("click", () => {
         const target = document.getElementById(button.dataset.copyTarget);
-        if (target) navigator.clipboard.writeText(target.value);
+        if (target) {
+          navigator.clipboard.writeText(target.value);
+          markCopied(button);
+        }
       });
     });
   </script>
