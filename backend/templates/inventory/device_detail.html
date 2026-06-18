@@ -1,4 +1,4 @@
-{% load static %}
+{% load static security_tags %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -7,6 +7,7 @@
   <title>{{ server.name|default:server.hostname }} | Detalle</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/device_detail.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/security_score.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
 </head>
 <body class="detail-body">
@@ -81,12 +82,38 @@
         <p>Uptime</p>
         <div class="progress success" style="--value: 100%;"></div>
       </article>
-      <article class="kpi-card card">
-        <div class="kpi-top"><span class="kpi-icon security">SEC</span><strong>{{ security_score }}/100</strong></div>
-        <p>Puntaje seguridad</p>
-        <div class="progress {{ cpu_tone }}" style="--value: {{ security_score }}%;"></div>
-      </article>
     </section>
+
+    {% with security=latest|security_assessment %}
+    <section class="card security-score-card">
+      <div class="security-score-main">
+        <div class="security-score-copy">
+          <h2>Security Score</h2>
+          <div class="security-score-value">
+            <strong>{{ security.score }}</strong>
+            <span>/ 100</span>
+          </div>
+          <span class="security-risk {{ security.tone }}">{{ security.level }}</span>
+        </div>
+        <div class="security-gauge" style="--score: {{ security.score }}; --rotation: {{ security.gauge_rotation }}deg;">
+          <div class="security-gauge-arc"></div>
+          <div class="security-gauge-needle"></div>
+          <span>{{ security.score }}</span>
+        </div>
+      </div>
+      <div class="security-check-list">
+        {% for check in security.checks %}
+          <div class="security-check-row {% if check.passed %}ok{% else %}fail{% endif %}">
+            <div class="security-check-name">
+              <span class="security-check-icon"></span>
+              <span>{{ check.label }}</span>
+            </div>
+            <div class="security-check-detail">{{ check.detail }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endwith %}
 
     <section class="detail-grid-12">
       <article class="card info-card span-7">
