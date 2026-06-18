@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="{% static 'inventory/profile.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/site_settings.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <link rel="stylesheet" href="{% static 'alerts/alerts.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/layout_width.css' %}">
 </head>
 <body>
   {% include "inventory/partials/app_header.html" with active_menu="settings" %}
@@ -40,9 +42,16 @@
       </section>
     {% endif %}
 
+    <nav class="alert-tabs settings-tabs" aria-label="Secciones de configuracion">
+      <a class="{% if active_settings_tab == 'site' %}active{% endif %}" href="{% url 'site-settings' %}?tab=site">Personalizacion</a>
+      <a class="{% if active_settings_tab == 'smtp' %}active{% endif %}" href="{% url 'site-settings' %}?tab=smtp">Correo SMTP</a>
+    </nav>
+
+    {% if active_settings_tab == 'site' %}
     <section class="settings-layout">
       <form class="profile-card settings-card" method="post" enctype="multipart/form-data" data-loading-form>
         {% csrf_token %}
+        <input type="hidden" name="action" value="save_site">
         <div class="profile-card-head">
           <div>
             <h2>Identidad visual</h2>
@@ -110,6 +119,66 @@
         </div>
       </form>
     </section>
+    {% endif %}
+
+    {% if active_settings_tab == 'smtp' %}
+      <section class="settings-layout smtp-layout">
+        <form class="profile-card settings-card" method="post" data-loading-form>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_smtp">
+          <div class="profile-card-head">
+            <div>
+              <h2>Servidor de correo SMTP</h2>
+              <p>Define el servidor usado por la plataforma para enviar notificaciones de alertas.</p>
+            </div>
+            {% if smtp_settings.is_configured %}
+              <span class="health-ok">Configurado</span>
+            {% else %}
+              <span class="health-warn">Incompleto</span>
+            {% endif %}
+          </div>
+
+          <div class="form-grid">
+            {% for field in smtp_form %}
+              <div class="field {% if field.name == 'require_auth' %}field-check{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="form-actions">
+            <a class="ghost-button" href="{% url 'device-list' %}">Cancelar</a>
+            <button class="submit-button" type="submit" data-loading-label="Guardando...">Guardar SMTP</button>
+          </div>
+        </form>
+
+        <section class="profile-card settings-card">
+          <div class="profile-card-head">
+            <div>
+              <h2>Pruebas de correo</h2>
+              <p>Valida conectividad y envio antes de activar notificaciones criticas.</p>
+            </div>
+          </div>
+          <form method="post" class="test-actions">
+            {% csrf_token %}
+            <button class="ghost-button" type="submit" name="action" value="test_connection">Probar conexion</button>
+          </form>
+          <form method="post" class="test-actions">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="send_test_email">
+            <div class="field">
+              <label for="{{ test_email_form.recipient.id_for_label }}">Correo de prueba</label>
+              {{ test_email_form.recipient }}
+              {% for error in test_email_form.recipient.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <button class="submit-button" type="submit">Enviar correo de prueba</button>
+          </form>
+        </section>
+      </section>
+    {% endif %}
   </main>
 
   <script>
