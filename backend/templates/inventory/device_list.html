@@ -35,24 +35,6 @@
       {% endfor %}
     </section>
 
-    <section class="toolbar">
-      <div class="search">
-        <span>Buscar</span>
-        <input type="search" placeholder="Buscar dispositivos" aria-label="Buscar dispositivos">
-      </div>
-      {% if can_manage_devices %}
-        <a class="export" href="{% url 'agent-install' %}">Nuevo agente</a>
-      {% endif %}
-    </section>
-
-    <section class="filter-row">
-      <span>Plataforma</span>
-      <mark>Linux</mark>
-      <mark>Windows</mark>
-      <span>Estado</span>
-      <mark>En linea</mark>
-    </section>
-
     <section class="device-panel">
       <table>
         <thead>
