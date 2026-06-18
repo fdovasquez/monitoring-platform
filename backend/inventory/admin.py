@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AgentToken, DeviceGroup, MachineCredential, Server, SiteSettings, UserProfile
+from .models import AgentToken, DeviceGroup, MachineCredential, Server, ServerInventory, SiteSettings, UserProfile
 
 
 @admin.register(DeviceGroup)
@@ -16,6 +16,13 @@ class ServerAdmin(admin.ModelAdmin):
     list_filter = ("group", "os_type", "environment", "is_active")
     search_fields = ("hostname", "name", "ip_address", "owner")
     readonly_fields = ("created_at", "updated_at", "last_seen")
+
+
+@admin.register(ServerInventory)
+class ServerInventoryAdmin(admin.ModelAdmin):
+    list_display = ("server", "os_name", "os_version", "architecture", "primary_ip", "collected_at", "updated_at")
+    search_fields = ("server__hostname", "fqdn", "serial_number", "model", "manufacturer", "primary_ip")
+    readonly_fields = ("raw_data", "updated_at")
 
 
 @admin.register(AgentToken)
