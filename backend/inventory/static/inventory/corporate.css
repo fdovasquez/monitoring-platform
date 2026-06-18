@@ -14,6 +14,8 @@
   --corp-red: #ef4444;
   --corp-radius: 8px;
   --corp-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+  --app-max-width: 1640px;
+  --app-page-padding: 24px;
 }
 
 html {
@@ -77,10 +79,10 @@ a {
   align-items: center !important;
   gap: 18px !important;
   width: 100% !important;
-  max-width: 1680px !important;
+  max-width: var(--app-max-width) !important;
   min-height: 62px !important;
   margin: 0 auto !important;
-  padding: 0 24px !important;
+  padding: 0 var(--app-page-padding) !important;
 }
 
 .app-brand {
@@ -242,6 +244,29 @@ a {
 .profile-shell,
 .alerts-shell {
   background: transparent !important;
+}
+
+.content,
+.detail-shell,
+.profile-shell,
+.alerts-shell,
+.agent-modal-shell {
+  width: 100% !important;
+  max-width: var(--app-max-width) !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  padding-right: var(--app-page-padding) !important;
+  padding-left: var(--app-page-padding) !important;
+}
+
+.content {
+  padding-top: 24px !important;
+  padding-bottom: 24px !important;
+}
+
+.agent-modal-shell {
+  padding-top: 28px !important;
+  padding-bottom: 28px !important;
 }
 
 .topbar,
@@ -443,7 +468,8 @@ pre {
   .content,
   .detail-shell,
   .profile-shell,
-  .alerts-shell {
+  .alerts-shell,
+  .agent-modal-shell {
     padding: 14px !important;
   }
 }
