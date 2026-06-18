@@ -15,6 +15,7 @@
   --corp-radius: 8px;
   --corp-shadow: 0 14px 34px rgba(15, 23, 42, .08);
   --app-max-width: 1640px;
+  --app-content-width: 1320px;
   --app-page-padding: 24px;
 }
 
@@ -252,7 +253,7 @@ a {
 .alerts-shell,
 .agent-modal-shell {
   width: 100% !important;
-  max-width: var(--app-max-width) !important;
+  max-width: var(--app-content-width) !important;
   margin-right: auto !important;
   margin-left: auto !important;
   padding-right: var(--app-page-padding) !important;
