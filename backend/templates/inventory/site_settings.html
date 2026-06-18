@@ -8,39 +8,10 @@
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/profile.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/site_settings.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
 </head>
 <body>
-  <header class="app-header">
-    <a class="app-brand" href="{% url 'device-list' %}">
-      {% if site_settings.logo %}
-        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="width: {{ site_settings.logo_width }}px; height: {{ site_settings.logo_height }}px;">
-      {% else %}
-        <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}" style="width: {{ site_settings.logo_width }}px; height: {{ site_settings.logo_height }}px;">
-      {% endif %}
-      <span>{{ site_settings.subtitle }}</span>
-    </a>
-    <nav class="app-nav" aria-label="Menu principal">
-      <a href="{% url 'device-list' %}">Dispositivos</a>
-      <a href="{% url 'agent-install' %}">Instalar agente</a>
-      <a href="{% url 'user-list' %}">Usuarios</a>
-      <a class="active" href="{% url 'site-settings' %}">Configuracion</a>
-      <a href="{% url 'alert-settings' %}">Alertas y Umbrales</a>
-      <a href="{% url 'admin:index' %}">Admin</a>
-    </nav>
-    <div class="app-actions">
-      <details class="account-menu">
-        <summary>{{ request.user.username }}</summary>
-        <div class="account-dropdown">
-          <a href="{% url 'profile' %}">Editar perfil</a>
-          <a href="{% url 'profile' %}#security">Cambiar contrasena</a>
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit">Cerrar sesion</button>
-          </form>
-        </div>
-      </details>
-    </div>
-  </header>
+  {% include "inventory/partials/app_header.html" with active_menu="settings" %}
 
   <main class="content profile-shell">
     <header class="profile-hero">
