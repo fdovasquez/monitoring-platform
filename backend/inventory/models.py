@@ -98,6 +98,35 @@ class Server(models.Model):
         return self.name or self.hostname
 
 
+class ServerInventory(models.Model):
+    server = models.OneToOneField(Server, on_delete=models.CASCADE, related_name="inventory")
+    fqdn = models.CharField(max_length=255, blank=True)
+    os_name = models.CharField(max_length=255, blank=True)
+    os_version = models.CharField(max_length=255, blank=True)
+    kernel = models.CharField(max_length=255, blank=True)
+    architecture = models.CharField(max_length=120, blank=True)
+    serial_number = models.CharField(max_length=255, blank=True)
+    model = models.CharField(max_length=255, blank=True)
+    manufacturer = models.CharField(max_length=255, blank=True)
+    domain = models.CharField(max_length=255, blank=True)
+    logged_user = models.CharField(max_length=255, blank=True)
+    primary_ip = models.GenericIPAddressField(null=True, blank=True)
+    gateway = models.CharField(max_length=255, blank=True)
+    dns_servers = models.JSONField(default=list, blank=True)
+    mac_addresses = models.JSONField(default=list, blank=True)
+    interfaces = models.JSONField(default=list, blank=True)
+    timezone = models.CharField(max_length=120, blank=True)
+    raw_data = models.JSONField(default=dict, blank=True)
+    collected_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["server__hostname"]
+
+    def __str__(self):
+        return f"Inventario {self.server.hostname}"
+
+
 def credential_cipher():
     digest = hashlib.sha256(settings.SECRET_KEY.encode("utf-8")).digest()
     return Fernet(base64.urlsafe_b64encode(digest))
