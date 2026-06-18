@@ -17,9 +17,11 @@
         <h1>Todos los dispositivos</h1>
         <p>{{ online_devices }} en linea / {{ offline_devices }} fuera de linea</p>
       </div>
-      <div class="top-actions">
-        <a class="action-button" href="{% url 'agent-install' %}">Instalar agente</a>
-      </div>
+      {% if can_manage_devices %}
+        <div class="top-actions">
+          <a class="action-button" href="{% url 'agent-install' %}">Instalar agente</a>
+        </div>
+      {% endif %}
     </header>
 
     <section class="group-strip" aria-label="Grupos de dispositivos">
@@ -38,7 +40,9 @@
         <span>Buscar</span>
         <input type="search" placeholder="Buscar dispositivos" aria-label="Buscar dispositivos">
       </div>
-      <a class="export" href="{% url 'agent-install' %}">Nuevo agente</a>
+      {% if can_manage_devices %}
+        <a class="export" href="{% url 'agent-install' %}">Nuevo agente</a>
+      {% endif %}
     </section>
 
     <section class="filter-row">
