@@ -384,7 +384,7 @@ button[type="submit"]:not(.danger-button):hover {
 }
 
 .status.online,
-badge.ok,
+.badge.ok,
 .status-pill.online {
   color: #166534 !important;
   background: #dcfce7 !important;
