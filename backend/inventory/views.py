@@ -391,6 +391,23 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         return events
 
 
+class DeviceDeleteView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
+    template_name = "inventory/device_confirm_delete.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["server"] = get_object_or_404(Server, id=kwargs["pk"])
+        context.update(sidebar_context())
+        return context
+
+    def post(self, request, pk):
+        server = get_object_or_404(Server, id=pk)
+        server_name = server.name or server.hostname
+        server.delete()
+        messages.success(request, f"Servidor {server_name} eliminado correctamente.")
+        return redirect("device-list")
+
+
 class MachineCredentialCreateView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
     def post(self, request, pk):
         server = get_object_or_404(Server, id=pk)
