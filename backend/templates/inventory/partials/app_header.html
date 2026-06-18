@@ -40,7 +40,7 @@
         </summary>
         <div class="account-dropdown">
           <a href="{% url 'profile' %}">Editar perfil</a>
-          <a href="{% url 'password-change' %}">Cambiar contrasena</a>
+          <a href="{% url 'password-change' %}">Cambiar contrase&ntilde;a</a>
           <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit">Cerrar sesion</button>
