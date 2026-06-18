@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from .models import AgentToken, DeviceGroup, MachineCredential, Server, ServerInventory, SiteSettings, UserProfile
+from .models import (
+    AgentToken,
+    DeviceGroup,
+    MachineCredential,
+    Server,
+    ServerInventory,
+    ServerRuntimeSnapshot,
+    SiteSettings,
+    UserProfile,
+)
 
 
 @admin.register(DeviceGroup)
@@ -23,6 +32,22 @@ class ServerInventoryAdmin(admin.ModelAdmin):
     list_display = ("server", "os_name", "os_version", "architecture", "primary_ip", "collected_at", "updated_at")
     search_fields = ("server__hostname", "fqdn", "serial_number", "model", "manufacturer", "primary_ip")
     readonly_fields = ("raw_data", "updated_at")
+
+
+@admin.register(ServerRuntimeSnapshot)
+class ServerRuntimeSnapshotAdmin(admin.ModelAdmin):
+    list_display = ("server", "service_count", "process_count", "port_count", "collected_at", "updated_at")
+    search_fields = ("server__hostname",)
+    readonly_fields = ("services", "processes", "ports", "raw_data", "updated_at")
+
+    def service_count(self, obj):
+        return len(obj.services or [])
+
+    def process_count(self, obj):
+        return len(obj.processes or [])
+
+    def port_count(self, obj):
+        return len(obj.ports or [])
 
 
 @admin.register(AgentToken)
