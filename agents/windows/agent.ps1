@@ -56,6 +56,67 @@ $MacAddresses = @($NetworkConfigs | ForEach-Object { $_.MACAddress } | Where-Obj
 $Uptime = [int]((Get-Date) - $Os.LastBootUpTime).TotalSeconds
 $MemoryPercent = [math]::Round((($Os.TotalVisibleMemorySize - $Os.FreePhysicalMemory) / $Os.TotalVisibleMemorySize) * 100, 2)
 $DiskPercent = [math]::Round((($Disk.Size - $Disk.FreeSpace) / $Disk.Size) * 100, 2)
+$Services = @(Get-CimInstance Win32_Service | Select-Object -First 120 | ForEach-Object {
+    @{
+        name = $_.Name
+        display_name = $_.DisplayName
+        state = $_.State
+        sub_state = $_.Status
+        start_type = $_.StartMode
+    }
+})
+$Processes = @(Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 40 | ForEach-Object {
+    $ProcessPath = ""
+    try {
+        $ProcessPath = $_.Path
+    } catch {
+        $ProcessPath = ""
+    }
+    @{
+        pid = $_.Id
+        name = $_.ProcessName
+        user = ""
+        cpu_percent = if ($_.CPU) { [math]::Round($_.CPU, 2) } else { 0 }
+        memory_percent = if ($Computer.TotalPhysicalMemory -gt 0) { [math]::Round(($_.WorkingSet64 / $Computer.TotalPhysicalMemory) * 100, 2) } else { 0 }
+        path = $ProcessPath
+    }
+})
+$TcpPorts = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Select-Object -First 160 | ForEach-Object {
+    $ProcessName = ""
+    if ($_.OwningProcess) {
+        try {
+            $ProcessName = (Get-Process -Id $_.OwningProcess -ErrorAction Stop).ProcessName
+        } catch {
+            $ProcessName = ""
+        }
+    }
+    @{
+        protocol = "TCP"
+        local_address = $_.LocalAddress
+        local_port = $_.LocalPort
+        status = $_.State
+        pid = $_.OwningProcess
+        process = $ProcessName
+    }
+})
+$UdpPorts = @(Get-NetUDPEndpoint -ErrorAction SilentlyContinue | Select-Object -First 80 | ForEach-Object {
+    $ProcessName = ""
+    if ($_.OwningProcess) {
+        try {
+            $ProcessName = (Get-Process -Id $_.OwningProcess -ErrorAction Stop).ProcessName
+        } catch {
+            $ProcessName = ""
+        }
+    }
+    @{
+        protocol = "UDP"
+        local_address = $_.LocalAddress
+        local_port = $_.LocalPort
+        status = "LISTEN"
+        pid = $_.OwningProcess
+        process = $ProcessName
+    }
+})
 
 $Payload = @{
     hostname = $Hostname
@@ -89,7 +150,9 @@ $Payload = @{
         timezone = (Get-TimeZone).Id
         collected_at = (Get-Date).ToUniversalTime().ToString("o")
     }
-    services = @()
+    services = @($Services)
+    processes = @($Processes)
+    ports = @($TcpPorts + $UdpPorts)
 } | ConvertTo-Json -Depth 8
 
 $Headers = @{
