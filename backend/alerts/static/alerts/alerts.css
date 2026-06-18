@@ -3,6 +3,229 @@
   gap: 16px;
 }
 
+.monitors-shell {
+  gap: 0;
+}
+
+.monitor-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 96px;
+  padding: 20px 8px;
+  background: #ffffff;
+  border-bottom: 1px solid #dbe3ef;
+}
+
+.monitor-identity,
+.monitor-title-line,
+.monitor-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.monitor-icon {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.monitor-title-line h1 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.monitor-kind {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  padding: 0 8px;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 11px;
+}
+
+.monitor-tabs {
+  display: flex;
+  gap: 16px;
+  min-height: 52px;
+  align-items: end;
+  padding: 0 8px;
+  background: #ffffff;
+  border-bottom: 1px solid #dbe3ef;
+}
+
+.monitor-tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  color: #334155;
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+}
+
+.monitor-tabs a.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+.monitor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 8px;
+  background: #ffffff;
+  border-bottom: 1px solid #dbe3ef;
+}
+
+.monitor-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, 100%);
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+.monitor-search input {
+  min-height: 34px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.monitor-table-card {
+  overflow-x: auto;
+  background: #ffffff;
+  border-bottom: 1px solid #dbe3ef;
+}
+
+.monitor-table {
+  width: 100%;
+  min-width: 1280px;
+  border-collapse: collapse;
+}
+
+.monitor-table th,
+.monitor-table td {
+  padding: 14px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.monitor-table th {
+  height: 38px;
+  color: #475569 !important;
+  background: #f8fafc !important;
+  font-size: 12px;
+}
+
+.monitor-table td {
+  height: 64px;
+}
+
+.monitor-name span,
+.threshold-copy {
+  display: block;
+}
+
+.monitor-name small,
+.threshold-copy small {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.severity-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.severity-pill.info {
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #86efac;
+}
+
+.severity-pill.warning {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+}
+
+.severity-pill.critical {
+  color: #c2410c;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+}
+
+.check-ok {
+  display: inline-flex;
+  min-width: 28px;
+  min-height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  color: #059669;
+  border: 1.5px solid #059669;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.check-muted {
+  color: #94a3b8;
+}
+
+.monitor-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.monitor-row-actions form {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+
+.monitor-row-actions a,
+.monitor-row-actions button {
+  min-height: auto;
+  padding: 0;
+  color: #2563eb;
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.monitor-row-actions .danger-link {
+  color: #dc2626 !important;
+}
+
+.compact-edit-form {
+  margin: 16px 0;
+}
+
 .alert-health span,
 .status-pill {
   display: inline-flex;
@@ -249,6 +472,13 @@
 }
 
 @media (max-width: 980px) {
+  .monitor-hero,
+  .monitor-toolbar,
+  .monitor-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .alerts-grid,
   .history-filters {
     grid-template-columns: 1fr;
