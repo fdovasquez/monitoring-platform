@@ -1,0 +1,35 @@
+{% load static %}
+<header class="app-header">
+  <a class="app-brand" href="{% url 'device-list' %}">
+    {% if site_settings.logo %}
+      <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="width: {{ site_settings.logo_width }}px; height: {{ site_settings.logo_height }}px;">
+    {% else %}
+      <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}" style="width: {{ site_settings.logo_width }}px; height: {{ site_settings.logo_height }}px;">
+    {% endif %}
+    <span>{{ site_settings.subtitle }}</span>
+  </a>
+  <nav class="app-nav" aria-label="Menu principal">
+    <a class="{% if active_menu == 'devices' %}active{% endif %}" href="{% url 'device-list' %}">
+      Dispositivos{% if total_devices %} <span class="nav-count">{{ total_devices }}</span>{% endif %}
+    </a>
+    <a class="{% if active_menu == 'agents' %}active{% endif %}" href="{% url 'agent-install' %}">Instalar agente</a>
+    <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
+    <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
+    <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}">Alertas</a>
+    <a href="{% url 'admin:inventory_server_changelist' %}">Servidores</a>
+    <a href="{% url 'admin:metrics_metricsample_changelist' %}">Metricas</a>
+  </nav>
+  <div class="app-actions">
+    <details class="account-menu">
+      <summary>{{ request.user.username }}</summary>
+      <div class="account-dropdown">
+        <a href="{% url 'profile' %}">Editar perfil</a>
+        <a href="{% url 'password-change' %}">Cambiar contrasena</a>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit">Cerrar sesion</button>
+        </form>
+      </div>
+    </details>
+  </div>
+</header>
