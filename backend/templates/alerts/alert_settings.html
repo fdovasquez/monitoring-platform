@@ -7,8 +7,8 @@
   <title>Alertas y Umbrales</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/profile.css' %}">
-  <link rel="stylesheet" href="{% static 'alerts/alerts.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <link rel="stylesheet" href="{% static 'alerts/alerts.css' %}">
 </head>
 <body>
   {% include "inventory/partials/app_header.html" with active_menu="alerts" %}
@@ -95,7 +95,7 @@
 
     {% if active_tab == 'rules' %}
       <section class="alerts-grid">
-        <form class="profile-card" method="post" data-confirm="{% if edit_rule %}Guardar cambios de la alerta?{% else %}Crear alerta?{% endif %}">
+        <form class="profile-card alert-rule-form" method="post" data-confirm="{% if edit_rule %}Guardar cambios de la alerta?{% else %}Crear alerta?{% endif %}">
           {% csrf_token %}
           {% if edit_rule %}
             <input type="hidden" name="action" value="update_rule:{{ edit_rule.id }}">
@@ -111,14 +111,55 @@
               <a class="ghost-button" href="{% url 'alert-settings' %}?tab=rules">Cancelar edicion</a>
             {% endif %}
           </div>
-          <div class="form-grid">
-            {% for field in rule_form %}
-              <div class="field {% if field.name == 'recipients' %}field-wide{% endif %} {% if field.name == 'is_active' %}field-check{% endif %}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-              </div>
-            {% endfor %}
+          <div class="alert-rule-grid">
+            <div class="field">
+              <label for="{{ rule_form.name.id_for_label }}">{{ rule_form.name.label }}</label>
+              {{ rule_form.name }}
+              {% for error in rule_form.name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ rule_form.event_type.id_for_label }}">{{ rule_form.event_type.label }}</label>
+              {{ rule_form.event_type }}
+              {% for error in rule_form.event_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ rule_form.threshold.id_for_label }}">{{ rule_form.threshold.label }}</label>
+              {{ rule_form.threshold }}
+              {% for error in rule_form.threshold.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ rule_form.priority.id_for_label }}">{{ rule_form.priority.label }}</label>
+              {{ rule_form.priority }}
+              {% for error in rule_form.priority.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field field-wide">
+              <label for="{{ rule_form.recipients.id_for_label }}">{{ rule_form.recipients.label }}</label>
+              {{ rule_form.recipients }}
+              {% for error in rule_form.recipients.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ rule_form.notification_frequency_minutes.id_for_label }}">{{ rule_form.notification_frequency_minutes.label }}</label>
+              {{ rule_form.notification_frequency_minutes }}
+              {% for error in rule_form.notification_frequency_minutes.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ rule_form.min_interval_minutes.id_for_label }}">{{ rule_form.min_interval_minutes.label }}</label>
+              {{ rule_form.min_interval_minutes }}
+              {% for error in rule_form.min_interval_minutes.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ rule_form.service_name.id_for_label }}">{{ rule_form.service_name.label }}</label>
+              {{ rule_form.service_name }}
+              {% for error in rule_form.service_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field alert-rule-status">
+              <span class="field-label">{{ rule_form.is_active.label }}</span>
+              <label class="inline-check compact-check" for="{{ rule_form.is_active.id_for_label }}">
+                {{ rule_form.is_active }}
+                <span>Regla habilitada</span>
+              </label>
+              {% for error in rule_form.is_active.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
           </div>
           <div class="form-actions">
             {% if edit_rule %}
