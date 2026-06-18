@@ -1,0 +1,213 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="30">
+  <title>{{ server.name|default:server.hostname }} | Runtime</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/device_detail.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <style>
+    .runtime-shell { display: grid; gap: 16px; }
+    .runtime-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px; }
+    .runtime-title h1 { margin: 0 0 6px; font-size: 24px; font-weight: 500; letter-spacing: 0; }
+    .runtime-title p { margin: 0; color: #526173; font-size: 14px; }
+    .runtime-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .runtime-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+    .runtime-kpi { padding: 18px; transition: transform .2s ease, box-shadow .2s ease; }
+    .runtime-kpi:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(15, 23, 42, .08); }
+    .runtime-kpi span { display: block; color: #5d6a7d; font-size: 13px; margin-bottom: 10px; }
+    .runtime-kpi strong { display: block; color: #0f172a; font-size: 28px; font-weight: 500; }
+    .runtime-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .runtime-card { padding: 0; overflow: hidden; }
+    .runtime-card-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; }
+    .runtime-card-header h2 { margin: 0; font-size: 18px; font-weight: 500; }
+    .runtime-card-header p { margin: 5px 0 0; color: #64748b; font-size: 13px; }
+    .runtime-table-wrap { overflow-x: auto; }
+    .runtime-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .runtime-table th { background: #f8fafc; color: #475569; font-weight: 500; text-align: left; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+    .runtime-table td { padding: 12px 14px; border-bottom: 1px solid #edf2f7; color: #0f172a; vertical-align: top; }
+    .runtime-table tr:last-child td { border-bottom: 0; }
+    .runtime-muted { color: #64748b; }
+    .runtime-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 10px; background: #eff6ff; color: #1d4ed8; font-size: 12px; }
+    .runtime-pill.ok { background: #dcfce7; color: #15803d; }
+    .runtime-pill.warn { background: #fef3c7; color: #b45309; }
+    .runtime-pill.err { background: #fee2e2; color: #b91c1c; }
+    .runtime-empty { padding: 26px 20px; color: #64748b; font-size: 14px; }
+    @media (max-width: 960px) {
+      .runtime-header { align-items: flex-start; flex-direction: column; }
+      .runtime-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .runtime-summary { grid-template-columns: 1fr; }
+      .runtime-actions { width: 100%; }
+      .runtime-actions .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body class="detail-body">
+  {% include "inventory/partials/app_header.html" with active_menu="devices" %}
+
+  <main class="content detail-shell runtime-shell">
+    <header class="card runtime-header">
+      <div class="runtime-title">
+        <h1>Runtime del servidor</h1>
+        <p>{{ server.name|default:server.hostname }} · {{ server.ip_address|default:"Sin IP" }} · actualiza cada 30 segundos</p>
+      </div>
+      <div class="runtime-actions">
+        <a class="btn secondary" href="{% url 'device-detail' server.id %}">Volver al detalle</a>
+        <button class="btn secondary" type="button" onclick="window.location.reload()">Actualizar</button>
+      </div>
+    </header>
+
+    {% if runtime %}
+      <section class="runtime-summary">
+        <article class="card runtime-kpi">
+          <span>Servicios detectados</span>
+          <strong>{{ runtime.service_count }}</strong>
+        </article>
+        <article class="card runtime-kpi">
+          <span>Servicios detenidos</span>
+          <strong>{{ runtime.stopped_count }}</strong>
+        </article>
+        <article class="card runtime-kpi">
+          <span>Procesos reportados</span>
+          <strong>{{ runtime.process_count }}</strong>
+        </article>
+        <article class="card runtime-kpi">
+          <span>Puertos abiertos</span>
+          <strong>{{ runtime.port_count }}</strong>
+        </article>
+      </section>
+
+      <section class="runtime-grid">
+        <article class="card runtime-card">
+          <div class="runtime-card-header">
+            <div>
+              <h2>Servicios</h2>
+              <p>Estado actual de servicios Windows o Linux reportados por el agente.</p>
+            </div>
+            <span class="runtime-pill">Ultimo reporte: {{ runtime.record.collected_at|date:"d/m/Y H:i" }}</span>
+          </div>
+          {% if runtime.services %}
+            <div class="runtime-table-wrap">
+              <table class="runtime-table">
+                <thead>
+                  <tr>
+                    <th>Servicio</th>
+                    <th>Estado</th>
+                    <th>Inicio</th>
+                    <th>Descripcion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for service in runtime.services %}
+                    <tr>
+                      <td>{{ service.name|default:"-" }}</td>
+                      <td>
+                        {% if service.state == "active" or service.state == "running" %}
+                          <span class="runtime-pill ok">{{ service.state }}</span>
+                        {% else %}
+                          <span class="runtime-pill warn">{{ service.state|default:"-" }}</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ service.start_type|default:service.sub_state|default:"-" }}</td>
+                      <td class="runtime-muted">{{ service.description|default:service.display_name|default:"-" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="runtime-empty">Aun no hay servicios reportados por el agente.</div>
+          {% endif %}
+        </article>
+
+        <article class="card runtime-card">
+          <div class="runtime-card-header">
+            <div>
+              <h2>Procesos</h2>
+              <p>Procesos principales ordenados por consumo de recursos.</p>
+            </div>
+          </div>
+          {% if runtime.processes %}
+            <div class="runtime-table-wrap">
+              <table class="runtime-table">
+                <thead>
+                  <tr>
+                    <th>PID</th>
+                    <th>Proceso</th>
+                    <th>CPU</th>
+                    <th>RAM MB</th>
+                    <th>Usuario</th>
+                    <th>Ruta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for process in runtime.processes %}
+                    <tr>
+                      <td>{{ process.pid|default:"-" }}</td>
+                      <td>{{ process.name|default:"-" }}</td>
+                      <td>{{ process.cpu_percent|default:"0" }}%</td>
+                      <td>{{ process.memory_mb|default:"0" }}</td>
+                      <td>{{ process.username|default:"-" }}</td>
+                      <td class="runtime-muted">{{ process.path|default:"-" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="runtime-empty">Aun no hay procesos reportados por el agente.</div>
+          {% endif %}
+        </article>
+
+        <article class="card runtime-card">
+          <div class="runtime-card-header">
+            <div>
+              <h2>Puertos abiertos</h2>
+              <p>Puertos TCP en escucha y UDP detectados automaticamente.</p>
+            </div>
+          </div>
+          {% if runtime.ports %}
+            <div class="runtime-table-wrap">
+              <table class="runtime-table">
+                <thead>
+                  <tr>
+                    <th>Protocolo</th>
+                    <th>IP local</th>
+                    <th>Puerto</th>
+                    <th>Estado</th>
+                    <th>PID</th>
+                    <th>Proceso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for port in runtime.ports %}
+                    <tr>
+                      <td>{{ port.protocol|default:"-" }}</td>
+                      <td>{{ port.local_address|default:"-" }}</td>
+                      <td>{{ port.local_port|default:"-" }}</td>
+                      <td><span class="runtime-pill ok">{{ port.status|default:"open" }}</span></td>
+                      <td>{{ port.pid|default:"-" }}</td>
+                      <td>{{ port.process|default:"-" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="runtime-empty">Aun no hay puertos reportados por el agente.</div>
+          {% endif %}
+        </article>
+      </section>
+    {% else %}
+      <section class="card runtime-empty">
+        El agente todavia no ha enviado informacion de servicios, procesos o puertos para este equipo. Actualiza el agente y espera el siguiente reporte.
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>
