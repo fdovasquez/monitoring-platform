@@ -699,7 +699,6 @@ set -e
 
 mkdir -p /opt/monitoring-agent
 AGENT_BASE_URL="{download_base_url}linux"
-AGENT_BINARY="/opt/monitoring-agent/monitoring-agent"
 AGENT_SCRIPT="/opt/monitoring-agent/agent.py"
 SERVICE_FILE="/etc/systemd/system/monitoring-agent.service"
 
@@ -724,32 +723,14 @@ PY
   fi
 }}
 
-if download_file "$AGENT_BASE_URL/monitoring-agent-linux-x86_64" "$AGENT_BINARY"; then
-  chmod 755 "$AGENT_BINARY"
-  cat >"$SERVICE_FILE" <<'EOF'
-[Unit]
-Description=Monitoring Agent Linux
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-EnvironmentFile=/etc/monitoring-agent.env
-ExecStart=/opt/monitoring-agent/monitoring-agent
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-else
-  echo "No se encontro binario standalone en el monitor. Usando agente Python estandar."
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: Python 3 no esta instalado y no hay binario standalone disponible."
-    exit 1
-  fi
-  download_file "$AGENT_BASE_URL/agent.py" "$AGENT_SCRIPT"
-  download_file "$AGENT_BASE_URL/monitoring-agent.service" "$SERVICE_FILE"
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: Python 3 no esta instalado. Instala Python 3 base o usa un paquete standalone validado para esta arquitectura."
+  exit 1
 fi
+
+rm -f /opt/monitoring-agent/monitoring-agent
+download_file "$AGENT_BASE_URL/agent.py" "$AGENT_SCRIPT"
+download_file "$AGENT_BASE_URL/monitoring-agent.service" "$SERVICE_FILE"
 
 cat >/etc/monitoring-agent.env <<'EOF'
 MONITORING_API_URL={api_url}
