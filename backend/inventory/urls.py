@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth.decorators import user_passes_test
 
 from .auth_views import CorporateLoginView, CorporateLogoutView, LoginCodeVerifyView
 from .views import (
@@ -19,6 +20,15 @@ from .views import (
 from .site_views import SiteSettingsView
 
 
+def can_manage_devices(user):
+    return user.is_authenticated and (
+        user.is_superuser or user.groups.filter(name__in=["Administrador", "Editor"]).exists()
+    )
+
+
+device_manager_required = user_passes_test(can_manage_devices)
+
+
 urlpatterns = [
     path("login/", CorporateLoginView.as_view(), name="login"),
     path("login/verify/", LoginCodeVerifyView.as_view(), name="login-verify"),
@@ -31,7 +41,7 @@ urlpatterns = [
         MachineCredentialDeleteView.as_view(),
         name="machine-credential-delete",
     ),
-    path("agents/new/", AgentInstallWizardView.as_view(), name="agent-install"),
+    path("agents/new/", device_manager_required(AgentInstallWizardView.as_view()), name="agent-install"),
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/new/", UserCreateView.as_view(), name="user-create"),
     path("users/<int:pk>/edit/", UserEditView.as_view(), name="user-edit"),
