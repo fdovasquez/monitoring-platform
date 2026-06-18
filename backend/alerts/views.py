@@ -2,8 +2,8 @@ import csv
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Q
 from django.http import HttpResponse
+from django.db.models import Q
 from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -29,6 +29,14 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         history_filter = AlertHistoryFilterForm(self.request.GET or None)
         logs = self.filtered_logs(history_filter)
         cutoff = timezone.now() - timezone.timedelta(days=30)
+        edit_rule = kwargs.get("edit_rule")
+        if edit_rule is None:
+            edit_rule_id = self.request.GET.get("edit_rule")
+            if edit_rule_id:
+                edit_rule = AlertRule.objects.filter(id=edit_rule_id).first()
+        rule_form = kwargs.get("rule_form")
+        if rule_form is None:
+            rule_form = AlertRuleForm(instance=edit_rule) if edit_rule else AlertRuleForm()
         AlertEmailLog.objects.filter(created_at__lt=cutoff).delete()
         context.update(
             {
@@ -36,7 +44,8 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 "smtp_settings": smtp,
                 "smtp_form": kwargs.get("smtp_form") or SmtpSettingsForm(instance=smtp),
                 "test_email_form": kwargs.get("test_email_form") or TestEmailForm(),
-                "rule_form": kwargs.get("rule_form") or AlertRuleForm(),
+                "rule_form": rule_form,
+                "edit_rule": edit_rule,
                 "rules": AlertRule.objects.order_by("name"),
                 "history_filter": history_filter,
                 "logs": logs[:200],
@@ -86,6 +95,20 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 return redirect("/app/alerts/?tab=rules")
             messages.error(request, "No se pudo crear la alerta. Revisa los campos.")
             return self.render_to_response(self.get_context_data(rule_form=form, active_tab="rules"))
+
+        if action.startswith("update_rule:"):
+            rule_id = action.split(":", 1)[1]
+            rule = AlertRule.objects.filter(id=rule_id).first()
+            if not rule:
+                messages.error(request, "La regla seleccionada no existe.")
+                return redirect("/app/alerts/?tab=rules")
+            form = AlertRuleForm(request.POST, instance=rule)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Alerta actualizada correctamente.")
+                return redirect("/app/alerts/?tab=rules")
+            messages.error(request, "No se pudo actualizar la alerta. Revisa los campos.")
+            return self.render_to_response(self.get_context_data(rule_form=form, edit_rule=rule, active_tab="rules"))
 
         if action.startswith("toggle_rule:"):
             rule_id = action.split(":", 1)[1]
