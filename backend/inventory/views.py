@@ -69,7 +69,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
 
         for server in servers:
             sample = server.latest_samples[0] if server.latest_samples else None
-            online = bool(server.last_seen and server.last_seen >= now - timedelta(minutes=5))
+            online = bool(server.last_seen and server.last_seen >= now - timedelta(minutes=1))
             devices.append(
                 {
                     "server": server,
@@ -130,7 +130,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         server = Server.objects.select_related("group", "agent_token").get(id=kwargs["pk"])
         samples = list(server.metric_samples.order_by("-timestamp")[:25])
         latest = samples[0] if samples else None
-        online = bool(server.last_seen and server.last_seen >= timezone.now() - timedelta(minutes=5))
+        online = bool(server.last_seen and server.last_seen >= timezone.now() - timedelta(minutes=1))
         disk_details = self.disk_details(latest)
         disk_count = self.disk_count(latest, disk_details)
         inventory = self.inventory_snapshot(server)
