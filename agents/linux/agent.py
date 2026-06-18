@@ -24,9 +24,9 @@ def read_file(path):
         return ""
 
 
-def command_output(command):
+def command_output(command, timeout=3):
     try:
-        return subprocess.check_output(command, stderr=subprocess.DEVNULL, text=True, timeout=3).strip()
+        return subprocess.check_output(command, stderr=subprocess.DEVNULL, text=True, timeout=timeout).strip()
     except Exception:
         return ""
 
@@ -183,6 +183,96 @@ def collect_ports():
     return ports[:120]
 
 
+def command_exists(command):
+    return bool(command_output(["sh", "-c", f"command -v {command}"]))
+
+
+def collect_firewall_status():
+    checks = [
+        ("firewalld", ["systemctl", "is-active", "firewalld"]),
+        ("ufw", ["systemctl", "is-active", "ufw"]),
+        ("nftables", ["systemctl", "is-active", "nftables"]),
+    ]
+    for name, command in checks:
+        status = command_output(command)
+        if status == "active":
+            return {"enabled": True, "name": name, "detail": f"Activo ({name})"}
+    return {"enabled": False, "name": "", "detail": "No activo"}
+
+
+def collect_os_security_status():
+    if command_exists("getenforce"):
+        status = command_output(["getenforce"])
+        return {
+            "enabled": status in ["Enforcing", "Permissive"],
+            "name": "SELinux",
+            "detail": f"Activo ({status.lower()})" if status else "SELinux no disponible",
+        }
+    if command_exists("aa-status"):
+        status = command_output(["sh", "-c", "aa-status --enabled >/dev/null 2>&1 && echo enabled || echo disabled"])
+        return {
+            "enabled": status == "enabled",
+            "name": "AppArmor",
+            "detail": "Activo (apparmor)" if status == "enabled" else "AppArmor no activo",
+        }
+    return {"enabled": False, "name": "", "detail": "SELinux/AppArmor no detectado"}
+
+
+def collect_disk_encryption_status():
+    lsblk = command_output(["lsblk", "-no", "TYPE"])
+    encrypted = any(line.strip() == "crypt" for line in lsblk.splitlines())
+    root_source = command_output(["findmnt", "-n", "-o", "SOURCE", "/"])
+    return {
+        "enabled": encrypted or root_source.startswith("/dev/mapper/"),
+        "detail": "Disco principal cifrado" if encrypted else "Disco principal no cifrado",
+    }
+
+
+def collect_patch_status():
+    cache_path = "/tmp/monitoring-agent-patch-status"
+    try:
+        if os.path.exists(cache_path) and time.time() - os.path.getmtime(cache_path) < 21600:
+            output = read_file(cache_path)
+            return {
+                "up_to_date": output == "current",
+                "detail": "Al dia" if output == "current" else ("Actualizaciones pendientes" if output == "pending" else "No evaluado"),
+            }
+    except OSError:
+        pass
+
+    if command_exists("dnf"):
+        output = command_output(["sh", "-c", "dnf check-update --quiet >/tmp/monitoring-agent-updates 2>/dev/null; rc=$?; if [ $rc -eq 100 ]; then echo pending; elif [ $rc -eq 0 ]; then echo current; else echo unknown; fi"], timeout=45)
+    elif command_exists("yum"):
+        output = command_output(["sh", "-c", "yum check-update --quiet >/tmp/monitoring-agent-updates 2>/dev/null; rc=$?; if [ $rc -eq 100 ]; then echo pending; elif [ $rc -eq 0 ]; then echo current; else echo unknown; fi"], timeout=45)
+    elif command_exists("apt"):
+        output = command_output(["sh", "-c", "apt list --upgradable 2>/dev/null | tail -n +2 | head -n 1 | grep -q . && echo pending || echo current"], timeout=45)
+    else:
+        output = "unknown"
+    try:
+        with open(cache_path, "w", encoding="utf-8") as handle:
+            handle.write(output)
+    except OSError:
+        pass
+    return {
+        "up_to_date": output == "current",
+        "detail": "Al dia" if output == "current" else ("Actualizaciones pendientes" if output == "pending" else "No evaluado"),
+    }
+
+
+def collect_security_status():
+    os_version = platform.platform()
+    return {
+        "disk_encryption": collect_disk_encryption_status(),
+        "firewall": collect_firewall_status(),
+        "os_security": collect_os_security_status(),
+        "patch_compliance": collect_patch_status(),
+        "os_version": {
+            "supported": True,
+            "detail": os_version,
+        },
+    }
+
+
 def collect_metrics():
     disk_root = psutil.disk_usage("/")
     disks = []
@@ -215,6 +305,7 @@ def collect_metrics():
             "disks": disks,
             "uptime_seconds": uptime_seconds,
             "load_1m": os.getloadavg()[0] if hasattr(os, "getloadavg") else None,
+            "security": collect_security_status(),
         },
         "inventory": collect_inventory(),
         "services": collect_services(),
