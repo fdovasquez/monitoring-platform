@@ -17,6 +17,7 @@ from .views import (
     UserDeleteView,
     UserEditView,
     UserListView,
+    agent_download,
 )
 from .runtime_views import DeviceRuntimeView
 from .site_views import SiteSettingsView
@@ -52,6 +53,7 @@ urlpatterns = [
         name="machine-credential-delete",
     ),
     path("agents/new/", device_manager_required(AgentInstallWizardView.as_view()), name="agent-install"),
+    path("agents/download/<str:platform>/<str:filename>", agent_download, name="agent-download"),
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/new/", UserCreateView.as_view(), name="user-create"),
     path("users/<int:pk>/edit/", UserEditView.as_view(), name="user-edit"),

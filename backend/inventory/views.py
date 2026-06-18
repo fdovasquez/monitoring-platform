@@ -1,10 +1,12 @@
 from datetime import timedelta
 import uuid
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
+from django.http import FileResponse, Http404
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
@@ -46,6 +48,18 @@ def user_can_manage_credentials(user):
 
 def user_can_manage_devices(user):
     return user.is_superuser or user.groups.filter(name__in=["Administrador", "Editor"]).exists()
+
+
+def agent_download(request, platform, filename):
+    allowed_files = {
+        ("linux", "agent.py"): settings.BASE_DIR.parent / "agents" / "linux" / "agent.py",
+        ("linux", "monitoring-agent.service"): settings.BASE_DIR.parent / "agents" / "linux" / "monitoring-agent.service",
+        ("windows", "agent.ps1"): settings.BASE_DIR.parent / "agents" / "windows" / "agent.ps1",
+    }
+    file_path = allowed_files.get((platform, filename))
+    if not file_path or not file_path.exists():
+        raise Http404("Archivo de agente no encontrado.")
+    return FileResponse(open(file_path, "rb"), as_attachment=True, filename=filename)
 
 
 class AdminRoleRequiredMixin(UserPassesTestMixin):
@@ -631,13 +645,14 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
             if server:
                 token, _ = AgentToken.objects.get_or_create(server=server)
                 api_url = self.api_url()
+                download_base_url = self.download_base_url()
                 context.update(
                     {
                         "created_server": server,
                         "agent_token": token,
-                        "linux_script": self.linux_script(server, token.token, api_url, "dnf"),
-                        "ubuntu_script": self.linux_script(server, token.token, api_url, "apt"),
-                        "windows_script": self.windows_script(server, token.token, api_url),
+                        "linux_script": self.linux_script(token.token, api_url, download_base_url, "dnf"),
+                        "ubuntu_script": self.linux_script(token.token, api_url, download_base_url, "apt"),
+                        "windows_script": self.windows_script(token.token, api_url, download_base_url),
                     }
                 )
         return context
@@ -669,25 +684,39 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
     def api_url(self):
         return self.request.build_absolute_uri("/api/v1/metrics/ingest/")
 
+    def download_base_url(self):
+        return self.request.build_absolute_uri("/app/agents/download/")
+
     @staticmethod
-    def linux_script(server, token, api_url, package_manager):
-        installer = "dnf install -y git python3 python3-pip" if package_manager == "dnf" else "apt update && apt install -y git python3 python3-venv python3-pip"
+    def linux_script(token, api_url, download_base_url, package_manager):
+        installer = (
+            "dnf install -y python3 python3-requests python3-psutil"
+            if package_manager == "dnf"
+            else "apt update && apt install -y python3 python3-venv python3-requests python3-psutil"
+        )
         return f"""#!/bin/bash
 set -e
 
 {installer}
-cd /opt
-if [ ! -d /opt/monitoring-platform ]; then
-  git clone https://github.com/fdovasquez/monitoring-platform.git /opt/monitoring-platform
-else
-  cd /opt/monitoring-platform && git pull
-fi
 
 mkdir -p /opt/monitoring-agent
-cp /opt/monitoring-platform/agents/linux/agent.py /opt/monitoring-agent/agent.py
-python3 -m venv /opt/monitoring-agent/.venv
-/opt/monitoring-agent/.venv/bin/pip install --upgrade pip
-/opt/monitoring-agent/.venv/bin/pip install psutil requests
+python3 - <<'PY'
+from pathlib import Path
+from urllib.request import urlopen
+
+downloads = [
+    ("{download_base_url}linux/agent.py", "/opt/monitoring-agent/agent.py"),
+    ("{download_base_url}linux/monitoring-agent.service", "/etc/systemd/system/monitoring-agent.service"),
+]
+for url, path in downloads:
+    data = urlopen(url, timeout=30).read()
+    Path(path).write_bytes(data)
+PY
+
+if ! python3 -m venv --system-site-packages /opt/monitoring-agent/.venv; then
+  mkdir -p /opt/monitoring-agent/.venv/bin
+  ln -sf /usr/bin/python3 /opt/monitoring-agent/.venv/bin/python
+fi
 
 cat >/etc/monitoring-agent.env <<'EOF'
 MONITORING_API_URL={api_url}
@@ -697,16 +726,16 @@ MONITORING_VERIFY_TLS=false
 EOF
 
 chmod 600 /etc/monitoring-agent.env
-cp /opt/monitoring-platform/agents/linux/monitoring-agent.service /etc/systemd/system/monitoring-agent.service
+chmod 755 /opt/monitoring-agent
 systemctl daemon-reload
 systemctl enable --now monitoring-agent
 systemctl status monitoring-agent --no-pager
 """
 
     @staticmethod
-    def windows_script(server, token, api_url):
+    def windows_script(token, api_url, download_base_url):
         return f"""New-Item -ItemType Directory -Force "C:\\ProgramData\\MonitoringAgent"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/fdovasquez/monitoring-platform/main/agents/windows/agent.ps1" -OutFile "C:\\ProgramData\\MonitoringAgent\\agent.ps1"
+Invoke-WebRequest -Uri "{download_base_url}windows/agent.ps1" -OutFile "C:\\ProgramData\\MonitoringAgent\\agent.ps1"
 
 @'
 $env:MONITORING_API_URL = "{api_url}"
