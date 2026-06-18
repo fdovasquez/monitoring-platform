@@ -13,10 +13,18 @@
       <a class="{% if active_menu == 'devices' %}active{% endif %}" href="{% url 'device-list' %}">
         Dispositivos{% if total_devices %} <span class="nav-count">{{ total_devices }}</span>{% endif %}
       </a>
-      <a class="{% if active_menu == 'agents' %}active{% endif %}" href="{% url 'agent-install' %}">Instalar agente</a>
-      <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
-      <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
-      <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}">Alertas</a>
+      {% if can_manage_devices %}
+        <a class="{% if active_menu == 'agents' %}active{% endif %}" href="{% url 'agent-install' %}">Instalar agente</a>
+      {% endif %}
+      {% if can_manage_users %}
+        <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
+      {% endif %}
+      {% if can_manage_site_settings %}
+        <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
+      {% endif %}
+      {% if can_manage_alerts %}
+        <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}">Alertas</a>
+      {% endif %}
     </nav>
     <div class="app-actions">
       <details class="account-menu">
