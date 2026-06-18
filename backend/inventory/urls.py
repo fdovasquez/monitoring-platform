@@ -1,5 +1,5 @@
 from django.urls import path
-from django.contrib.auth.decorators import user_passes_test
+from django.core.exceptions import PermissionDenied
 
 from .auth_views import CorporateLoginView, CorporateLogoutView, LoginCodeVerifyView
 from .views import (
@@ -26,7 +26,13 @@ def can_manage_devices(user):
     )
 
 
-device_manager_required = user_passes_test(can_manage_devices)
+def device_manager_required(view_func):
+    def wrapped(request, *args, **kwargs):
+        if can_manage_devices(request.user):
+            return view_func(request, *args, **kwargs)
+        raise PermissionDenied
+
+    return wrapped
 
 
 urlpatterns = [
