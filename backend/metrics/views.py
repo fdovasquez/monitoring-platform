@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from inventory.models import AgentToken, ServerInventory
+from inventory.models import AgentToken, ServerInventory, ServerRuntimeSnapshot
 from alerts.services import evaluate_metric_sample
 
 from .models import MetricSample
@@ -62,6 +62,13 @@ class MetricIngestView(APIView):
                 payload=request.data,
             )
             update_inventory(server, data.get("inventory", {}), data["timestamp"])
+            update_runtime_snapshot(
+                server,
+                data.get("services", []),
+                data.get("processes", []),
+                data.get("ports", []),
+                data["timestamp"],
+            )
 
         evaluate_metric_sample(sample)
         return Response({"status": "ok", "sample_id": sample.id}, status=status.HTTP_201_CREATED)
@@ -102,3 +109,27 @@ def update_inventory(server, inventory, collected_at):
         "collected_at": collected_at,
     }
     ServerInventory.objects.update_or_create(server=server, defaults=defaults)
+
+
+def clean_list(value):
+    return value if isinstance(value, list) else []
+
+
+def update_runtime_snapshot(server, services, processes, ports, collected_at):
+    services = clean_list(services)
+    processes = clean_list(processes)
+    ports = clean_list(ports)
+    if not services and not processes and not ports:
+        return
+    defaults = {
+        "services": services[:250],
+        "processes": processes[:100],
+        "ports": ports[:250],
+        "raw_data": {
+            "services": services,
+            "processes": processes,
+            "ports": ports,
+        },
+        "collected_at": collected_at,
+    }
+    ServerRuntimeSnapshot.objects.update_or_create(server=server, defaults=defaults)
