@@ -133,7 +133,7 @@ class CorporateLoginView(TemplateView):
 
         user = form.get_user()
         next_url = safe_next_url(request)
-        if user.is_superuser:
+        if user.is_superuser or user.groups.filter(name="Administrador").exists():
             login(request, user)
             return redirect(next_url)
 
