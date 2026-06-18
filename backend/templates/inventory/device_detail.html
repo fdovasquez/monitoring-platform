@@ -40,6 +40,9 @@
         <button class="btn secondary" type="button" onclick="window.location.reload()">
           <span class="btn-icon refresh-icon" aria-hidden="true"></span> Actualizar
         </button>
+        <a class="btn secondary" href="{% url 'device-runtime' server.id %}">
+          Runtime
+        </a>
         {% if is_linux and can_manage_credentials %}
           <button class="btn primary" type="button" data-open-modal="console-modal"><span class="btn-icon terminal-icon" aria-hidden="true"></span> Abrir consola</button>
         {% endif %}
