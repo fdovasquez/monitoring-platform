@@ -700,15 +700,30 @@ set -e
 mkdir -p /opt/monitoring-agent
 AGENT_BASE_URL="{download_base_url}linux"
 AGENT_BINARY="/opt/monitoring-agent/monitoring-agent"
+CA_CERT="/opt/monitoring-agent/monitor-ca-chain.pem"
 SERVICE_FILE="/etc/systemd/system/monitoring-agent.service"
+
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "ERROR: Se requiere openssl para registrar el certificado del monitor."
+  exit 1
+fi
+
+MONITOR_HOST="$(printf '%s' "{api_url}" | sed -E 's#https?://([^/:]+).*#\\1#')"
+echo | openssl s_client -showcerts -connect "${{MONITOR_HOST}}:443" -servername "${{MONITOR_HOST}}" 2>/dev/null \
+  | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > "$CA_CERT"
+
+if [ ! -s "$CA_CERT" ]; then
+  echo "ERROR: No se pudo obtener el certificado del monitor ${{MONITOR_HOST}}."
+  exit 1
+fi
 
 download_file() {{
   local url="$1"
   local destination="$2"
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$url" -o "$destination"
+    curl -fsSL --cacert "$CA_CERT" "$url" -o "$destination"
   elif command -v wget >/dev/null 2>&1; then
-    wget -q "$url" -O "$destination"
+    wget -q --ca-certificate="$CA_CERT" "$url" -O "$destination"
   else
     echo "ERROR: Se requiere curl o wget para descargar el agente desde el monitor interno."
     exit 1
@@ -728,6 +743,7 @@ MONITORING_API_URL={api_url}
 MONITORING_AGENT_TOKEN={token}
 MONITORING_INTERVAL=60
 MONITORING_VERIFY_TLS=true
+MONITORING_CA_FILE=/opt/monitoring-agent/monitor-ca-chain.pem
 EOF
 
 chmod 600 /etc/monitoring-agent.env
