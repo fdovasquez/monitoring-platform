@@ -757,7 +757,14 @@ $TaskCommand = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$Agent
 schtasks.exe /Delete /TN "MonitoringAgent" /F 2>$null | Out-Null
 schtasks.exe /Create /TN "MonitoringAgent" /TR $TaskCommand /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /F | Out-Null
 schtasks.exe /Run /TN "MonitoringAgent" | Out-Null
+Write-Host "Instalacion completada. Ejecutando una prueba de envio..." -ForegroundColor Cyan
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $AgentScript
+if ($LASTEXITCODE -eq 0) {{
+  Write-Host "Prueba enviada correctamente al servidor de monitoreo." -ForegroundColor Green
+}}
+Write-Host ""
 schtasks.exe /Query /TN "MonitoringAgent" /V /FO LIST
+Read-Host "Presiona Enter para cerrar"
 """
 
 
