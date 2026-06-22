@@ -1,5 +1,5 @@
 Exit code: 0
-Wall time: 0.7 seconds
+Wall time: 0.6 seconds
 Output:
 from datetime import timedelta
 import uuid
@@ -702,7 +702,7 @@ set -e
 
 mkdir -p /opt/monitoring-agent
 AGENT_BASE_URL="{download_base_url}linux"
-AGENT_SCRIPT="/opt/monitoring-agent/agent.py"
+AGENT_BINARY="/opt/monitoring-agent/monitoring-agent"
 SERVICE_FILE="/etc/systemd/system/monitoring-agent.service"
 
 download_file() {{
@@ -712,38 +712,29 @@ download_file() {{
     curl -fsSL "$url" -o "$destination"
   elif command -v wget >/dev/null 2>&1; then
     wget -q "$url" -O "$destination"
-  elif command -v python3 >/dev/null 2>&1; then
-    python3 - "$url" "$destination" <<'PY'
-import sys
-from pathlib import Path
-from urllib.request import urlopen
-url, destination = sys.argv[1], sys.argv[2]
-Path(destination).write_bytes(urlopen(url, timeout=30).read())
-PY
   else
-    echo "ERROR: No existe curl, wget ni python3 para descargar el agente desde el monitor."
+    echo "ERROR: Se requiere curl o wget para descargar el agente desde el monitor interno."
     exit 1
   fi
 }}
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "ERROR: Python 3 no esta instalado. Instala Python 3 base o usa un paquete standalone validado para esta arquitectura."
+if [ "$(uname -m)" != "x86_64" ]; then
+  echo "ERROR: El paquete actual es compatible con Linux x86_64. Arquitectura detectada: $(uname -m)"
   exit 1
 fi
 
-rm -f /opt/monitoring-agent/monitoring-agent
-download_file "$AGENT_BASE_URL/agent.py" "$AGENT_SCRIPT"
+download_file "$AGENT_BASE_URL/monitoring-agent-linux-x86_64" "$AGENT_BINARY"
 download_file "$AGENT_BASE_URL/monitoring-agent.service" "$SERVICE_FILE"
 
 cat >/etc/monitoring-agent.env <<'EOF'
 MONITORING_API_URL={api_url}
 MONITORING_AGENT_TOKEN={token}
 MONITORING_INTERVAL=60
-MONITORING_VERIFY_TLS=false
+MONITORING_VERIFY_TLS=true
 EOF
 
 chmod 600 /etc/monitoring-agent.env
-chmod 755 /opt/monitoring-agent
+chmod 755 "$AGENT_BINARY"
 systemctl daemon-reload
 systemctl enable --now monitoring-agent
 systemctl status monitoring-agent --no-pager
