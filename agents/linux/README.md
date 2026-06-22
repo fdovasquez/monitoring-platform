@@ -1,18 +1,31 @@
-# Agente Linux
+Exit code: 0
+Wall time: 0.7 seconds
+Output:
+# Agente Linux independiente
 
-Agente propio de ejemplo para enviar metricas basicas a la API de la plataforma.
+El instalador de la plataforma descarga un binario estatico para Linux x86_64
+desde el propio servidor de monitoreo. Los equipos Oracle Linux, RHEL, Rocky,
+CentOS, Ubuntu o Debian no requieren Python, pip, Git, dnf ni acceso a Internet.
 
-## Instalacion rapida
+## Construccion unica en el monitor
+
+Ejecuta una vez en el servidor de monitoreo:
 
 ```bash
-sudo mkdir -p /opt/monitoring-agent
-sudo cp agent.py /opt/monitoring-agent/agent.py
-sudo python3 -m venv /opt/monitoring-agent/.venv
-sudo /opt/monitoring-agent/.venv/bin/pip install psutil requests
-sudo cp agent.env.example /etc/monitoring-agent.env
-sudo vim /etc/monitoring-agent.env
-sudo chmod 600 /etc/monitoring-agent.env
-sudo cp monitoring-agent.service /etc/systemd/system/monitoring-agent.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now monitoring-agent
+sudo apt install -y golang-go
+cd /opt/monitoring-platform
+./agents/linux/build_standalone.sh
+file agents/dist/linux/monitoring-agent-linux-x86_64
 ```
+
+El archivo generado queda disponible para los instaladores internos en:
+
+```text
+/app/agents/download/linux/monitoring-agent-linux-x86_64
+```
+
+## Requisito minimo del cliente
+
+El cliente solo necesita `curl` o `wget` para bajar el binario desde el
+monitor interno y `systemd` para ejecutarlo como servicio.
+
