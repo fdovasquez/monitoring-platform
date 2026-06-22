@@ -1,11 +1,9 @@
-Exit code: 0
-Wall time: 0.7 seconds
-Output:
 package main
 
 import (
     "bytes"
     "crypto/tls"
+    "crypto/x509"
     "encoding/json"
     "fmt"
     "io"
@@ -138,7 +136,21 @@ func main() {
     if apiURL == "" || token == "" { fmt.Fprintln(os.Stderr, "MONITORING_API_URL and MONITORING_AGENT_TOKEN are required"); os.Exit(1) }
     interval, err := time.ParseDuration(env("MONITORING_INTERVAL", "60")+"s"); if err != nil { interval = time.Minute }
     transport := &http.Transport{}
-    if strings.EqualFold(env("MONITORING_VERIFY_TLS", "true"), "false") { transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} }
+    tlsConfig := &tls.Config{}
+    hasTLSConfig := false
+    if caFile := os.Getenv("MONITORING_CA_FILE"); caFile != "" {
+        pemData, err := os.ReadFile(caFile)
+        if err != nil { fmt.Fprintf(os.Stderr, "No se pudo leer MONITORING_CA_FILE: %v\n", err); os.Exit(1) }
+        roots := x509.NewCertPool()
+        if !roots.AppendCertsFromPEM(pemData) { fmt.Fprintln(os.Stderr, "MONITORING_CA_FILE no contiene certificados PEM validos"); os.Exit(1) }
+        tlsConfig.RootCAs = roots
+        hasTLSConfig = true
+    }
+    if strings.EqualFold(env("MONITORING_VERIFY_TLS", "true"), "false") {
+        tlsConfig.InsecureSkipVerify = true
+        hasTLSConfig = true
+    }
+    if hasTLSConfig { transport.TLSClientConfig = tlsConfig }
     client := &http.Client{Timeout: 20*time.Second, Transport: transport}
     for { if err := send(client, apiURL, token); err != nil { fmt.Fprintf(os.Stderr, "%s error=%v\n", time.Now().UTC().Format(time.RFC3339), err) }; time.Sleep(interval) }
 }
