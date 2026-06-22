@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.7 seconds
+Output:
 from datetime import timedelta
 import uuid
 
@@ -748,19 +751,25 @@ systemctl status monitoring-agent --no-pager
 
     @staticmethod
     def windows_script(token, api_url, download_base_url):
-        return f"""New-Item -ItemType Directory -Force "C:\\ProgramData\\MonitoringAgent"
-Invoke-WebRequest -Uri "{download_base_url}windows/agent.ps1" -OutFile "C:\\ProgramData\\MonitoringAgent\\agent.ps1"
+        return f"""$ErrorActionPreference = "Stop"
+$AgentDirectory = "C:\\ProgramData\\MonitoringAgent"
+$AgentScript = Join-Path $AgentDirectory "agent.ps1"
+$ConfigFile = Join-Path $AgentDirectory "agent.env.ps1"
 
-@'
-$env:MONITORING_API_URL = "{api_url}"
-$env:MONITORING_AGENT_TOKEN = "{token}"
-$env:MONITORING_SKIP_TLS_VERIFY = "true"
-'@ | Set-Content "C:\\ProgramData\\MonitoringAgent\\agent.env.ps1"
+New-Item -ItemType Directory -Path $AgentDirectory -Force | Out-Null
+Invoke-WebRequest -Uri "{download_base_url}windows/agent.ps1" -OutFile $AgentScript
 
-$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\\ProgramData\\MonitoringAgent\\agent.ps1"
-$Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 1)
+@(
+  '$env:MONITORING_API_URL = "{api_url}"'
+  '$env:MONITORING_AGENT_TOKEN = "{token}"'
+  '$env:MONITORING_SKIP_TLS_VERIFY = "true"'
+) | Set-Content -Path $ConfigFile -Encoding UTF8
+
+$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$AgentScript`""
+$Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 3650)
 $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest
-Register-ScheduledTask -TaskName "MonitoringAgent" -Action $Action -Trigger $Trigger -Principal $Principal -Force
+Unregister-ScheduledTask -TaskName "MonitoringAgent" -Confirm:$false -ErrorAction SilentlyContinue
+Register-ScheduledTask -TaskName "MonitoringAgent" -Action $Action -Trigger $Trigger -Principal $Principal -Force | Out-Null
 Start-ScheduledTask -TaskName "MonitoringAgent"
 Get-ScheduledTaskInfo -TaskName "MonitoringAgent"
 """
@@ -898,3 +907,4 @@ class LogoutView(LoginRequiredMixin, TemplateView):
     def post(self, request):
         logout(request)
         return redirect("login")
+
