@@ -765,13 +765,11 @@ Invoke-WebRequest -Uri "{download_base_url}windows/agent.ps1" -OutFile $AgentScr
   '$env:MONITORING_SKIP_TLS_VERIFY = "true"'
 ) | Set-Content -Path $ConfigFile -Encoding UTF8
 
-$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$AgentScript`""
-$Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 3650)
-$Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest
-Unregister-ScheduledTask -TaskName "MonitoringAgent" -Confirm:$false -ErrorAction SilentlyContinue
-Register-ScheduledTask -TaskName "MonitoringAgent" -Action $Action -Trigger $Trigger -Principal $Principal -Force | Out-Null
-Start-ScheduledTask -TaskName "MonitoringAgent"
-Get-ScheduledTaskInfo -TaskName "MonitoringAgent"
+$TaskCommand = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$AgentScript`""
+schtasks.exe /Delete /TN "MonitoringAgent" /F 2>$null | Out-Null
+schtasks.exe /Create /TN "MonitoringAgent" /TR $TaskCommand /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /F | Out-Null
+schtasks.exe /Run /TN "MonitoringAgent" | Out-Null
+schtasks.exe /Query /TN "MonitoringAgent" /V /FO LIST
 """
 
 
