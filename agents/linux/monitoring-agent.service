@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.7 seconds
+Output:
 [Unit]
 Description=Monitoring Agent Linux
 After=network-online.target
@@ -5,9 +8,10 @@ Wants=network-online.target
 
 [Service]
 EnvironmentFile=/etc/monitoring-agent.env
-ExecStart=/usr/bin/env python3 /opt/monitoring-agent/agent.py
+ExecStart=/opt/monitoring-agent/monitoring-agent
 Restart=always
 RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
+
