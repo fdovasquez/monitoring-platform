@@ -3,6 +3,8 @@
 Thumbs.db
 *.swp
 *.swo
+__pycache__/
+*.py[cod]
 
 # Local notes and secrets
 .env
