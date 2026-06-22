@@ -45,6 +45,7 @@
     <nav class="alert-tabs settings-tabs" aria-label="Secciones de configuracion">
       <a class="{% if active_settings_tab == 'site' %}active{% endif %}" href="{% url 'site-settings' %}?tab=site">Personalizacion</a>
       <a class="{% if active_settings_tab == 'smtp' %}active{% endif %}" href="{% url 'site-settings' %}?tab=smtp">Correo SMTP</a>
+      <a class="{% if active_settings_tab == 'https' %}active{% endif %}" href="{% url 'site-settings' %}?tab=https">HTTPS y certificados</a>
     </nav>
 
     {% if active_settings_tab == 'site' %}
@@ -176,6 +177,61 @@
             </div>
             <button class="submit-button" type="submit">Enviar correo de prueba</button>
           </form>
+        </section>
+      </section>
+    {% endif %}
+
+    {% if active_settings_tab == 'https' %}
+      <section class="settings-layout tls-layout">
+        <form class="profile-card settings-card" method="post" enctype="multipart/form-data" data-loading-form>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_tls">
+          <div class="profile-card-head">
+            <div>
+              <h2>Certificado HTTPS</h2>
+              <p>Carga un certificado PEM y su llave privada. La llave se cifra antes de guardarse.</p>
+            </div>
+            {% if tls_certificate.is_configured %}<span class="health-ok">Certificado cargado</span>{% else %}<span class="health-warn">Sin certificado</span>{% endif %}
+          </div>
+          <div class="form-grid">
+            <div class="field field-wide">
+              <label for="{{ tls_form.domain.id_for_label }}">{{ tls_form.domain.label }}</label>
+              {{ tls_form.domain }}
+              {% if tls_form.domain.help_text %}<small>{{ tls_form.domain.help_text }}</small>{% endif %}
+              {% for error in tls_form.domain.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ tls_form.certificate_file.id_for_label }}">Certificado publico</label>
+              {{ tls_form.certificate_file }}
+              <small>Archivo PEM, CRT o CER. Incluye la cadena intermedia si corresponde.</small>
+              {% for error in tls_form.certificate_file.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ tls_form.private_key_file.id_for_label }}">Llave privada</label>
+              {{ tls_form.private_key_file }}
+              <small>Archivo PEM sin contraseña. Nunca se muestra nuevamente en pantalla.</small>
+              {% for error in tls_form.private_key_file.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+          </div>
+          {% if tls_certificate.is_configured %}
+            <label class="inline-check tls-remove-check">{{ tls_form.remove_certificate }}<span>Eliminar el certificado HTTPS almacenado</span></label>
+          {% endif %}
+          {% for error in tls_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          <div class="form-actions">
+            <a class="ghost-button" href="{% url 'device-list' %}">Cancelar</a>
+            <button class="submit-button" type="submit" data-loading-label="Guardando...">Guardar certificado</button>
+          </div>
+        </form>
+        <section class="profile-card settings-card tls-guide">
+          <div class="profile-card-head"><div><h2>Activar HTTPS</h2><p>Cuando guardes el certificado, ejecuta estos pasos como <code>root</code> en el servidor de monitoreo.</p></div></div>
+          <ol><li>Exporta el certificado cifrado hacia la carpeta segura del sistema.</li><li>Instala la configuracion Nginx incluida con la plataforma.</li><li>Habilita el sitio y recarga Nginx.</li></ol>
+          <pre>cd /opt/monitoring-platform/backend
+set -a; source /etc/monitoring-platform.env; set +a
+.venv/bin/python manage.py export_tls_certificate
+sudo cp /opt/monitoring-platform/deploy/nginx-https.conf /etc/nginx/sites-available/monitoring-platform
+sudo ln -sfn /etc/nginx/sites-available/monitoring-platform /etc/nginx/sites-enabled/monitoring-platform
+sudo nginx -t && sudo systemctl reload nginx</pre>
+          <p class="tls-note">Antes de usarlo, reemplaza <code>MONITOR.DOMINIO.O.IP</code> en el archivo Nginx por el dominio o IP informado arriba. El nombre debe coincidir con el certificado.</p>
         </section>
       </section>
     {% endif %}

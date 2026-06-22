@@ -1,6 +1,9 @@
 from django import forms
 
-from .models import SiteSettings
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+
+from .models import SiteSettings, TlsCertificate
 
 
 class SiteSettingsForm(forms.ModelForm):
@@ -60,3 +63,70 @@ class SiteSettingsForm(forms.ModelForm):
         if commit:
             settings.save()
         return settings
+
+
+class TlsCertificateForm(forms.ModelForm):
+    certificate_file = forms.FileField(label="Certificado", required=False)
+    private_key_file = forms.FileField(label="Llave privada", required=False)
+    remove_certificate = forms.BooleanField(label="Eliminar certificado HTTPS", required=False)
+
+    max_file_size = 2 * 1024 * 1024
+
+    class Meta:
+        model = TlsCertificate
+        fields = ["domain"]
+        labels = {"domain": "Dominio o IP para HTTPS"}
+        help_texts = {"domain": "Ejemplo: monitor.empresa.cl. Para una IP interna, ingresa la IP exacta."}
+
+    def clean_certificate_file(self):
+        certificate = self.cleaned_data.get("certificate_file")
+        if not certificate:
+            return certificate
+        if certificate.size > self.max_file_size:
+            raise forms.ValidationError("El certificado no puede superar 2 MB.")
+        content = certificate.read()
+        try:
+            x509.load_pem_x509_certificate(content)
+        except ValueError as exc:
+            raise forms.ValidationError("El archivo no contiene un certificado PEM valido.") from exc
+        certificate.seek(0)
+        return certificate
+
+    def clean_private_key_file(self):
+        private_key = self.cleaned_data.get("private_key_file")
+        if not private_key:
+            return private_key
+        if private_key.size > self.max_file_size:
+            raise forms.ValidationError("La llave privada no puede superar 2 MB.")
+        content = private_key.read()
+        try:
+            serialization.load_pem_private_key(content, password=None)
+        except (TypeError, ValueError) as exc:
+            raise forms.ValidationError("La llave privada debe estar en formato PEM y sin clave adicional.") from exc
+        private_key.seek(0)
+        return private_key
+
+    def clean(self):
+        cleaned_data = super().clean()
+        has_certificate = bool(cleaned_data.get("certificate_file"))
+        has_key = bool(cleaned_data.get("private_key_file"))
+        removing = cleaned_data.get("remove_certificate")
+        if has_certificate != has_key:
+            raise forms.ValidationError("Debes cargar el certificado y su llave privada juntos.")
+        if removing and (has_certificate or has_key):
+            raise forms.ValidationError("No puedes eliminar y cargar un certificado en la misma accion.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        certificate = super().save(commit=False)
+        if self.cleaned_data.get("remove_certificate"):
+            certificate.clear()
+        elif self.cleaned_data.get("certificate_file"):
+            certificate_file = self.cleaned_data["certificate_file"]
+            private_key_file = self.cleaned_data["private_key_file"]
+            certificate.certificate_pem = certificate_file.read().decode("utf-8")
+            certificate.set_private_key(private_key_file.read().decode("utf-8"))
+            certificate.certificate_filename = certificate_file.name
+        if commit:
+            certificate.save()
+        return certificate

@@ -104,3 +104,8 @@ def security_assessment(sample):
 @register.filter
 def security_score(sample):
     return security_assessment(sample)["score"]
+
+
+@register.filter
+def security_tone(sample):
+    return security_assessment(sample)["tone"]

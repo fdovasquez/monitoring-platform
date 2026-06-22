@@ -103,6 +103,41 @@
   border-radius: 3px;
 }
 
+.tls-layout {
+  grid-template-columns: minmax(0, 760px) minmax(300px, 1fr);
+  gap: 16px;
+}
+
+.tls-remove-check {
+  margin-top: 14px;
+}
+
+.tls-guide ol {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--ink-600);
+  font-size: 14px;
+}
+
+.tls-guide pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 14px;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.tls-note {
+  margin: 12px 0 0;
+  color: var(--ink-500);
+  font-size: 13px;
+}
+
 @media (max-width: 640px) {
   .settings-layout {
     grid-template-columns: 1fr;

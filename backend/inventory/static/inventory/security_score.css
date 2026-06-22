@@ -78,7 +78,7 @@
   border-radius: 999px 999px 0 0;
   background:
     radial-gradient(circle at 50% 100%, var(--detail-card) 0 47%, transparent 48%),
-    conic-gradient(from 250deg at 50% 100%, #22c55e 0 calc(var(--score) * 1%), #e2e8f0 0 100%);
+    conic-gradient(from 250deg at 50% 100%, var(--risk-color, #22c55e) 0 calc(var(--score) * 1%), #e2e8f0 0 100%);
   clip-path: inset(0 0 38% 0);
 }
 
@@ -111,10 +111,14 @@
   position: absolute;
   right: 8%;
   bottom: 8%;
-  color: #22c55e;
+  color: var(--risk-color, #22c55e);
   font-size: 18px;
   font-weight: 400;
 }
+
+.security-score-card:has(.security-risk.warning) { --risk-color: #d97706; }
+.security-score-card:has(.security-risk.danger) { --risk-color: #dc2626; }
+.security-score-card:has(.security-risk.success) { --risk-color: #16a34a; }
 
 .security-check-list {
   display: grid;
@@ -200,7 +204,7 @@
   .security-gauge-arc {
     background:
       radial-gradient(circle at 50% 100%, var(--detail-card) 0 47%, transparent 48%),
-      conic-gradient(from 250deg at 50% 100%, #22c55e 0 calc(var(--score) * 1%), #334155 0 100%);
+      conic-gradient(from 250deg at 50% 100%, var(--risk-color, #22c55e) 0 calc(var(--score) * 1%), #334155 0 100%);
   }
 
   .security-gauge-needle {

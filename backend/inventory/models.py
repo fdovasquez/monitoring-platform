@@ -69,6 +69,50 @@ class SiteSettings(models.Model):
         return self.site_name
 
 
+class TlsCertificate(models.Model):
+    """Single TLS certificate stored by the platform for the Nginx export command."""
+
+    domain = models.CharField(max_length=255, blank=True)
+    certificate_pem = models.TextField(blank=True)
+    encrypted_private_key = models.TextField(blank=True)
+    certificate_filename = models.CharField(max_length=255, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Certificado HTTPS"
+        verbose_name_plural = "Certificados HTTPS"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        certificate, _ = cls.objects.get_or_create(pk=1)
+        return certificate
+
+    @property
+    def is_configured(self):
+        return bool(self.certificate_pem and self.encrypted_private_key)
+
+    def set_private_key(self, private_key):
+        self.encrypted_private_key = credential_cipher().encrypt(private_key.encode("utf-8")).decode("utf-8")
+
+    def get_private_key(self):
+        if not self.encrypted_private_key:
+            return ""
+        return credential_cipher().decrypt(self.encrypted_private_key.encode("utf-8")).decode("utf-8")
+
+    def clear(self):
+        self.domain = ""
+        self.certificate_pem = ""
+        self.encrypted_private_key = ""
+        self.certificate_filename = ""
+
+    def __str__(self):
+        return self.domain or "Certificado HTTPS"
+
+
 class Server(models.Model):
     OS_LINUX = "linux"
     OS_WINDOWS = "windows"

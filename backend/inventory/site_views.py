@@ -7,8 +7,8 @@ from alerts.forms import SmtpSettingsForm, TestEmailForm
 from alerts.models import SmtpSettings
 from alerts.services import send_test_email, test_smtp_connection
 
-from .models import SiteSettings
-from .site_forms import SiteSettingsForm
+from .models import SiteSettings, TlsCertificate
+from .site_forms import SiteSettingsForm, TlsCertificateForm
 
 
 def user_can_manage_site_settings(user):
@@ -24,18 +24,31 @@ class SiteSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         settings = SiteSettings.load()
+        tls_certificate = TlsCertificate.load()
         smtp = SmtpSettings.load()
         context["settings_form"] = kwargs.get("settings_form") or SiteSettingsForm(instance=settings)
         context["site_settings_edit"] = settings
         context["smtp_settings"] = smtp
         context["smtp_form"] = kwargs.get("smtp_form") or SmtpSettingsForm(instance=smtp)
         context["test_email_form"] = kwargs.get("test_email_form") or TestEmailForm()
+        context["tls_certificate"] = tls_certificate
+        context["tls_form"] = kwargs.get("tls_form") or TlsCertificateForm(instance=tls_certificate)
         context["active_settings_tab"] = kwargs.get("active_settings_tab") or self.request.GET.get("tab", "site")
         return context
 
     def post(self, request):
         action = request.POST.get("action", "save_site")
         smtp = SmtpSettings.load()
+
+        if action == "save_tls":
+            certificate = TlsCertificate.load()
+            form = TlsCertificateForm(request.POST, request.FILES, instance=certificate)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Certificado HTTPS guardado correctamente. Exportalo en el servidor para activarlo.")
+                return redirect("/app/settings/?tab=https")
+            messages.error(request, "No se pudo guardar el certificado. Revisa los archivos seleccionados.")
+            return self.render_to_response(self.get_context_data(tls_form=form, active_settings_tab="https"))
 
         if action == "save_smtp":
             form = SmtpSettingsForm(request.POST, instance=smtp)

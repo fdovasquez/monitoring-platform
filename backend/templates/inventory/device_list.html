@@ -75,8 +75,8 @@
               <td>{{ device.sample.memory_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
               <td>{{ device.sample.disk_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
               <td>
-                {% with score=device.sample|security_score %}
-                <div class="score">
+                {% with score=device.sample|security_score tone=device.sample|security_tone %}
+                <div class="score {{ tone }}">
                   <span style="--score: {{ score }}%"></span>
                   <strong>{{ score }} / 100</strong>
                 </div>

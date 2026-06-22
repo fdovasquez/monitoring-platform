@@ -500,8 +500,12 @@ th {
   height: 18px;
   border-radius: 4px;
   background:
-    linear-gradient(90deg, var(--green-600) var(--score), #d7dee8 var(--score));
+    linear-gradient(90deg, var(--score-color, var(--green-600)) var(--score), #d7dee8 var(--score));
 }
+
+.score.success { --score-color: var(--green-600); }
+.score.warning { --score-color: #d97706; }
+.score.danger { --score-color: var(--red-600); }
 
 .score strong {
   font-weight: 400;
