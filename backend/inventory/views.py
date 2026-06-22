@@ -697,6 +697,11 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
         return f"""#!/bin/bash
 set -e
 
+INSTALL_LOG="/var/log/monitoring-agent-install.log"
+exec > >(tee -a "$INSTALL_LOG") 2>&1
+trap 'status=$?; echo "ERROR: La instalacion fallo (codigo $status). Revisa $INSTALL_LOG"; exit $status' ERR
+
+echo "Instalando agente de monitoreo. El registro quedara en $INSTALL_LOG"
 mkdir -p /opt/monitoring-agent
 AGENT_BASE_URL="{download_base_url}linux"
 AGENT_BINARY="/opt/monitoring-agent/monitoring-agent"
@@ -750,7 +755,16 @@ chmod 600 /etc/monitoring-agent.env
 chmod 755 "$AGENT_BINARY"
 systemctl daemon-reload
 systemctl enable --now monitoring-agent
-systemctl status monitoring-agent --no-pager
+
+if systemctl is-active --quiet monitoring-agent; then
+  echo "INSTALACION COMPLETADA: monitoring-agent esta activo."
+else
+  echo "ERROR: El servicio no pudo iniciar."
+  systemctl status monitoring-agent --no-pager || true
+  exit 1
+fi
+
+echo "Para revisar el resultado: journalctl -u monitoring-agent -n 50 --no-pager"
 """
 
     @staticmethod
