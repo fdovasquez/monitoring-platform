@@ -520,24 +520,6 @@ th {
   color: var(--ink-500);
 }
 
-.table-action-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  padding: 0 10px;
-  color: var(--blue-700);
-  background: #ffffff;
-  border: 1px solid #bfd4f7;
-  border-radius: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.table-action-button:hover {
-  background: #edf5ff;
-  border-color: #8fb5ef;
-}
 
 .score.success { --score-color: var(--green-600); }
 .score.warning { --score-color: #d97706; }
