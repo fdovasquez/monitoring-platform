@@ -763,6 +763,7 @@ cat >/etc/monitoring-agent.env <<EOF
 MONITORING_API_URL={api_url}
 MONITORING_AGENT_TOKEN=$TOKEN
 MONITORING_INTERVAL=60
+MONITORING_PACKAGE_QUERY_ONLINE=false
 MONITORING_VERIFY_TLS=true
 MONITORING_CA_FILE=/opt/monitoring-agent/monitor-ca-chain.pem
 EOF
