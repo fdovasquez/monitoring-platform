@@ -210,4 +210,3 @@ func main() {
     client := &http.Client{Timeout: 20*time.Second, Transport: transport}
     for { if err := send(client, apiURL, token); err != nil { fmt.Fprintf(os.Stderr, "%s error=%v\n", time.Now().UTC().Format(time.RFC3339), err) }; time.Sleep(interval) }
 }
-
