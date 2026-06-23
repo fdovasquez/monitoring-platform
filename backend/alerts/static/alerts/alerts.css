@@ -330,8 +330,14 @@
   resize: vertical;
 }
 
-.bulk-recipients-form .submit-button {
-  min-width: 148px;
+.bulk-recipients-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bulk-recipients-form .submit-button,
+.bulk-recipients-form .ghost-button {
+  min-width: 132px;
   height: 44px;
   margin: 0 !important;
   white-space: nowrap;
@@ -542,7 +548,13 @@
     grid-template-columns: 1fr;
   }
 
-  .bulk-recipients-form .submit-button {
+  .bulk-recipients-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bulk-recipients-form .submit-button,
+  .bulk-recipients-form .ghost-button {
     width: 100%;
   }
 
