@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.generic import TemplateView
 
-from .forms import AlertHistoryFilterForm, AlertRuleForm
+from .forms import AlertHistoryFilterForm, AlertRuleForm, BulkRecipientsForm
 from .models import AlertEmailLog, AlertRule
 
 
@@ -41,6 +41,7 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             {
                 "active_tab": kwargs.get("active_tab") or self.request.GET.get("tab", "monitors"),
                 "rule_form": rule_form,
+                "bulk_recipients_form": kwargs.get("bulk_recipients_form") or BulkRecipientsForm(),
                 "edit_rule": edit_rule,
                 "rules": self.filtered_rules(),
                 "history_filter": history_filter,
@@ -53,6 +54,31 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def post(self, request):
         action = request.POST.get("action", "")
+
+        if action == "bulk_add_recipients":
+            form = BulkRecipientsForm(request.POST)
+            if form.is_valid():
+                additions = form.cleaned_data["recipients"]
+                updated = 0
+                for rule in AlertRule.objects.all():
+                    merged = []
+                    seen = set()
+                    for address in [*rule.recipient_list(), *additions]:
+                        key = address.lower()
+                        if key not in seen:
+                            seen.add(key)
+                            merged.append(address)
+                    recipients = ", ".join(merged)
+                    if rule.recipients != recipients:
+                        rule.recipients = recipients
+                        rule.save(update_fields=["recipients", "updated_at"])
+                        updated += 1
+                messages.success(request, f"Destinatarios agregados a {updated} alerta(s).")
+                return redirect("/app/alerts/?tab=monitors")
+            messages.error(request, "No se pudieron agregar los destinatarios. Revisa los correos ingresados.")
+            return self.render_to_response(
+                self.get_context_data(bulk_recipients_form=form, active_tab="monitors")
+            )
 
         if action == "create_rule":
             form = AlertRuleForm(request.POST)
@@ -307,3 +333,4 @@ class AlertHistoryExportView(LoginRequiredMixin, UserPassesTestMixin, TemplateVi
                 ]
             )
         return response
+
