@@ -101,7 +101,7 @@ def alert_html(settings, title, severity, details, server=None):
           Este correo fue generado por la plataforma de monitoreo. Verifica el remitente antes de abrir enlaces.
         </td></tr>
         <tr><td style="padding:25px 24px;background:#111827;color:#ffffff;">
-          <span style="font-size:20px;font-weight:600;">NOC Â· Monitoreo de Servidores</span>
+          <span style="font-size:20px;font-weight:600;">Monitoreo de Servidores</span>
           <span style="float:right;color:#bfdbfe;font-size:12px;">{product_name}</span>
         </td></tr>
         <tr><td style="padding:18px 24px;background:{severity_color};color:#ffffff;">
@@ -121,7 +121,7 @@ def alert_html(settings, title, severity, details, server=None):
           </p>
         </td></tr>
         <tr><td style="padding:15px 24px;background:#f8fafc;border-top:1px solid #e5e7eb;color:#94a3b8;font-size:11px;text-align:center;">
-          {product_name} Â· Sistema de monitoreo Â· No responder a este correo
+          {product_name} | Sistema de monitoreo | No responder a este correo
         </td></tr>
       </table>
     </td></tr>
