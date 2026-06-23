@@ -1,3 +1,4 @@
+import base64
 from datetime import timedelta
 import uuid
 
@@ -694,8 +695,7 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
 
     @staticmethod
     def linux_script(token, api_url, download_base_url):
-        return f"""bash <<'MONITORING_AGENT_INSTALL'
-#!/bin/bash
+        script = f"""#!/bin/bash
 set -e
 
 INSTALL_LOG="/var/log/monitoring-agent-install.log"
@@ -766,14 +766,9 @@ else
 fi
 
 echo "Para revisar el resultado: journalctl -u monitoring-agent -n 50 --no-pager"
-MONITORING_AGENT_INSTALL
-install_status=$?
-if [ "$install_status" -ne 0 ]; then
-  echo "La instalacion fallo, pero tu consola sigue abierta. Revisa: /var/log/monitoring-agent-install.log"
-else
-  echo "Instalacion finalizada. La consola permanece abierta."
-fi
 """
+        encoded_script = base64.b64encode(script.encode("utf-8")).decode("ascii")
+        return f"echo {encoded_script} | base64 -d | bash; echo; echo 'Revisa /var/log/monitoring-agent-install.log si hubo errores.'"
 
     @staticmethod
     def windows_script(token, api_url, download_base_url):
