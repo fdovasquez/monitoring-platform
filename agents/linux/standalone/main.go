@@ -16,7 +16,7 @@ import (
     "time"
 )
 
-const agentVersion = "1.2.0-standalone"
+const agentVersion = "1.3.0-standalone"
 
 func env(name, fallback string) string {
     if value := os.Getenv(name); value != "" { return value }
@@ -102,6 +102,52 @@ func osVersion() string {
     return runtime.GOOS
 }
 
+func serviceActive(name string) bool {
+    return exec.Command("systemctl", "is-active", "--quiet", name).Run() == nil
+}
+
+func firewallSecurity() map[string]interface{} {
+    if serviceActive("firewalld") {
+        return map[string]interface{}{"enabled": true, "detail": "Activo (firewalld)"}
+    }
+    if serviceActive("ufw") {
+        return map[string]interface{}{"enabled": true, "detail": "Activo (UFW)"}
+    }
+    return map[string]interface{}{"enabled": false, "detail": "No se detecto un firewall activo"}
+}
+
+func osSecurity() map[string]interface{} {
+    selinux := strings.ToLower(command("getenforce"))
+    if selinux == "enforcing" {
+        return map[string]interface{}{"enabled": true, "detail": "SELinux en modo Enforcing"}
+    }
+    if serviceActive("apparmor") {
+        return map[string]interface{}{"enabled": true, "detail": "AppArmor activo"}
+    }
+    return map[string]interface{}{"enabled": false, "detail": "No se detecto SELinux Enforcing ni AppArmor activo"}
+}
+
+func pendingSecurity(detail string) map[string]interface{} {
+    return map[string]interface{}{"enabled": false, "detail": detail, "pending": true}
+}
+
+func security() map[string]interface{} {
+    return map[string]interface{}{
+        "disk_encryption": pendingSecurity("Pendiente de evaluacion de cifrado del disco"),
+        "firewall": firewallSecurity(),
+        "os_security": osSecurity(),
+        "patch_compliance": map[string]interface{}{
+            "up_to_date": false,
+            "detail": "Pendiente de evaluacion de actualizaciones",
+            "pending": true,
+        },
+        "os_version": map[string]interface{}{
+            "supported": true,
+            "detail": osVersion(),
+        },
+    }
+}
+
 func inventory(hostname string) map[string]interface{} {
     dns := []string{}
     for _, line := range strings.Split(read("/etc/resolv.conf"), "\n") {
@@ -128,7 +174,7 @@ func payload() map[string]interface{} {
     diskList, diskRoot := disks()
     return map[string]interface{}{
         "hostname": hostname, "agent_version": agentVersion, "timestamp": time.Now().UTC().Format(time.RFC3339),
-        "metrics": map[string]interface{}{"cpu_percent": cpuPercent(), "memory_percent": memoryPercent(), "disk_root_percent": diskRoot, "disk_count": len(diskList), "disks": diskList, "uptime_seconds": uptime()},
+        "metrics": map[string]interface{}{"cpu_percent": cpuPercent(), "memory_percent": memoryPercent(), "disk_root_percent": diskRoot, "disk_count": len(diskList), "disks": diskList, "uptime_seconds": uptime(), "security": security()},
         "inventory": inventory(hostname), "services": []interface{}{}, "processes": []interface{}{}, "ports": []interface{}{},
     }
 }
