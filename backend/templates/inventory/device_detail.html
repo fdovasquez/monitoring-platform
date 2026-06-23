@@ -112,6 +112,9 @@
               <span class="security-check-copy">
                 <span>{{ check.label }}</span>
                 <small>{{ check.description }}</small>
+                {% if check.latest_update %}
+                  <small class="security-check-meta">Ultimo instalado: {{ check.latest_update }}</small>
+                {% endif %}
               </span>
             </div>
             <div class="security-check-result">
