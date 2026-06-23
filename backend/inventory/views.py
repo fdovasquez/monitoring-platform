@@ -22,6 +22,7 @@ from .forms import (
     MachineCredentialForm,
     ProfileForm,
     ROLE_NAMES,
+    ServerEditForm,
     UserCreateForm,
     UserEditForm,
     ensure_base_roles,
@@ -543,6 +544,34 @@ class DeviceDeleteView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView)
         server.delete()
         messages.success(request, f"Servidor {server_name} eliminado correctamente.")
         return redirect("device-list")
+
+
+class DeviceEditView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin, TemplateView):
+    template_name = "inventory/device_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        server = get_object_or_404(Server, id=kwargs["pk"])
+        context.update(
+            {
+                "server": server,
+                "form": ServerEditForm(instance=server),
+            }
+        )
+        context.update(sidebar_context())
+        return context
+
+    def post(self, request, pk):
+        server = get_object_or_404(Server, id=pk)
+        form = ServerEditForm(request.POST, instance=server)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Servidor actualizado correctamente.")
+            return redirect("device-detail", pk=server.id)
+
+        context = {"server": server, "form": form}
+        context.update(sidebar_context())
+        return self.render_to_response(context)
 
 
 class MachineCredentialCreateView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
