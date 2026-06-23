@@ -104,6 +104,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
                 {
                     "server": server,
                     "sample": sample,
+                    "agent_version": sample.agent_version if sample and sample.agent_version else "",
                     "online": online,
                     "security_score": self.security_score(sample),
                     "uptime": self.format_uptime(sample.uptime_seconds if sample else None),
