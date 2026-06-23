@@ -178,7 +178,7 @@
               </div>
             </div>
           {% empty %}
-            <div class="empty-compact">El agente aun no ha reportado discos.</div>
+            <div class="empty-compact">El agente no ha reportado particiones. Actualiza el agente del equipo para obtener el detalle de discos.</div>
           {% endfor %}
         </div>
       </article>
@@ -206,8 +206,8 @@
                 <span>{% if interface.ips %}{{ interface.ips|join:", " }}{% else %}Sin IP{% endif %}</span>
                 <small>{{ interface.mac|default:"Sin MAC" }}{% if interface.speed_mbps %} / {{ interface.speed_mbps }} Mbps{% endif %}</small>
               </article>
-            {% empty %}
-              <div class="empty-compact">El agente aun no ha reportado interfaces de red.</div>
+          {% empty %}
+              <div class="empty-compact">El agente no ha reportado interfaces de red. Actualiza el agente del equipo para obtener IP, MAC y velocidad.</div>
             {% endfor %}
           </div>
         </div>
