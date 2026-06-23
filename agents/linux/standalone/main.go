@@ -16,7 +16,7 @@ import (
     "time"
 )
 
-const agentVersion = "1.5.0-standalone"
+const agentVersion = "1.6.0-standalone"
 
 var lastPatchCheck time.Time
 var cachedPatchSecurity map[string]interface{}
@@ -199,6 +199,22 @@ func pendingSecurity(detail string) map[string]interface{} {
     return map[string]interface{}{"enabled": false, "detail": detail, "pending": true}
 }
 
+func latestInstalledPackage() string {
+    output := command("rpm", "-qa", "--last")
+    lines := strings.Split(output, "\n")
+    if len(lines) == 0 || strings.TrimSpace(lines[0]) == "" {
+        return ""
+    }
+    return strings.TrimSpace(lines[0])
+}
+
+func patchDetail(message string) string {
+    if lastPackage := latestInstalledPackage(); lastPackage != "" {
+        return message + ". Ultimo paquete instalado: " + lastPackage
+    }
+    return message
+}
+
 func patchSecurity() map[string]interface{} {
     if cachedPatchSecurity != nil && time.Since(lastPatchCheck) < 30*time.Minute {
         return cachedPatchSecurity
@@ -213,22 +229,26 @@ func patchSecurity() map[string]interface{} {
     if packageManager == "" {
         cachedPatchSecurity = map[string]interface{}{
             "up_to_date": false,
-            "detail": "No se encontro dnf ni yum para revisar actualizaciones",
+            "detail": patchDetail("No se encontro dnf ni yum para revisar actualizaciones"),
             "pending": true,
         }
         lastPatchCheck = time.Now()
         return cachedPatchSecurity
     }
 
-    run := exec.Command(packageManager, "-q", "check-update", "--cacheonly")
+    args := []string{"-q", "check-update", "--cacheonly"}
+    if strings.EqualFold(env("MONITORING_PACKAGE_QUERY_ONLINE", "false"), "true") {
+        args = []string{"-q", "check-update"}
+    }
+    run := exec.Command(packageManager, args...)
     if err := run.Run(); err == nil {
-        cachedPatchSecurity = map[string]interface{}{"up_to_date": true, "detail": "Sin actualizaciones pendientes en el cache local"}
+        cachedPatchSecurity = map[string]interface{}{"up_to_date": true, "detail": patchDetail("Sin actualizaciones pendientes")}
     } else if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 100 {
-        cachedPatchSecurity = map[string]interface{}{"up_to_date": false, "detail": "Hay actualizaciones disponibles en el cache local"}
+        cachedPatchSecurity = map[string]interface{}{"up_to_date": false, "detail": patchDetail("Hay actualizaciones disponibles")}
     } else {
         cachedPatchSecurity = map[string]interface{}{
             "up_to_date": false,
-            "detail": "No fue posible consultar actualizaciones desde el cache local",
+            "detail": patchDetail("No fue posible consultar actualizaciones desde el cache local"),
             "pending": true,
         }
     }
