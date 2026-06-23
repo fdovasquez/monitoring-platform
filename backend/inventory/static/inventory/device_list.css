@@ -552,31 +552,6 @@ th {
   background: #f2f8ff;
 }
 
-.reach {
-  min-width: 170px;
-}
-
-.reach i {
-  display: block;
-  width: 150px;
-  height: 18px;
-  background:
-    linear-gradient(90deg, rgba(11, 99, 206, .15), rgba(11, 99, 206, .35)),
-    repeating-linear-gradient(90deg, transparent 0 12px, rgba(11, 99, 206, .45) 12px 14px);
-  border-radius: 2px;
-}
-
-.reach span,
-.reach strong {
-  color: var(--ink-500);
-  font-size: 12px;
-}
-
-.reach strong {
-  color: var(--blue-700);
-  margin-left: 10px;
-}
-
 .empty-state {
   display: grid;
   place-items: center;
