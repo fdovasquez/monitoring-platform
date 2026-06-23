@@ -51,7 +51,6 @@
             <th>Uptime</th>
             <th>Etiquetas</th>
             <th>Alcance</th>
-            {% if can_manage_devices %}<th>Accion</th>{% endif %}
           </tr>
         </thead>
         <tbody>
@@ -107,17 +106,10 @@
                   <strong>{% if device.online %}{{ device.latency }} ms{% else %}-{% endif %}</strong>
                 </div>
               </td>
-              {% if can_manage_devices %}
-                <td>
-                  <a class="table-action-button" href="{% url 'agent-install' %}?server={{ device.server.id }}&platform={{ device.server.os_type }}">
-                    Copiar comando
-                  </a>
-                </td>
-              {% endif %}
             </tr>
           {% empty %}
             <tr>
-              <td colspan="{% if can_manage_devices %}12{% else %}11{% endif %}">
+              <td colspan="11">
                 <div class="empty-state">
                   <strong>No hay dispositivos</strong>
                   <span>Usa "Instalar nuevo agente" para crear un servidor, generar token y copiar el instalador.</span>
