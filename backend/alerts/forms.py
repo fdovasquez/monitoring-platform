@@ -61,6 +61,34 @@ class TestEmailForm(forms.Form):
     recipient = forms.EmailField(label="Correo de prueba")
 
 
+class BulkRecipientsForm(forms.Form):
+    recipients = forms.CharField(
+        label="Destinatarios",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 2,
+                "placeholder": "soporte@empresa.cl, infraestructura@empresa.cl",
+            }
+        ),
+    )
+
+    def clean_recipients(self):
+        raw = self.cleaned_data.get("recipients", "")
+        emails = [item.strip() for item in re.split(r"[,;\n]+", raw) if item.strip()]
+        if not emails:
+            raise forms.ValidationError("Ingresa al menos un destinatario.")
+        validator = forms.EmailField()
+        normalized = []
+        seen = set()
+        for email in emails:
+            value = validator.clean(email)
+            key = value.lower()
+            if key not in seen:
+                seen.add(key)
+                normalized.append(value)
+        return normalized
+
+
 class AlertRuleForm(forms.ModelForm):
     class Meta:
         model = AlertRule
@@ -116,3 +144,4 @@ class AlertHistoryFilterForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["severity"].choices = [("", "Todas")] + list(AlertRule.PRIORITY_CHOICES)
         self.fields["status"].choices = [("", "Todos"), ("sent", "Enviado"), ("error", "Error")]
+
