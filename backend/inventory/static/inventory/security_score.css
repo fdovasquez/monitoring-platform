@@ -167,6 +167,11 @@
   color: #dc2626;
 }
 
+.security-check-row.pending .security-check-icon,
+.security-check-row.pending .security-check-detail {
+  color: #64748b;
+}
+
 .security-check-row.ok .security-check-icon::before {
   width: 7px;
   height: 4px;
@@ -192,6 +197,14 @@
 
 .security-check-row.fail .security-check-icon::after {
   transform: rotate(-45deg);
+}
+
+.security-check-row.pending .security-check-icon::before {
+  width: 6px;
+  height: 1.6px;
+  background: currentColor;
+  border-radius: 999px;
+  content: "";
 }
 
 .security-check-detail {
@@ -227,3 +240,4 @@
     text-align: left;
   }
 }
+
