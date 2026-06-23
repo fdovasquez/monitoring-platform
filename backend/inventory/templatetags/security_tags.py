@@ -127,6 +127,7 @@ def security_assessment(sample):
             disk_encryption.get("enabled"),
             disk_encryption.get("detail") or "El disco principal no esta cifrado",
             5,
+            pending=disk_encryption.get("pending", False),
         ),
         security_check(
             "Firewall",
@@ -134,6 +135,7 @@ def security_assessment(sample):
             firewall.get("enabled"),
             firewall.get("detail") or "Firewall no activo",
             25,
+            pending=firewall.get("pending", False),
         ),
         security_check(
             "Seguridad del sistema",
@@ -141,6 +143,7 @@ def security_assessment(sample):
             os_security.get("enabled"),
             os_security.get("detail") or "Control de seguridad no activo",
             25,
+            pending=os_security.get("pending", False),
         ),
         security_check(
             "Actualizaciones de seguridad",
@@ -148,6 +151,7 @@ def security_assessment(sample):
             patch_compliance.get("up_to_date"),
             patch_compliance.get("detail") or "No evaluado",
             25,
+            pending=patch_compliance.get("pending", False),
         ),
         security_check(
             "Version del sistema",
@@ -155,6 +159,7 @@ def security_assessment(sample):
             os_version.get("supported", True),
             display_os_version(os_version.get("detail") or inventory.get("os_version")),
             20,
+            pending=os_version.get("pending", False),
         ),
     ]
     return security_summary(checks)
