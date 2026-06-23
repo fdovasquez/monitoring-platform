@@ -20,6 +20,7 @@ def env_bool(name, default=False):
 SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = [host.strip() for host in env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+MONITORING_PUBLIC_URL = env("MONITORING_PUBLIC_URL", "")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -132,3 +133,4 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
 CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
+
