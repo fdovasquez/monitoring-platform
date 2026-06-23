@@ -1,5 +1,5 @@
-import base64
 from datetime import timedelta
+import shlex
 import uuid
 
 from django.conf import settings
@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
@@ -656,8 +656,8 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
                     {
                         "created_server": server,
                         "agent_token": token,
-                        "linux_script": self.linux_script(token.token, api_url, download_base_url),
-                        "ubuntu_script": self.linux_script(token.token, api_url, download_base_url),
+                        "linux_script": self.linux_script(token.token, self.linux_installer_url()),
+                        "ubuntu_script": self.linux_script(token.token, self.linux_installer_url()),
                         "windows_script": self.windows_script(token.token, api_url, download_base_url),
                     }
                 )
@@ -693,10 +693,23 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
     def download_base_url(self):
         return self.request.build_absolute_uri("/app/agents/download/")
 
+    def linux_installer_url(self):
+        return self.request.build_absolute_uri("/app/agents/install/linux.sh")
+
     @staticmethod
-    def linux_script(token, api_url, download_base_url):
-        script = f"""#!/bin/bash
+    def linux_script(token, installer_url):
+        return f"curl -kfsSL {shlex.quote(installer_url)} | bash -s -- {shlex.quote(token)}"
+
+    @staticmethod
+    def linux_bootstrap_script(api_url, download_base_url):
+        return f"""#!/bin/bash
 set -e
+
+TOKEN="${{1:-}}"
+if [ -z "$TOKEN" ]; then
+  echo "ERROR: Falta el token de instalacion."
+  exit 1
+fi
 
 INSTALL_LOG="/var/log/monitoring-agent-install.log"
 exec > >(tee -a "$INSTALL_LOG") 2>&1
@@ -744,9 +757,9 @@ fi
 download_file "$AGENT_BASE_URL/monitoring-agent-linux-x86_64" "$AGENT_BINARY"
 download_file "$AGENT_BASE_URL/monitoring-agent.service" "$SERVICE_FILE"
 
-cat >/etc/monitoring-agent.env <<'EOF'
+cat >/etc/monitoring-agent.env <<EOF
 MONITORING_API_URL={api_url}
-MONITORING_AGENT_TOKEN={token}
+MONITORING_AGENT_TOKEN=$TOKEN
 MONITORING_INTERVAL=60
 MONITORING_VERIFY_TLS=true
 MONITORING_CA_FILE=/opt/monitoring-agent/monitor-ca-chain.pem
@@ -767,8 +780,6 @@ fi
 
 echo "Para revisar el resultado: journalctl -u monitoring-agent -n 50 --no-pager"
 """
-        encoded_script = base64.b64encode(script.encode("utf-8")).decode("ascii")
-        return f"echo {encoded_script} | base64 -d | bash; echo; echo 'Revisa /var/log/monitoring-agent-install.log si hubo errores.'"
 
     @staticmethod
     def windows_script(token, api_url, download_base_url):
@@ -799,6 +810,13 @@ Write-Host ""
 schtasks.exe /Query /TN "MonitoringAgent" /V /FO LIST
 Read-Host "Presiona Enter para cerrar"
 """
+
+
+def linux_install_script(request):
+    api_url = request.build_absolute_uri("/api/v1/metrics/ingest/")
+    download_base_url = request.build_absolute_uri("/app/agents/download/")
+    script = AgentInstallWizardView.linux_bootstrap_script(api_url, download_base_url)
+    return HttpResponse(script, content_type="text/x-shellscript; charset=utf-8")
 
 
 class UserListView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
