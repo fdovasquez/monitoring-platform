@@ -65,7 +65,25 @@ class Command(BaseCommand):
             f"Umbral configurado: {threshold_minutes} minutos\n"
         )
         try:
-            send_email(settings, recipients, subject, body, rule.event_type, rule.priority, server, rule.service_name)
+            send_email(
+                settings,
+                recipients,
+                subject,
+                body,
+                rule.event_type,
+                rule.priority,
+                server,
+                rule.service_name,
+                title=rule.name,
+                details=[
+                    ("Servidor", server.hostname),
+                    ("Evento", rule.get_event_type_display()),
+                    ("Estado", "Fuera de linea"),
+                    ("Ultimo reporte", timezone.localtime(server.last_seen).strftime("%Y-%m-%d %H:%M:%S") if server.last_seen else "Sin reportes"),
+                    ("Minutos sin reporte", f"{minutes_without_report:.1f}"),
+                    ("Umbral configurado", f"{threshold_minutes} minutos"),
+                ],
+            )
             rule.last_notified_at = timezone.now()
             rule.save(update_fields=["last_notified_at", "updated_at"])
             return True
@@ -93,7 +111,23 @@ class Command(BaseCommand):
             f"Fecha recuperacion: {timezone.localtime(resolved_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
         )
         try:
-            send_email(settings, recipients, subject, body, "server_recovered", AlertRule.PRIORITY_INFO, server, rule.service_name)
+            send_email(
+                settings,
+                recipients,
+                subject,
+                body,
+                "server_recovered",
+                AlertRule.PRIORITY_INFO,
+                server,
+                rule.service_name,
+                title="Servidor recuperado",
+                details=[
+                    ("Servidor", server.hostname),
+                    ("Evento", "Recuperacion de monitoreo"),
+                    ("Estado", "En linea"),
+                    ("Fecha de recuperacion", timezone.localtime(resolved_at).strftime("%Y-%m-%d %H:%M:%S")),
+                ],
+            )
         except Exception:
             pass
         return True
@@ -103,3 +137,4 @@ class Command(BaseCommand):
         if not server.last_seen:
             return 999999.0
         return max(0.0, (timezone.now() - server.last_seen).total_seconds() / 60)
+
