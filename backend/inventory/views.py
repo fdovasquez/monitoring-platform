@@ -694,20 +694,13 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
 
     @staticmethod
     def linux_script(token, api_url, download_base_url):
-        return f"""#!/bin/bash
+        return f"""bash <<'MONITORING_AGENT_INSTALL'
+#!/bin/bash
 set -e
 
 INSTALL_LOG="/var/log/monitoring-agent-install.log"
 exec > >(tee -a "$INSTALL_LOG") 2>&1
-
-pause_terminal() {{
-  if [ -t 0 ]; then
-    echo
-    read -r -p "Presiona Enter para cerrar..." _
-  fi
-}}
-
-trap 'status=$?; echo "ERROR: La instalacion fallo (codigo $status). Revisa $INSTALL_LOG"; pause_terminal; exit $status' ERR
+trap 'status=$?; echo "ERROR: La instalacion fallo (codigo $status). Revisa $INSTALL_LOG"; exit $status' ERR
 
 echo "Instalando agente de monitoreo. El registro quedara en $INSTALL_LOG"
 mkdir -p /opt/monitoring-agent
@@ -718,7 +711,6 @@ SERVICE_FILE="/etc/systemd/system/monitoring-agent.service"
 
 if ! command -v openssl >/dev/null 2>&1; then
   echo "ERROR: Se requiere openssl para registrar el certificado del monitor."
-  pause_terminal
   exit 1
 fi
 
@@ -728,7 +720,6 @@ echo | openssl s_client -showcerts -connect "${{MONITOR_HOST}}:443" -servername 
 
 if [ ! -s "$CA_CERT" ]; then
   echo "ERROR: No se pudo obtener el certificado del monitor ${{MONITOR_HOST}}."
-  pause_terminal
   exit 1
 fi
 
@@ -741,14 +732,12 @@ download_file() {{
     wget -q --ca-certificate="$CA_CERT" "$url" -O "$destination"
   else
     echo "ERROR: Se requiere curl o wget para descargar el agente desde el monitor interno."
-    pause_terminal
     exit 1
   fi
 }}
 
 if [ "$(uname -m)" != "x86_64" ]; then
   echo "ERROR: El paquete actual es compatible con Linux x86_64. Arquitectura detectada: $(uname -m)"
-  pause_terminal
   exit 1
 fi
 
@@ -773,12 +762,17 @@ if systemctl is-active --quiet monitoring-agent; then
 else
   echo "ERROR: El servicio no pudo iniciar."
   systemctl status monitoring-agent --no-pager || true
-  pause_terminal
   exit 1
 fi
 
 echo "Para revisar el resultado: journalctl -u monitoring-agent -n 50 --no-pager"
-pause_terminal
+MONITORING_AGENT_INSTALL
+install_status=$?
+if [ "$install_status" -ne 0 ]; then
+  echo "La instalacion fallo, pero tu consola sigue abierta. Revisa: /var/log/monitoring-agent-install.log"
+else
+  echo "Instalacion finalizada. La consola permanece abierta."
+fi
 """
 
     @staticmethod
