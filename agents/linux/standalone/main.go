@@ -92,6 +92,16 @@ func primaryIP() string {
     return output
 }
 
+func osVersion() string {
+    for _, line := range strings.Split(read("/etc/os-release"), "\n") {
+        parts := strings.SplitN(line, "=", 2)
+        if len(parts) == 2 && parts[0] == "PRETTY_NAME" {
+            return strings.Trim(parts[1], "\"")
+        }
+    }
+    return runtime.GOOS
+}
+
 func inventory(hostname string) map[string]interface{} {
     dns := []string{}
     for _, line := range strings.Split(read("/etc/resolv.conf"), "\n") {
@@ -100,7 +110,7 @@ func inventory(hostname string) map[string]interface{} {
     }
     return map[string]interface{}{
         "hostname": hostname, "fqdn": command("hostname", "-f"), "os_name": runtime.GOOS,
-        "os_version": read("/etc/os-release"), "kernel": command("uname", "-r"), "architecture": runtime.GOARCH,
+        "os_version": osVersion(), "kernel": command("uname", "-r"), "architecture": runtime.GOARCH,
         "serial_number": read("/sys/class/dmi/id/product_serial"), "model": read("/sys/class/dmi/id/product_name"),
         "manufacturer": read("/sys/class/dmi/id/sys_vendor"), "domain": command("hostname", "-d"),
         "logged_user": env("SUDO_USER", env("USER", "")), "primary_ip": primaryIP(),
