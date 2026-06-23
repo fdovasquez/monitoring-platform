@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 
-from .models import MachineCredential, UserProfile
+from .models import MachineCredential, Server, UserProfile
 
 
 ROLE_NAMES = ["Administrador", "Editor", "Visualizador"]
@@ -86,8 +86,8 @@ class UserEditForm(forms.ModelForm):
 class ProfileForm(forms.Form):
     first_name = forms.CharField(label="Nombre", max_length=150)
     last_name = forms.CharField(label="Apellido", max_length=150)
-    email = forms.EmailField(label="Correo electrónico")
-    phone = forms.CharField(label="Teléfono", max_length=40, required=False)
+    email = forms.EmailField(label="Correo electrÃ³nico")
+    phone = forms.CharField(label="TelÃ©fono", max_length=40, required=False)
     position = forms.CharField(label="Cargo", max_length=120, required=False)
     photo = forms.ImageField(label="Foto de perfil", required=False)
     delete_photo = forms.BooleanField(label="Eliminar foto actual", required=False)
@@ -117,7 +117,7 @@ class ProfileForm(forms.Form):
         if photo.size > self.max_photo_size:
             raise forms.ValidationError("La foto no puede superar 2 MB.")
         if getattr(photo, "content_type", "") not in self.allowed_content_types:
-            raise forms.ValidationError("Solo se permiten imágenes JPG, PNG o WEBP.")
+            raise forms.ValidationError("Solo se permiten imÃ¡genes JPG, PNG o WEBP.")
         return photo
 
     def save(self):
@@ -140,9 +140,9 @@ class ProfileForm(forms.Form):
 
 
 class AccountPasswordChangeForm(forms.Form):
-    current_password = forms.CharField(label="Contraseña actual", widget=forms.PasswordInput)
-    new_password = forms.CharField(label="Nueva contraseña", widget=forms.PasswordInput)
-    confirm_password = forms.CharField(label="Confirmar nueva contraseña", widget=forms.PasswordInput)
+    current_password = forms.CharField(label="ContraseÃ±a actual", widget=forms.PasswordInput)
+    new_password = forms.CharField(label="Nueva contraseÃ±a", widget=forms.PasswordInput)
+    confirm_password = forms.CharField(label="Confirmar nueva contraseÃ±a", widget=forms.PasswordInput)
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user")
@@ -151,7 +151,7 @@ class AccountPasswordChangeForm(forms.Form):
     def clean_current_password(self):
         current_password = self.cleaned_data.get("current_password", "")
         if not self.user.check_password(current_password):
-            raise forms.ValidationError("La contraseña actual no es correcta.")
+            raise forms.ValidationError("La contraseÃ±a actual no es correcta.")
         return current_password
 
     def clean(self):
@@ -163,19 +163,19 @@ class AccountPasswordChangeForm(forms.Form):
         if not new_password or not confirm_password:
             return cleaned_data
         if new_password != confirm_password:
-            self.add_error("confirm_password", "La confirmación no coincide con la nueva contraseña.")
+            self.add_error("confirm_password", "La confirmaciÃ³n no coincide con la nueva contraseÃ±a.")
         if current_password and current_password == new_password:
-            self.add_error("new_password", "La nueva contraseña debe ser distinta a la actual.")
+            self.add_error("new_password", "La nueva contraseÃ±a debe ser distinta a la actual.")
         if not any(character.isupper() for character in new_password):
-            self.add_error("new_password", "La nueva contraseña debe incluir al menos una mayúscula.")
+            self.add_error("new_password", "La nueva contraseÃ±a debe incluir al menos una mayÃºscula.")
         if not any(character.islower() for character in new_password):
-            self.add_error("new_password", "La nueva contraseña debe incluir al menos una minúscula.")
+            self.add_error("new_password", "La nueva contraseÃ±a debe incluir al menos una minÃºscula.")
         if not any(character.isdigit() for character in new_password):
-            self.add_error("new_password", "La nueva contraseña debe incluir al menos un número.")
+            self.add_error("new_password", "La nueva contraseÃ±a debe incluir al menos un nÃºmero.")
         if not any(not character.isalnum() for character in new_password):
-            self.add_error("new_password", "La nueva contraseña debe incluir al menos un carácter especial.")
+            self.add_error("new_password", "La nueva contraseÃ±a debe incluir al menos un carÃ¡cter especial.")
         if len(new_password) < 8:
-            self.add_error("new_password", "La nueva contraseña debe tener al menos 8 caracteres.")
+            self.add_error("new_password", "La nueva contraseÃ±a debe tener al menos 8 caracteres.")
         try:
             validate_password(new_password, self.user)
         except ValidationError as error:
@@ -208,3 +208,26 @@ class MachineCredentialForm(forms.ModelForm):
         if commit:
             credential.save()
         return credential
+
+
+class ServerEditForm(forms.ModelForm):
+    class Meta:
+        model = Server
+        fields = ["name", "hostname", "ip_address", "group", "os_type", "environment", "owner", "is_active"]
+        labels = {
+            "name": "Nombre visible",
+            "hostname": "Hostname",
+            "ip_address": "Direccion IP",
+            "group": "Grupo",
+            "os_type": "Sistema operativo",
+            "environment": "Ambiente",
+            "owner": "Responsable",
+            "is_active": "Equipo activo",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name != "is_active":
+                field.widget.attrs.update({"class": "profile-input"})
+
