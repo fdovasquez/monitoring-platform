@@ -18,6 +18,7 @@ from .views import (
     UserEditView,
     UserListView,
     agent_download,
+    linux_install_script,
 )
 from .runtime_views import DeviceRuntimeView
 from .site_views import SiteSettingsView
@@ -53,6 +54,7 @@ urlpatterns = [
         name="machine-credential-delete",
     ),
     path("agents/new/", device_manager_required(AgentInstallWizardView.as_view()), name="agent-install"),
+    path("agents/install/linux.sh", linux_install_script, name="linux-agent-install-script"),
     path("agents/download/<str:platform>/<str:filename>", agent_download, name="agent-download"),
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/new/", UserCreateView.as_view(), name="user-create"),
@@ -64,3 +66,4 @@ urlpatterns = [
     path("settings/", SiteSettingsView.as_view(), name="site-settings"),
     path("logout/", CorporateLogoutView.as_view(), name="logout"),
 ]
+
