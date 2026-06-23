@@ -44,6 +44,11 @@
         <a class="btn secondary" href="{% url 'device-runtime' server.id %}">
           Runtime
         </a>
+        {% if can_manage_devices %}
+          <a class="btn secondary" href="{% url 'agent-install' %}?server={{ server.id }}&platform={{ server.os_type }}">
+            Copiar comando de agente
+          </a>
+        {% endif %}
         {% if is_linux and can_manage_credentials %}
           <button class="btn primary" type="button" data-open-modal="console-modal"><span class="btn-icon terminal-icon" aria-hidden="true"></span> Abrir consola</button>
         {% endif %}
