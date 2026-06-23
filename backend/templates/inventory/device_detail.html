@@ -94,6 +94,9 @@
             <span>/ 100</span>
           </div>
           <span class="security-risk {{ security.tone }}">{{ security.level }}</span>
+          <p class="security-summary">
+            {{ security.passed_count }} verificados{% if security.pending_count %} / {{ security.pending_count }} pendientes{% endif %}{% if security.failed_count %} / {{ security.failed_count }} en riesgo{% endif %}
+          </p>
         </div>
         <div class="security-gauge" style="--score: {{ security.score }}; --rotation: {{ security.gauge_rotation }}deg;">
           <div class="security-gauge-arc"></div>
@@ -106,9 +109,15 @@
           <div class="security-check-row {% if check.pending %}pending{% elif check.passed %}ok{% else %}fail{% endif %}">
             <div class="security-check-name">
               <span class="security-check-icon"></span>
-              <span>{{ check.label }}</span>
+              <span class="security-check-copy">
+                <span>{{ check.label }}</span>
+                <small>{{ check.description }}</small>
+              </span>
             </div>
-            <div class="security-check-detail">{{ check.detail }}</div>
+            <div class="security-check-result">
+              <span class="security-check-detail">{{ check.detail }}</span>
+              <span class="security-check-weight">{{ check.weight }} pts</span>
+            </div>
           </div>
         {% endfor %}
       </div>
