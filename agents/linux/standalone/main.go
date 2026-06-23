@@ -16,7 +16,10 @@ import (
     "time"
 )
 
-const agentVersion = "1.3.0-standalone"
+const agentVersion = "1.4.0-standalone"
+
+var lastPatchCheck time.Time
+var cachedPatchSecurity map[string]interface{}
 
 func env(name, fallback string) string {
     if value := os.Getenv(name); value != "" { return value }
@@ -116,6 +119,20 @@ func firewallSecurity() map[string]interface{} {
     return map[string]interface{}{"enabled": false, "detail": "No se detecto un firewall activo"}
 }
 
+func diskEncryptionSecurity() map[string]interface{} {
+    rootSource := command("findmnt", "-n", "-o", "SOURCE", "/")
+    if rootSource == "" {
+        return pendingSecurity("No fue posible identificar el volumen raiz")
+    }
+
+    volumeType := strings.ToLower(command("lsblk", "-no", "TYPE", rootSource))
+    if volumeType == "crypt" {
+        return map[string]interface{}{"enabled": true, "detail": "Volumen raiz protegido con LUKS/dm-crypt"}
+    }
+
+    return map[string]interface{}{"enabled": false, "detail": "El volumen raiz no usa cifrado LUKS/dm-crypt"}
+}
+
 func osSecurity() map[string]interface{} {
     selinux := strings.ToLower(command("getenforce"))
     if selinux == "enforcing" {
@@ -131,16 +148,49 @@ func pendingSecurity(detail string) map[string]interface{} {
     return map[string]interface{}{"enabled": false, "detail": detail, "pending": true}
 }
 
+func patchSecurity() map[string]interface{} {
+    if cachedPatchSecurity != nil && time.Since(lastPatchCheck) < 30*time.Minute {
+        return cachedPatchSecurity
+    }
+
+    packageManager := ""
+    if _, err := exec.LookPath("dnf"); err == nil {
+        packageManager = "dnf"
+    } else if _, err := exec.LookPath("yum"); err == nil {
+        packageManager = "yum"
+    }
+    if packageManager == "" {
+        cachedPatchSecurity = map[string]interface{}{
+            "up_to_date": false,
+            "detail": "No se encontro dnf ni yum para revisar actualizaciones",
+            "pending": true,
+        }
+        lastPatchCheck = time.Now()
+        return cachedPatchSecurity
+    }
+
+    run := exec.Command(packageManager, "-q", "check-update", "--cacheonly")
+    if err := run.Run(); err == nil {
+        cachedPatchSecurity = map[string]interface{}{"up_to_date": true, "detail": "Sin actualizaciones pendientes en el cache local"}
+    } else if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 100 {
+        cachedPatchSecurity = map[string]interface{}{"up_to_date": false, "detail": "Hay actualizaciones disponibles en el cache local"}
+    } else {
+        cachedPatchSecurity = map[string]interface{}{
+            "up_to_date": false,
+            "detail": "No fue posible consultar actualizaciones desde el cache local",
+            "pending": true,
+        }
+    }
+    lastPatchCheck = time.Now()
+    return cachedPatchSecurity
+}
+
 func security() map[string]interface{} {
     return map[string]interface{}{
-        "disk_encryption": pendingSecurity("Pendiente de evaluacion de cifrado del disco"),
+        "disk_encryption": diskEncryptionSecurity(),
         "firewall": firewallSecurity(),
         "os_security": osSecurity(),
-        "patch_compliance": map[string]interface{}{
-            "up_to_date": false,
-            "detail": "Pendiente de evaluacion de actualizaciones",
-            "pending": true,
-        },
+        "patch_compliance": patchSecurity(),
         "os_version": map[string]interface{}{
             "supported": true,
             "detail": osVersion(),
