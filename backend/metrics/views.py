@@ -101,10 +101,10 @@ def resolve_server_for_token(agent_token, data):
     return server
 
 
-def clean_text(value):
+def clean_text(value, max_length=255):
     if value is None:
         return ""
-    return str(value).strip()
+    return str(value).strip()[:max_length]
 
 
 def clean_ip(value):
@@ -160,3 +160,4 @@ def update_runtime_snapshot(server, services, processes, ports, collected_at):
         "collected_at": collected_at,
     }
     ServerRuntimeSnapshot.objects.update_or_create(server=server, defaults=defaults)
+
