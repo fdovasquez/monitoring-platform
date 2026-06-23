@@ -34,7 +34,7 @@
       <div class="header-actions">
         {% if online %}<span class="status online">Online</span>{% else %}<span class="status offline">Offline</span>{% endif %}
         {% if can_manage_devices %}
-          <a class="btn secondary" href="{% url 'admin:inventory_server_change' server.id %}">
+          <a class="btn secondary" href="{% url 'device-edit' server.id %}">
             <span class="btn-icon edit-icon" aria-hidden="true"></span> Editar
           </a>
         {% endif %}
