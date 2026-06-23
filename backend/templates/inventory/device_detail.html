@@ -88,7 +88,7 @@
     <section class="card security-score-card">
       <div class="security-score-main">
         <div class="security-score-copy">
-          <h2>Security Score</h2>
+          <h2>Puntaje de seguridad</h2>
           <div class="security-score-value">
             <strong>{{ security.score }}</strong>
             <span>/ 100</span>
@@ -103,7 +103,7 @@
       </div>
       <div class="security-check-list">
         {% for check in security.checks %}
-          <div class="security-check-row {% if check.passed %}ok{% else %}fail{% endif %}">
+          <div class="security-check-row {% if check.pending %}pending{% elif check.passed %}ok{% else %}fail{% endif %}">
             <div class="security-check-name">
               <span class="security-check-icon"></span>
               <span>{{ check.label }}</span>
@@ -431,3 +431,4 @@
   </script>
 </body>
 </html>
+
