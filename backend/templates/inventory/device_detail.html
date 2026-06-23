@@ -115,6 +115,9 @@
               </span>
             </div>
             <div class="security-check-result">
+              <span class="security-check-status">
+                {% if check.pending %}Pendiente{% elif check.passed %}Verificado{% else %}En riesgo{% endif %}
+              </span>
               <span class="security-check-detail">{{ check.detail }}</span>
               <span class="security-check-weight">{{ check.weight }} pts</span>
             </div>
