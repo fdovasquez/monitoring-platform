@@ -1,3 +1,5 @@
+import re
+
 from django import template
 
 
@@ -15,13 +17,27 @@ def metric_payload(sample):
     )
 
 
-def security_check(label, passed, detail, weight):
+def security_check(label, passed, detail, weight, pending=False):
     return {
         "label": label,
         "passed": bool(passed),
         "detail": detail or "No evaluado",
         "weight": weight,
+        "pending": pending,
     }
+
+
+def display_os_version(value):
+    """Returns a compact OS name instead of the complete os-release contents."""
+    if not value:
+        return "Version no informada"
+
+    text = str(value).replace("\n", " ").strip()
+    pretty_name = re.search(r'(?:^|\s)PRETTY_NAME=["\']?([^"\']+)', text)
+    if pretty_name:
+        return pretty_name.group(1).strip()
+
+    return text[:120] + ("..." if len(text) > 120 else "")
 
 
 def security_summary(checks):
@@ -58,19 +74,27 @@ def security_assessment(sample):
 
     if not security:
         checks = [
-            security_check("Disk encryption", False, "Agente pendiente de actualizar", 5),
-            security_check("Firewall", False, "Agente pendiente de actualizar", 25),
-            security_check("OS security", False, "Agente pendiente de actualizar", 25),
-            security_check("Patch compliance", False, "Agente pendiente de actualizar", 25),
-            security_check("OS version", bool(inventory.get("os_version")), inventory.get("os_version") or "No informado", 20),
+            security_check(
+                "Controles de seguridad",
+                False,
+                "El agente aun no reporta controles de seguridad.",
+                0,
+                pending=True,
+            ),
+            security_check(
+                "Version del sistema",
+                bool(inventory.get("os_version")),
+                display_os_version(inventory.get("os_version")),
+                20,
+            ),
         ]
         return security_summary(checks)
 
     checks = [
         security_check(
-            "Disk encryption",
+            "Cifrado de disco",
             disk_encryption.get("enabled"),
-            disk_encryption.get("detail") or "Primary disk not encrypted",
+            disk_encryption.get("detail") or "El disco principal no esta cifrado",
             5,
         ),
         security_check(
@@ -80,21 +104,21 @@ def security_assessment(sample):
             25,
         ),
         security_check(
-            "OS security",
+            "Seguridad del sistema",
             os_security.get("enabled"),
             os_security.get("detail") or "Control de seguridad no activo",
             25,
         ),
         security_check(
-            "Patch compliance",
+            "Actualizaciones de seguridad",
             patch_compliance.get("up_to_date"),
             patch_compliance.get("detail") or "No evaluado",
             25,
         ),
         security_check(
-            "OS version",
+            "Version del sistema",
             os_version.get("supported", True),
-            os_version.get("detail") or inventory.get("os_version") or "Version no informada",
+            display_os_version(os_version.get("detail") or inventory.get("os_version")),
             20,
         ),
     ]
@@ -109,3 +133,4 @@ def security_score(sample):
 @register.filter
 def security_tone(sample):
     return security_assessment(sample)["tone"]
+
