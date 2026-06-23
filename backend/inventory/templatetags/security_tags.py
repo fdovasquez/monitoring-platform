@@ -17,7 +17,7 @@ def metric_payload(sample):
     )
 
 
-def security_check(label, description, passed, detail, weight, pending=False):
+def security_check(label, description, passed, detail, weight, pending=False, latest_update=""):
     return {
         "label": label,
         "description": description,
@@ -25,6 +25,7 @@ def security_check(label, description, passed, detail, weight, pending=False):
         "detail": detail or "No evaluado",
         "weight": weight,
         "pending": pending,
+        "latest_update": latest_update,
     }
 
 
@@ -39,6 +40,15 @@ def display_os_version(value):
         return pretty_name.group(1).strip()
 
     return text[:120] + ("..." if len(text) > 120 else "")
+
+
+def split_patch_detail(value):
+    marker = ". Ultimo paquete instalado: "
+    detail = str(value or "No evaluado")
+    if marker not in detail:
+        return detail, ""
+    status, package = detail.split(marker, 1)
+    return status.strip(), package.strip()
 
 
 def security_summary(checks):
@@ -120,6 +130,10 @@ def security_assessment(sample):
         ]
         return security_summary(checks)
 
+    patch_detail, latest_update = split_patch_detail(
+        patch_compliance.get("detail") or "No evaluado"
+    )
+
     checks = [
         security_check(
             "Cifrado de disco",
@@ -149,9 +163,10 @@ def security_assessment(sample):
             "Actualizaciones de seguridad",
             "Comprueba el estado de actualizaciones y parches de seguridad.",
             patch_compliance.get("up_to_date"),
-            patch_compliance.get("detail") or "No evaluado",
+            patch_detail,
             25,
             pending=patch_compliance.get("pending", False),
+            latest_update=latest_update,
         ),
         security_check(
             "Version del sistema",
