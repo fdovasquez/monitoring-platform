@@ -17,9 +17,10 @@ def metric_payload(sample):
     )
 
 
-def security_check(label, passed, detail, weight, pending=False):
+def security_check(label, description, passed, detail, weight, pending=False):
     return {
         "label": label,
+        "description": description,
         "passed": bool(passed),
         "detail": detail or "No evaluado",
         "weight": weight,
@@ -57,6 +58,9 @@ def security_summary(checks):
         "level": level,
         "tone": tone,
         "checks": checks,
+        "passed_count": sum(1 for check in checks if check["passed"]),
+        "pending_count": sum(1 for check in checks if check["pending"]),
+        "failed_count": sum(1 for check in checks if not check["passed"] and not check["pending"]),
         "gauge_rotation": round(-75 + (score * 1.5), 2),
     }
 
@@ -75,14 +79,40 @@ def security_assessment(sample):
     if not security:
         checks = [
             security_check(
-                "Controles de seguridad",
+                "Cifrado de disco",
+                "Verifica si la unidad principal utiliza cifrado.",
                 False,
-                "El agente aun no reporta controles de seguridad.",
-                0,
+                "Pendiente de reporte del agente",
+                5,
+                pending=True,
+            ),
+            security_check(
+                "Firewall",
+                "Valida que el firewall del sistema este habilitado.",
+                False,
+                "Pendiente de reporte del agente",
+                25,
+                pending=True,
+            ),
+            security_check(
+                "Seguridad del sistema",
+                "Revisa los controles de seguridad nativos del sistema operativo.",
+                False,
+                "Pendiente de reporte del agente",
+                25,
+                pending=True,
+            ),
+            security_check(
+                "Actualizaciones de seguridad",
+                "Comprueba el estado de actualizaciones y parches de seguridad.",
+                False,
+                "Pendiente de reporte del agente",
+                25,
                 pending=True,
             ),
             security_check(
                 "Version del sistema",
+                "Comprueba que la version informada por el sistema sea compatible.",
                 bool(inventory.get("os_version")),
                 display_os_version(inventory.get("os_version")),
                 20,
@@ -93,30 +123,35 @@ def security_assessment(sample):
     checks = [
         security_check(
             "Cifrado de disco",
+            "Verifica si la unidad principal utiliza cifrado.",
             disk_encryption.get("enabled"),
             disk_encryption.get("detail") or "El disco principal no esta cifrado",
             5,
         ),
         security_check(
             "Firewall",
+            "Valida que el firewall del sistema este habilitado.",
             firewall.get("enabled"),
             firewall.get("detail") or "Firewall no activo",
             25,
         ),
         security_check(
             "Seguridad del sistema",
+            "Revisa los controles de seguridad nativos del sistema operativo.",
             os_security.get("enabled"),
             os_security.get("detail") or "Control de seguridad no activo",
             25,
         ),
         security_check(
             "Actualizaciones de seguridad",
+            "Comprueba el estado de actualizaciones y parches de seguridad.",
             patch_compliance.get("up_to_date"),
             patch_compliance.get("detail") or "No evaluado",
             25,
         ),
         security_check(
             "Version del sistema",
+            "Comprueba que la version informada por el sistema sea compatible.",
             os_version.get("supported", True),
             display_os_version(os_version.get("detail") or inventory.get("os_version")),
             20,
