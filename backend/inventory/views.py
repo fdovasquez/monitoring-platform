@@ -717,8 +717,10 @@ trap 'status=$?; echo "ERROR: La instalacion fallo (codigo $status). Revisa $INS
 
 echo "Instalando agente de monitoreo. El registro quedara en $INSTALL_LOG"
 mkdir -p /opt/monitoring-agent
+systemctl stop monitoring-agent 2>/dev/null || true
 AGENT_BASE_URL="{download_base_url}linux"
 AGENT_BINARY="/opt/monitoring-agent/monitoring-agent"
+AGENT_TEMP="/opt/monitoring-agent/monitoring-agent.new"
 CA_CERT="/opt/monitoring-agent/monitor-ca-chain.pem"
 SERVICE_FILE="/etc/systemd/system/monitoring-agent.service"
 
@@ -754,7 +756,7 @@ if [ "$(uname -m)" != "x86_64" ]; then
   exit 1
 fi
 
-download_file "$AGENT_BASE_URL/monitoring-agent-linux-x86_64" "$AGENT_BINARY"
+download_file "$AGENT_BASE_URL/monitoring-agent-linux-x86_64" "$AGENT_TEMP"
 download_file "$AGENT_BASE_URL/monitoring-agent.service" "$SERVICE_FILE"
 
 cat >/etc/monitoring-agent.env <<EOF
@@ -766,7 +768,8 @@ MONITORING_CA_FILE=/opt/monitoring-agent/monitor-ca-chain.pem
 EOF
 
 chmod 600 /etc/monitoring-agent.env
-chmod 755 "$AGENT_BINARY"
+chmod 755 "$AGENT_TEMP"
+mv -f "$AGENT_TEMP" "$AGENT_BINARY"
 systemctl daemon-reload
 systemctl enable --now monitoring-agent
 
