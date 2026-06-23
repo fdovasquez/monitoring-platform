@@ -1,4 +1,3 @@
-{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -46,6 +45,23 @@
     {% endif %}
 
     {% if active_tab == 'monitors' %}
+      <section class="bulk-recipients-panel">
+        <div class="bulk-recipients-copy">
+          <h2>Destinatarios para todas las alertas</h2>
+          <p>Agrega correos a todas las reglas existentes sin reemplazar los destinatarios actuales.</p>
+        </div>
+        <form method="post" class="bulk-recipients-form" onsubmit="return confirm('Agregar estos destinatarios a todas las alertas?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="bulk_add_recipients">
+          <div class="field">
+            <label for="{{ bulk_recipients_form.recipients.id_for_label }}">Correos separados por coma, punto y coma o salto de linea</label>
+            {{ bulk_recipients_form.recipients }}
+            {% for error in bulk_recipients_form.recipients.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <button class="submit-button" type="submit">Agregar a todas</button>
+        </form>
+      </section>
+
       {% if edit_rule %}
         <form class="profile-card alert-rule-form compact-edit-form" method="post" data-confirm="Guardar cambios de la regla?">
           {% csrf_token %}
@@ -223,3 +239,4 @@
   </script>
 </body>
 </html>
+
