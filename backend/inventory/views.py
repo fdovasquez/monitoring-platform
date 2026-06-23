@@ -384,7 +384,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         disks = metrics.get("disks")
         if isinstance(disks, list) and disks:
             return [DeviceDetailView.normalize_disk(disk) for disk in disks]
-        if sample.disk_percent is not None:
+        if sample.disk_percent is not None and float(sample.disk_percent) > 0:
             return [DeviceDetailView.normalize_disk({"mountpoint": "Principal", "percent": sample.disk_percent})]
         return []
 
