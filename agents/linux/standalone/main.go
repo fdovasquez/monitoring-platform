@@ -16,7 +16,7 @@ import (
     "time"
 )
 
-const agentVersion = "1.4.0-standalone"
+const agentVersion = "1.5.0-standalone"
 
 var lastPatchCheck time.Time
 var cachedPatchSecurity map[string]interface{}
@@ -103,6 +103,57 @@ func osVersion() string {
         }
     }
     return runtime.GOOS
+}
+
+func interfaceAddresses(name string) []string {
+    addresses := []string{}
+    for _, line := range strings.Split(command("ip", "-o", "addr", "show", "dev", name), "\n") {
+        fields := strings.Fields(line)
+        for index, field := range fields {
+            if (field == "inet" || field == "inet6") && len(fields) > index+1 {
+                addresses = append(addresses, fields[index+1])
+            }
+        }
+    }
+    return addresses
+}
+
+func networkInterfaces() ([]interface{}, []string) {
+    interfaces := []interface{}{}
+    macAddresses := []string{}
+
+    for _, line := range strings.Split(command("ip", "-o", "link", "show"), "\n") {
+        fields := strings.Fields(line)
+        if len(fields) < 2 {
+            continue
+        }
+        name := strings.TrimSuffix(fields[1], ":")
+        if name == "" || name == "lo" {
+            continue
+        }
+
+        mac := ""
+        for index, field := range fields {
+            if field == "link/ether" && len(fields) > index+1 {
+                mac = fields[index+1]
+                break
+            }
+        }
+        speed := number(read("/sys/class/net/" + name + "/speed"))
+        if speed < 0 {
+            speed = 0
+        }
+        interfaces = append(interfaces, map[string]interface{}{
+            "name": name,
+            "ips": interfaceAddresses(name),
+            "mac": mac,
+            "speed_mbps": int(speed),
+        })
+        if mac != "" {
+            macAddresses = append(macAddresses, mac)
+        }
+    }
+    return interfaces, macAddresses
 }
 
 func serviceActive(name string) bool {
@@ -204,6 +255,7 @@ func inventory(hostname string) map[string]interface{} {
         fields := strings.Fields(line)
         if len(fields) > 1 && fields[0] == "nameserver" { dns = append(dns, fields[1]) }
     }
+    interfaces, macAddresses := networkInterfaces()
     return map[string]interface{}{
         "hostname": hostname, "fqdn": command("hostname", "-f"), "os_name": runtime.GOOS,
         "os_version": osVersion(), "kernel": command("uname", "-r"), "architecture": runtime.GOARCH,
@@ -211,7 +263,7 @@ func inventory(hostname string) map[string]interface{} {
         "manufacturer": read("/sys/class/dmi/id/sys_vendor"), "domain": command("hostname", "-d"),
         "logged_user": env("SUDO_USER", env("USER", "")), "primary_ip": primaryIP(),
         "gateway": command("sh", "-c", "ip route | awk '/default/ {print $3; exit}'"), "dns_servers": dns,
-        "mac_addresses": []string{}, "interfaces": []interface{}{}, "timezone": time.Now().Location().String(),
+        "mac_addresses": macAddresses, "interfaces": interfaces, "timezone": time.Now().Location().String(),
         "collected_at": time.Now().UTC().Format(time.RFC3339),
     }
 }
