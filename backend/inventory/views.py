@@ -8,7 +8,7 @@ from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.http import FileResponse, Http404, HttpResponse
-from django.db.models import Count, Prefetch
+from django.db.models import Count, OuterRef, Subquery
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils import timezone
@@ -84,31 +84,36 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        latest_samples = MetricSample.objects.order_by("-timestamp")
         group_id = self.request.GET.get("group")
+        latest_sample_id = MetricSample.objects.filter(server=OuterRef("pk")).order_by("-timestamp").values("id")[:1]
         servers = (
-            Server.objects.prefetch_related(Prefetch("metric_samples", queryset=latest_samples, to_attr="latest_samples"))
-            .select_related("agent_token", "group")
+            Server.objects.select_related("agent_token", "group")
+            .annotate(latest_sample_id=Subquery(latest_sample_id))
             .order_by("hostname")
         )
         if group_id:
             servers = servers.filter(group_id=group_id)
 
+        servers = list(servers)
+        sample_ids = [server.latest_sample_id for server in servers if server.latest_sample_id]
+        samples_by_id = MetricSample.objects.in_bulk(sample_ids)
+
         now = timezone.now()
         devices = []
 
         for server in servers:
-            sample = server.latest_samples[0] if server.latest_samples else None
+            sample = samples_by_id.get(server.latest_sample_id)
             online = bool(server.last_seen and server.last_seen >= now - timedelta(minutes=1))
+            security = self.security_assessment(sample)
             devices.append(
                 {
                     "server": server,
                     "sample": sample,
                     "agent_version": sample.agent_version if sample and sample.agent_version else "",
                     "online": online,
-                    "security_score": self.security_score(sample),
+                    "security_score": security["score"],
+                    "security_tone": security["tone"],
                     "uptime": self.format_uptime(sample.uptime_seconds if sample else None),
-                    "latency": self.synthetic_latency(server.id),
                 }
             )
 
@@ -985,4 +990,3 @@ class LogoutView(LoginRequiredMixin, TemplateView):
     def post(self, request):
         logout(request)
         return redirect("login")
-
