@@ -1,4 +1,4 @@
-{% load static security_tags %}
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -82,12 +82,10 @@
               <td>{{ device.sample.memory_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
               <td>{{ device.sample.disk_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
               <td>
-                {% with score=device.sample|security_score tone=device.sample|security_tone %}
-                <div class="score {{ tone }}">
-                  <span style="--score: {{ score }}%"></span>
-                  <strong>{{ score }} / 100</strong>
+                <div class="score {{ device.security_tone }}">
+                  <span style="--score: {{ device.security_score }}%"></span>
+                  <strong>{{ device.security_score }} / 100</strong>
                 </div>
-                {% endwith %}
               </td>
               <td>{{ device.server.ip_address|default:"-" }}</td>
               <td>{{ device.uptime }}</td>
@@ -125,4 +123,3 @@
   </script>
 </body>
 </html>
-
