@@ -347,33 +347,53 @@
 
 .bulk-recipients-panel {
   display: grid;
-  grid-template-columns: minmax(250px, .62fr) minmax(420px, 1.38fr);
-  gap: 18px;
-  align-items: center;
-  padding: 16px 8px;
+  gap: 12px;
+  padding: 14px 16px 16px;
   background: #ffffff;
   border-bottom: 1px solid var(--line);
+}
+
+.bulk-recipients-copy {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .bulk-recipients-copy h2 {
   margin: 0 0 4px;
   color: var(--ink-900);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 400;
 }
 
 .bulk-recipients-copy p {
   margin: 0;
+  max-width: 760px;
   color: var(--ink-500);
   font-size: 13px;
   line-height: 1.45;
 }
 
+.bulk-recipients-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .bulk-recipients-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: end;
+  max-width: 980px;
 }
 
 .bulk-recipients-form .field {
@@ -387,28 +407,46 @@
   font-size: 12px;
 }
 
+.bulk-recipient-field small {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .bulk-recipients-form textarea {
   box-sizing: border-box;
   width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
+  min-height: 40px !important;
+  max-height: 82px;
+  padding: 9px 11px !important;
+  line-height: 1.4;
   resize: vertical;
 }
 
-.bulk-recipients-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(104px, 1fr));
+.bulk-recipients-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  padding-bottom: 22px;
 }
 
-.bulk-recipients-form .submit-button,
-.bulk-recipients-form .ghost-button {
+.bulk-recipients-footer .submit-button,
+.bulk-recipients-footer .ghost-button {
   display: inline-flex;
+  align-items: center;
   justify-content: center;
-  min-width: 0;
-  height: 40px;
+  box-sizing: border-box;
+  min-width: 84px !important;
+  width: auto !important;
+  height: 34px !important;
+  min-height: 34px !important;
   margin: 0 !important;
-  padding: 0 12px;
+  padding: 0 12px !important;
+  font-size: 13px;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -612,19 +650,18 @@
 
   .alerts-grid,
   .history-filters,
-  .bulk-recipients-panel,
   .bulk-recipients-form {
     grid-template-columns: 1fr;
   }
 
-  .bulk-recipients-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .bulk-recipients-copy {
+    flex-direction: column;
+    gap: 8px;
   }
 
-  .bulk-recipients-form .submit-button,
-  .bulk-recipients-form .ghost-button {
-    width: 100%;
+  .bulk-recipients-footer {
+    justify-content: flex-start;
+    padding-bottom: 0;
   }
 
   .alert-rule-grid,
