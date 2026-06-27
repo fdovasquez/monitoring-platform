@@ -1,5 +1,4 @@
 {% load static %}
-{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -28,6 +27,9 @@
         </div>
       </div>
       <div class="monitor-actions">
+        {% if active_tab == 'monitors' %}
+          <a class="submit-button monitor-primary-action" href="{% url 'alert-settings' %}?tab=monitors&new_rule=1">Agregar alerta</a>
+        {% endif %}
         <a class="ghost-button" href="{% url 'site-settings' %}?tab=smtp">Configurar SMTP</a>
         <button class="ghost-button" type="button">Columnas</button>
       </div>
@@ -65,6 +67,41 @@
           </div>
         </form>
       </section>
+
+      {% if show_create_rule and not edit_rule %}
+        <form class="profile-card alert-rule-form compact-edit-form" method="post" data-confirm="Crear nueva alerta?">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create_rule">
+          <div class="profile-card-head">
+            <div>
+              <h2>Agregar alerta</h2>
+              <p>Define evento, umbral, gravedad, destinatarios y frecuencia de notificacion.</p>
+            </div>
+            <a class="ghost-button" href="{% url 'alert-settings' %}?tab=monitors">Cancelar</a>
+          </div>
+          <div class="alert-rule-grid">
+            {% for field in rule_form %}
+              <div class="field {% if field.name == 'recipients' %}field-wide{% endif %} {% if field.name == 'is_active' %}alert-rule-status{% endif %}">
+                {% if field.name == 'is_active' %}
+                  <span class="field-label">{{ field.label }}</span>
+                  <label class="inline-check compact-check" for="{{ field.id_for_label }}">
+                    {{ field }}
+                    <span>Monitor habilitado</span>
+                  </label>
+                {% else %}
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                {% endif %}
+                {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+          <div class="form-actions">
+            <a class="ghost-button" href="{% url 'alert-settings' %}?tab=monitors">Cancelar</a>
+            <button class="submit-button" type="submit">Crear alerta</button>
+          </div>
+        </form>
+      {% endif %}
 
       {% if edit_rule %}
         <form class="profile-card alert-rule-form compact-edit-form" method="post" data-confirm="Guardar cambios de la regla?">
@@ -105,9 +142,11 @@
         <form class="monitor-search" method="get">
           <input type="hidden" name="tab" value="monitors">
           <span aria-hidden="true">Buscar</span>
-          <input name="q" value="{{ request.GET.q }}" placeholder="Buscar">
+          <input name="q" value="{{ request.GET.q }}" placeholder="Buscar monitor, tipo o servicio">
         </form>
-        <a class="ghost-button" href="{% url 'alert-settings' %}?tab=monitors">Limpiar</a>
+        <div class="monitor-toolbar-actions">
+          <a class="ghost-button compact-action" href="{% url 'alert-settings' %}?tab=monitors">Limpiar</a>
+        </div>
       </section>
 
       <section class="monitor-table-card">
@@ -158,11 +197,11 @@
                 <td><span class="check-ok">OK</span></td>
                 <td>
                   <div class="monitor-row-actions">
-                    <a href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ rule.id }}">Editar</a>
-                    <form method="post">
+                    <a class="row-action row-action-edit" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ rule.id }}">Editar</a>
+                    <form method="post" class="row-action-form">
                       {% csrf_token %}
-                      <button type="submit" name="action" value="toggle_rule:{{ rule.id }}">{% if rule.is_active %}Deshabilitar{% else %}Habilitar{% endif %}</button>
-                      <button class="danger-link" type="submit" name="action" value="delete_rule:{{ rule.id }}">Eliminar</button>
+                      <button class="row-action" type="submit" name="action" value="toggle_rule:{{ rule.id }}">{% if rule.is_active %}Deshabilitar{% else %}Habilitar{% endif %}</button>
+                      <button class="row-action row-action-danger" type="submit" name="action" value="delete_rule:{{ rule.id }}">Eliminar</button>
                     </form>
                   </div>
                 </td>
@@ -243,4 +282,3 @@
   </script>
 </body>
 </html>
-
