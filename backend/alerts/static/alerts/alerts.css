@@ -26,6 +26,24 @@
   gap: 12px;
 }
 
+.monitor-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.monitor-actions .ghost-button,
+.monitor-actions .submit-button {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.monitor-primary-action {
+  text-decoration: none;
+}
+
 .monitor-icon {
   display: grid;
   width: 50px;
@@ -83,7 +101,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 20px 8px;
+  padding: 14px 8px;
   background: #ffffff;
   border-bottom: 1px solid #dbe3ef;
 }
@@ -92,7 +110,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  width: min(320px, 100%);
+  width: min(420px, 100%);
   min-height: 38px;
   padding: 0 12px;
   border: 1px solid #cbd5e1;
@@ -106,6 +124,18 @@
   box-shadow: none !important;
 }
 
+.monitor-toolbar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.compact-action {
+  min-width: 74px !important;
+  min-height: 36px !important;
+  padding: 0 12px !important;
+}
+
 .monitor-table-card {
   overflow-x: auto;
   background: #ffffff;
@@ -114,17 +144,29 @@
 
 .monitor-table {
   width: 100%;
-  min-width: 1280px;
+  min-width: 1180px;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .monitor-table th,
 .monitor-table td {
-  padding: 14px 8px;
+  padding: 12px 10px;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
   vertical-align: middle;
+  overflow-wrap: anywhere;
 }
+
+.monitor-table th:nth-child(1) { width: 18%; }
+.monitor-table th:nth-child(2) { width: 11%; }
+.monitor-table th:nth-child(3) { width: 18%; }
+.monitor-table th:nth-child(4) { width: 15%; }
+.monitor-table th:nth-child(5) { width: 8%; }
+.monitor-table th:nth-child(6) { width: 8%; }
+.monitor-table th:nth-child(7) { width: 7%; }
+.monitor-table th:nth-child(8) { width: 8%; }
+.monitor-table th:nth-child(9) { width: 13%; }
 
 .monitor-table th {
   height: 38px;
@@ -134,7 +176,7 @@
 }
 
 .monitor-table td {
-  height: 64px;
+  height: 58px;
 }
 
 .monitor-name span,
@@ -198,28 +240,50 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 6px;
+  min-width: 172px;
 }
 
-.monitor-row-actions form {
+.monitor-row-actions form,
+.row-action-form {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
 }
 
-.monitor-row-actions a,
-.monitor-row-actions button {
-  min-height: auto;
-  padding: 0;
-  color: #2563eb;
-  background: transparent;
-  border: 0;
-  font-size: 13px;
+.monitor-row-actions .row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 64px;
+  max-width: 96px;
+  min-height: 30px;
+  padding: 0 8px;
+  color: #1d4ed8;
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.monitor-row-actions .danger-link {
-  color: #dc2626 !important;
+.monitor-row-actions .row-action:hover {
+  color: #1e40af;
+  background: #eff6ff;
+}
+
+.monitor-row-actions .row-action-danger {
+  color: #b91c1c !important;
+  border-color: #fecaca;
+}
+
+.monitor-row-actions .row-action-danger:hover {
+  background: #fff7f7;
 }
 
 .compact-edit-form {
@@ -283,10 +347,11 @@
 
 .bulk-recipients-panel {
   display: grid;
-  grid-template-columns: minmax(250px, .7fr) minmax(420px, 1.3fr);
-  gap: 20px;
+  grid-template-columns: minmax(250px, .62fr) minmax(420px, 1.38fr);
+  gap: 18px;
   align-items: center;
-  padding: 16px 0;
+  padding: 16px 8px;
+  background: #ffffff;
   border-bottom: 1px solid var(--line);
 }
 
@@ -306,7 +371,7 @@
 
 .bulk-recipients-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
   gap: 10px;
   align-items: end;
 }
@@ -331,15 +396,19 @@
 }
 
 .bulk-recipients-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(104px, 1fr));
   gap: 8px;
 }
 
 .bulk-recipients-form .submit-button,
 .bulk-recipients-form .ghost-button {
-  min-width: 132px;
-  height: 44px;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 0;
+  height: 40px;
   margin: 0 !important;
+  padding: 0 12px;
   white-space: nowrap;
 }
 
@@ -575,4 +644,3 @@
 body :where(h1, h2, h3, h4, h5, h6, strong, b, th, label, button, summary, .tabs a, .submit-button, .ghost-button, .danger-button, .alert-pill, .stat-card strong) {
   font-weight: 400 !important;
 }
-
