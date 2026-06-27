@@ -33,6 +33,9 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             edit_rule_id = self.request.GET.get("edit_rule")
             if edit_rule_id:
                 edit_rule = AlertRule.objects.filter(id=edit_rule_id).first()
+        show_create_rule = kwargs.get("show_create_rule")
+        if show_create_rule is None:
+            show_create_rule = self.request.GET.get("new_rule") == "1"
         rule_form = kwargs.get("rule_form")
         if rule_form is None:
             rule_form = AlertRuleForm(instance=edit_rule) if edit_rule else AlertRuleForm()
@@ -43,6 +46,7 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 "rule_form": rule_form,
                 "bulk_recipients_form": kwargs.get("bulk_recipients_form") or BulkRecipientsForm(),
                 "edit_rule": edit_rule,
+                "show_create_rule": show_create_rule,
                 "rules": self.filtered_rules(),
                 "history_filter": history_filter,
                 "logs": logs[:200],
@@ -96,7 +100,9 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 messages.success(request, "Alerta creada correctamente.")
                 return redirect("/app/alerts/?tab=monitors")
             messages.error(request, "No se pudo crear la alerta. Revisa los campos.")
-            return self.render_to_response(self.get_context_data(rule_form=form, active_tab="monitors"))
+            return self.render_to_response(
+                self.get_context_data(rule_form=form, active_tab="monitors", show_create_rule=True)
+            )
 
         if action.startswith("update_rule:"):
             rule_id = action.split(":", 1)[1]
@@ -342,4 +348,3 @@ class AlertHistoryExportView(LoginRequiredMixin, UserPassesTestMixin, TemplateVi
                 ]
             )
         return response
-
