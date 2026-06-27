@@ -51,19 +51,23 @@
     {% if active_tab == 'monitors' %}
       <section class="bulk-recipients-panel">
         <div class="bulk-recipients-copy">
-          <h2>Destinatarios para todas las alertas</h2>
-          <p>Agrega correos a todas las reglas existentes sin reemplazar los destinatarios actuales.</p>
+          <div>
+            <h2>Destinatarios globales</h2>
+            <p>Administra correos en todas las reglas existentes sin reemplazar las configuraciones individuales.</p>
+          </div>
+          <span class="bulk-recipients-badge">Todas las alertas</span>
         </div>
-        <form method="post" class="bulk-recipients-form" onsubmit="return confirm('Actualizar estos destinatarios en todas las alertas?');">
+        <form method="post" class="bulk-recipients-form" novalidate onsubmit="return confirm('Actualizar estos destinatarios en todas las alertas?');">
           {% csrf_token %}
-          <div class="field">
-            <label for="{{ bulk_recipients_form.recipients.id_for_label }}">Correos separados por coma, punto y coma o salto de linea</label>
+          <div class="field bulk-recipient-field">
+            <label for="{{ bulk_recipients_form.recipients.id_for_label }}">Correos</label>
             {{ bulk_recipients_form.recipients }}
+            <small>Separados por coma, punto y coma o salto de linea.</small>
             {% for error in bulk_recipients_form.recipients.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
           </div>
-          <div class="bulk-recipients-actions">
-            <button class="submit-button" type="submit" name="action" value="bulk_add_recipients">Agregar a todas</button>
-            <button class="ghost-button" type="submit" name="action" value="bulk_remove_recipients">Quitar de todas</button>
+          <div class="bulk-recipients-footer">
+            <button class="submit-button" type="submit" name="action" value="bulk_add_recipients" title="Agregar estos correos a todas las alertas">Agregar</button>
+            <button class="ghost-button" type="submit" name="action" value="bulk_remove_recipients" title="Quitar estos correos de todas las alertas">Quitar</button>
           </div>
         </form>
       </section>
