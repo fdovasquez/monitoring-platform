@@ -7,6 +7,7 @@
   <title>{{ server.name|default:server.hostname }} | Detalle</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/device_detail.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/monitor_assignments.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/security_score.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
 </head>
@@ -224,6 +225,85 @@
       {% endif %}
     </section>
 
+    <section class="card monitor-assignment-card" data-monitor-board data-action-url="{% url 'device-detail' server.id %}" data-csrf-token="{{ csrf_token }}">
+      <div class="section-title">
+        <div>
+          <h2>Monitoreos del servidor</h2>
+          <p>Define que reglas se evaluan para esta maquina. Arrastra una tarjeta o usa los botones de accion.</p>
+        </div>
+        <span class="monitor-count">{{ monitor_assignments.active_count }} asignados</span>
+      </div>
+      <div class="monitor-assignment-grid">
+        <div class="monitor-drop-column assigned" data-monitor-zone="assigned">
+          <div class="monitor-drop-head">
+            <span>Monitores asignados</span>
+            <small>Se evaluaran para este servidor</small>
+          </div>
+          <div class="monitor-card-list">
+            {% for item in monitor_assignments.active %}
+              <article class="monitor-pick-card {% if not item.assignment.is_enabled %}disabled{% endif %}" draggable="true" data-rule-id="{{ item.rule.id }}" data-current-zone="assigned">
+                <div class="monitor-pick-main">
+                  <span class="monitor-pick-type">{{ item.rule.get_priority_display }}</span>
+                  <h3>{{ item.rule.name }}</h3>
+                  <p>{{ item.description }}</p>
+                </div>
+                <div class="monitor-pick-meta">
+                  <span>{{ item.rule.get_event_type_display }}</span>
+                  <span>{{ item.threshold }}</span>
+                </div>
+                <div class="monitor-pick-actions">
+                  <form method="post" action="{% url 'device-detail' server.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
+                    <button class="text-action" type="submit" name="action" value="toggle_monitor">
+                      {% if item.assignment.is_enabled %}Deshabilitar{% else %}Habilitar{% endif %}
+                    </button>
+                  </form>
+                  <form method="post" action="{% url 'device-detail' server.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
+                    <button class="text-danger" type="submit" name="action" value="remove_monitor">Quitar</button>
+                  </form>
+                </div>
+              </article>
+            {% empty %}
+              <div class="monitor-empty-state">Arrastra aqui los monitores que quieres aplicar a este servidor.</div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="monitor-drop-column available" data-monitor-zone="available">
+          <div class="monitor-drop-head">
+            <span>Monitores disponibles</span>
+            <small>Reglas creadas en Alertas</small>
+          </div>
+          <div class="monitor-card-list">
+            {% for item in monitor_assignments.available %}
+              <article class="monitor-pick-card" draggable="true" data-rule-id="{{ item.rule.id }}" data-current-zone="available">
+                <div class="monitor-pick-main">
+                  <span class="monitor-pick-type">{{ item.rule.get_priority_display }}</span>
+                  <h3>{{ item.rule.name }}</h3>
+                  <p>{{ item.description }}</p>
+                </div>
+                <div class="monitor-pick-meta">
+                  <span>{{ item.rule.get_event_type_display }}</span>
+                  <span>{{ item.threshold }}</span>
+                </div>
+                <div class="monitor-pick-actions">
+                  <form method="post" action="{% url 'device-detail' server.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
+                    <button class="text-action" type="submit" name="action" value="assign_monitor">Agregar</button>
+                  </form>
+                </div>
+              </article>
+            {% empty %}
+              <div class="monitor-empty-state">No hay mas monitores disponibles para asignar.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="card credentials-card">
       <div class="section-title">
         <div>
@@ -414,6 +494,55 @@
       });
     });
 
+    const monitorBoard = document.querySelector("[data-monitor-board]");
+    if (monitorBoard) {
+      let draggedCard = null;
+
+      function submitMonitorAction(ruleId, action) {
+        const form = document.createElement("form");
+        form.method = "post";
+        form.action = monitorBoard.dataset.actionUrl;
+        form.innerHTML = `
+          <input type="hidden" name="csrfmiddlewaretoken" value="${monitorBoard.dataset.csrfToken}">
+          <input type="hidden" name="rule_id" value="${ruleId}">
+          <input type="hidden" name="action" value="${action}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+      }
+
+      monitorBoard.querySelectorAll("[data-rule-id]").forEach((card) => {
+        card.addEventListener("dragstart", () => {
+          draggedCard = card;
+          card.classList.add("dragging");
+        });
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+          draggedCard = null;
+        });
+      });
+
+      monitorBoard.querySelectorAll("[data-monitor-zone]").forEach((zone) => {
+        zone.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          zone.classList.add("drag-over");
+        });
+        zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+        zone.addEventListener("drop", (event) => {
+          event.preventDefault();
+          zone.classList.remove("drag-over");
+          if (!draggedCard) return;
+          const currentZone = draggedCard.dataset.currentZone;
+          const targetZone = zone.dataset.monitorZone;
+          if (currentZone === targetZone) return;
+          submitMonitorAction(
+            draggedCard.dataset.ruleId,
+            targetZone === "assigned" ? "assign_monitor" : "remove_monitor"
+          );
+        });
+      });
+    }
+
     function consoleText() {
       const frame = document.getElementById("console-frame");
       const doc = frame && frame.contentDocument;
@@ -451,4 +580,3 @@
   </script>
 </body>
 </html>
-
