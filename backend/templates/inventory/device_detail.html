@@ -496,22 +496,53 @@
       });
     });
 
-    const monitorBoard = document.querySelector("[data-monitor-board]");
-    if (monitorBoard) {
+    function refreshMonitorBoardFromHtml(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const nextBoard = doc.querySelector("[data-monitor-board]");
+      const currentBoard = document.querySelector("[data-monitor-board]");
+      if (nextBoard && currentBoard) {
+        currentBoard.replaceWith(nextBoard);
+        initMonitorBoard();
+      }
+    }
+
+    function submitMonitorData(monitorBoard, formData) {
+      return fetch(monitorBoard.dataset.actionUrl, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+        .then((response) => response.text())
+        .then(refreshMonitorBoardFromHtml);
+    }
+
+    function initMonitorBoard() {
+      const monitorBoard = document.querySelector("[data-monitor-board]");
+      if (!monitorBoard || monitorBoard.dataset.bound === "true") return;
+      monitorBoard.dataset.bound = "true";
       let draggedCard = null;
 
       function submitMonitorAction(ruleId, action) {
-        const form = document.createElement("form");
-        form.method = "post";
-        form.action = monitorBoard.dataset.actionUrl;
-        form.innerHTML = `
-          <input type="hidden" name="csrfmiddlewaretoken" value="${monitorBoard.dataset.csrfToken}">
-          <input type="hidden" name="rule_id" value="${ruleId}">
-          <input type="hidden" name="action" value="${action}">
-        `;
-        document.body.appendChild(form);
-        form.submit();
+        const formData = new FormData();
+        formData.append("csrfmiddlewaretoken", monitorBoard.dataset.csrfToken);
+        formData.append("rule_id", ruleId);
+        formData.append("action", action);
+        submitMonitorData(monitorBoard, formData);
       }
+
+      monitorBoard.querySelectorAll(".monitor-pick-actions form").forEach((form) => {
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const formData = new FormData(form);
+          if (event.submitter && event.submitter.name) {
+            formData.set(event.submitter.name, event.submitter.value);
+          }
+          submitMonitorData(monitorBoard, formData);
+        });
+      });
 
       monitorBoard.querySelectorAll("[data-rule-id]").forEach((card) => {
         card.addEventListener("click", (event) => {
@@ -548,6 +579,8 @@
         });
       });
     }
+
+    initMonitorBoard();
 
     function consoleText() {
       const frame = document.getElementById("console-frame");
