@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AlertEmailLog, AlertEvent, AlertRule, SmtpSettings
+from .models import AlertEmailLog, AlertEvent, AlertRule, ServerMonitorAssignment, SmtpSettings
 
 
 @admin.register(SmtpSettings)
@@ -14,6 +14,13 @@ class AlertRuleAdmin(admin.ModelAdmin):
     list_display = ("name", "event_type", "threshold", "priority", "is_active", "min_interval_minutes", "last_notified_at")
     list_filter = ("event_type", "priority", "is_active")
     search_fields = ("name",)
+
+
+@admin.register(ServerMonitorAssignment)
+class ServerMonitorAssignmentAdmin(admin.ModelAdmin):
+    list_display = ("server", "rule", "is_enabled", "updated_at")
+    list_filter = ("is_enabled", "rule__event_type", "rule__priority")
+    search_fields = ("server__hostname", "server__name", "rule__name")
 
 
 @admin.register(AlertEvent)
