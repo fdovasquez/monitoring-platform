@@ -1,0 +1,16 @@
+[Unit]
+Description=Monitoring Platform Central Reporter
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+User=monitoring
+Group=monitoring
+WorkingDirectory=/opt/monitoring-platform/backend
+EnvironmentFile=/etc/monitoring-platform.env
+ExecStart=/opt/monitoring-platform/backend/.venv/bin/python manage.py report_to_central --loop
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
