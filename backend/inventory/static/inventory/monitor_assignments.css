@@ -1,4 +1,4 @@
-.monitor-assignment-card {
+﻿.monitor-assignment-card {
   padding: 18px;
 }
 
@@ -71,7 +71,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
-  cursor: grab;
+  cursor: pointer;
   transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, opacity .18s ease;
 }
 
@@ -83,6 +83,7 @@
 
 .monitor-pick-card.dragging {
   opacity: .6;
+  cursor: grabbing;
 }
 
 .monitor-pick-card.disabled {
@@ -141,14 +142,71 @@
 
 .monitor-pick-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   gap: 8px;
-  padding-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid #eef2f7;
 }
 
 .monitor-pick-actions form {
+  display: inline-flex;
   margin: 0;
+}
+
+.monitor-action-btn {
+  display: inline-flex;
+  min-width: 76px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid #d8e2ee;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+.monitor-action-btn:hover {
+  background: #f8fafc;
+  border-color: #b6c6da;
+  color: #0f172a;
+}
+
+.monitor-action-btn.primary,
+.monitor-action-btn.secondary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.monitor-action-btn.primary:hover,
+.monitor-action-btn.secondary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.monitor-action-btn.danger {
+  background: #ffffff;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.monitor-action-btn.danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.monitor-action-btn.neutral {
+  min-width: 64px;
 }
 
 .monitor-empty-state {
@@ -176,5 +234,17 @@
 
   .monitor-drop-head small {
     text-align: left;
+  }
+}
+
+@media (max-width: 520px) {
+  .monitor-pick-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .monitor-action-btn {
+    min-width: 0;
+    flex: 1 1 110px;
   }
 }

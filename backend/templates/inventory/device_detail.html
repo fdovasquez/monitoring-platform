@@ -241,7 +241,7 @@
           </div>
           <div class="monitor-card-list">
             {% for item in monitor_assignments.active %}
-              <article class="monitor-pick-card {% if not item.assignment.is_enabled %}disabled{% endif %}" draggable="true" data-rule-id="{{ item.rule.id }}" data-current-zone="assigned">
+              <article class="monitor-pick-card {% if not item.assignment.is_enabled %}disabled{% endif %}" draggable="true" data-rule-id="{{ item.rule.id }}" data-current-zone="assigned" data-edit-url="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}">
                 <div class="monitor-pick-main">
                   <span class="monitor-pick-type">{{ item.rule.get_priority_display }}</span>
                   <h3>{{ item.rule.name }}</h3>
@@ -252,17 +252,18 @@
                   <span>{{ item.threshold }}</span>
                 </div>
                 <div class="monitor-pick-actions">
+                  <a class="monitor-action-btn neutral" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}">Editar</a>
                   <form method="post" action="{% url 'device-detail' server.id %}">
                     {% csrf_token %}
                     <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
-                    <button class="text-action" type="submit" name="action" value="toggle_monitor">
+                    <button class="monitor-action-btn secondary" type="submit" name="action" value="toggle_monitor">
                       {% if item.assignment.is_enabled %}Deshabilitar{% else %}Habilitar{% endif %}
                     </button>
                   </form>
                   <form method="post" action="{% url 'device-detail' server.id %}">
                     {% csrf_token %}
                     <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
-                    <button class="text-danger" type="submit" name="action" value="remove_monitor">Quitar</button>
+                    <button class="monitor-action-btn danger" type="submit" name="action" value="remove_monitor">Quitar</button>
                   </form>
                 </div>
               </article>
@@ -278,7 +279,7 @@
           </div>
           <div class="monitor-card-list">
             {% for item in monitor_assignments.available %}
-              <article class="monitor-pick-card" draggable="true" data-rule-id="{{ item.rule.id }}" data-current-zone="available">
+              <article class="monitor-pick-card" draggable="true" data-rule-id="{{ item.rule.id }}" data-current-zone="available" data-edit-url="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}">
                 <div class="monitor-pick-main">
                   <span class="monitor-pick-type">{{ item.rule.get_priority_display }}</span>
                   <h3>{{ item.rule.name }}</h3>
@@ -289,10 +290,11 @@
                   <span>{{ item.threshold }}</span>
                 </div>
                 <div class="monitor-pick-actions">
+                  <a class="monitor-action-btn neutral" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}">Editar</a>
                   <form method="post" action="{% url 'device-detail' server.id %}">
                     {% csrf_token %}
                     <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
-                    <button class="text-action" type="submit" name="action" value="assign_monitor">Agregar</button>
+                    <button class="monitor-action-btn primary" type="submit" name="action" value="assign_monitor">Agregar</button>
                   </form>
                 </div>
               </article>
@@ -512,6 +514,10 @@
       }
 
       monitorBoard.querySelectorAll("[data-rule-id]").forEach((card) => {
+        card.addEventListener("click", (event) => {
+          if (event.target.closest("a, button, form, input")) return;
+          if (card.dataset.editUrl) window.location.href = card.dataset.editUrl;
+        });
         card.addEventListener("dragstart", () => {
           draggedCard = card;
           card.classList.add("dragging");
