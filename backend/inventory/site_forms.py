@@ -3,7 +3,7 @@ from django import forms
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
-from .models import SiteSettings, TlsCertificate
+from .models import CentralMonitorSettings, SiteSettings, TlsCertificate
 
 
 class SiteSettingsForm(forms.ModelForm):
@@ -130,3 +130,78 @@ class TlsCertificateForm(forms.ModelForm):
         if commit:
             certificate.save()
         return certificate
+
+
+class CentralMonitorSettingsForm(forms.ModelForm):
+    api_token = forms.CharField(
+        label="Token API",
+        required=False,
+        widget=forms.PasswordInput(render_value=False),
+        help_text="Ingresa un token solo si quieres guardar o reemplazar el token actual.",
+    )
+
+    class Meta:
+        model = CentralMonitorSettings
+        fields = [
+            "reporting_enabled",
+            "central_api_url",
+            "satellite_id",
+            "satellite_name",
+            "report_interval_seconds",
+            "timeout_seconds",
+            "max_batch",
+        ]
+        labels = {
+            "reporting_enabled": "Activar reporte central",
+            "central_api_url": "URL del servidor central",
+            "satellite_id": "ID del satelite",
+            "satellite_name": "Nombre del satelite",
+            "report_interval_seconds": "Intervalo de reporte",
+            "timeout_seconds": "Timeout",
+            "max_batch": "Reportes pendientes por ciclo",
+        }
+        help_texts = {
+            "central_api_url": "Ejemplo: https://central.empresa.cl. No incluyas /api/v1/satellites/report.",
+            "satellite_id": "Identificador unico entregado por el monitor central.",
+            "report_interval_seconds": "Tiempo entre reportes salientes. Recomendado 300 segundos.",
+            "timeout_seconds": "Tiempo maximo de espera al servidor central.",
+            "max_batch": "Cantidad maxima de reportes encolados que se reintentaran por ciclo.",
+        }
+        widgets = {
+            "report_interval_seconds": forms.NumberInput(attrs={"min": 60, "max": 86400, "step": 60}),
+            "timeout_seconds": forms.NumberInput(attrs={"min": 5, "max": 120, "step": 1}),
+            "max_batch": forms.NumberInput(attrs={"min": 1, "max": 200, "step": 1}),
+        }
+
+    def clean_central_api_url(self):
+        url = self.cleaned_data.get("central_api_url", "").rstrip("/")
+        return url
+
+    def clean_report_interval_seconds(self):
+        value = self.cleaned_data["report_interval_seconds"]
+        if value < 60:
+            raise forms.ValidationError("El intervalo minimo es 60 segundos.")
+        return value
+
+    def clean(self):
+        cleaned_data = super().clean()
+        enabled = cleaned_data.get("reporting_enabled")
+        token = cleaned_data.get("api_token")
+        has_existing_token = bool(self.instance and self.instance.encrypted_api_token)
+        required_fields = ["central_api_url", "satellite_id", "satellite_name"]
+        if enabled:
+            for field in required_fields:
+                if not cleaned_data.get(field):
+                    self.add_error(field, "Este campo es obligatorio para activar el reporte central.")
+            if not token and not has_existing_token:
+                self.add_error("api_token", "Debes ingresar el token API para activar el reporte central.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        settings = super().save(commit=False)
+        token = self.cleaned_data.get("api_token")
+        if token:
+            settings.set_api_token(token)
+        if commit:
+            settings.save()
+        return settings

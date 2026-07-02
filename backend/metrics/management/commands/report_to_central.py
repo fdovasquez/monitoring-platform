@@ -1,10 +1,9 @@
 import logging
 import time
 
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from metrics.central_reporter import CentralReporterConfigurationError, run_report_cycle
+from metrics.central_reporter import CentralReporterConfigurationError, get_config, run_report_cycle
 
 
 logger = logging.getLogger(__name__)
@@ -24,12 +23,13 @@ class Command(BaseCommand):
         if options["loop"]:
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Reporte central en modo continuo cada {settings.REPORT_INTERVAL_SECONDS} segundos."
+                    f"Reporte central en modo continuo. Intervalo inicial configurado: {get_config().report_interval_seconds} segundos."
                 )
             )
             while True:
                 self.run_once()
-                time.sleep(settings.REPORT_INTERVAL_SECONDS)
+                interval = max(60, int(get_config().report_interval_seconds))
+                time.sleep(interval)
         else:
             self.run_once()
 

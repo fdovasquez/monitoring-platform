@@ -113,6 +113,48 @@ class TlsCertificate(models.Model):
         return self.domain or "Certificado HTTPS"
 
 
+class CentralMonitorSettings(models.Model):
+    central_api_url = models.URLField(max_length=500, blank=True)
+    satellite_id = models.CharField(max_length=120, blank=True)
+    satellite_name = models.CharField(max_length=160, blank=True)
+    encrypted_api_token = models.TextField(blank=True)
+    report_interval_seconds = models.PositiveIntegerField(default=300)
+    timeout_seconds = models.PositiveIntegerField(default=20)
+    max_batch = models.PositiveIntegerField(default=25)
+    reporting_enabled = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Monitor central"
+        verbose_name_plural = "Monitor central"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        self.central_api_url = self.central_api_url.rstrip("/")
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        settings, _ = cls.objects.get_or_create(pk=1)
+        return settings
+
+    def set_api_token(self, token):
+        if token:
+            self.encrypted_api_token = credential_cipher().encrypt(token.encode("utf-8")).decode("utf-8")
+
+    def get_api_token(self):
+        if not self.encrypted_api_token:
+            return ""
+        return credential_cipher().decrypt(self.encrypted_api_token.encode("utf-8")).decode("utf-8")
+
+    @property
+    def is_configured(self):
+        return bool(self.central_api_url and self.satellite_id and self.satellite_name and self.encrypted_api_token)
+
+    def __str__(self):
+        return self.satellite_name or "Monitor central"
+
+
 class Server(models.Model):
     OS_LINUX = "linux"
     OS_WINDOWS = "windows"

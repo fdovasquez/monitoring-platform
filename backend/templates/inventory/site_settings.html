@@ -46,6 +46,7 @@
       <a class="{% if active_settings_tab == 'site' %}active{% endif %}" href="{% url 'site-settings' %}?tab=site">Personalizacion</a>
       <a class="{% if active_settings_tab == 'smtp' %}active{% endif %}" href="{% url 'site-settings' %}?tab=smtp">Correo SMTP</a>
       <a class="{% if active_settings_tab == 'https' %}active{% endif %}" href="{% url 'site-settings' %}?tab=https">HTTPS y certificados</a>
+      <a class="{% if active_settings_tab == 'central' %}active{% endif %}" href="{% url 'site-settings' %}?tab=central">Monitor central</a>
     </nav>
 
     {% if active_settings_tab == 'site' %}
@@ -120,6 +121,107 @@
         </div>
       </form>
     </section>
+    {% endif %}
+
+    {% if active_settings_tab == 'central' %}
+      <section class="settings-layout smtp-layout">
+        <form class="profile-card settings-card" method="post" data-loading-form>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_central">
+          <div class="profile-card-head">
+            <div>
+              <h2>Monitor central</h2>
+              <p>Configura el envio saliente de reportes hacia un servidor central publico por HTTPS.</p>
+            </div>
+            {% if central_settings.reporting_enabled and central_settings.is_configured %}
+              <span class="health-ok">Activo</span>
+            {% elif central_settings.is_configured %}
+              <span class="health-warn">Configurado desactivado</span>
+            {% else %}
+              <span class="health-warn">Incompleto</span>
+            {% endif %}
+          </div>
+
+          <div class="form-grid">
+            <div class="field field-check field-wide">
+              <label for="{{ central_form.reporting_enabled.id_for_label }}">{{ central_form.reporting_enabled.label }}</label>
+              {{ central_form.reporting_enabled }}
+              <small>Activa o desactiva el envio de reportes al monitor central sin afectar el monitoreo local.</small>
+              {% for error in central_form.reporting_enabled.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field field-wide">
+              <label for="{{ central_form.central_api_url.id_for_label }}">{{ central_form.central_api_url.label }}</label>
+              {{ central_form.central_api_url }}
+              {% if central_form.central_api_url.help_text %}<small>{{ central_form.central_api_url.help_text }}</small>{% endif %}
+              {% for error in central_form.central_api_url.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ central_form.satellite_id.id_for_label }}">{{ central_form.satellite_id.label }}</label>
+              {{ central_form.satellite_id }}
+              {% if central_form.satellite_id.help_text %}<small>{{ central_form.satellite_id.help_text }}</small>{% endif %}
+              {% for error in central_form.satellite_id.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ central_form.satellite_name.id_for_label }}">{{ central_form.satellite_name.label }}</label>
+              {{ central_form.satellite_name }}
+              {% for error in central_form.satellite_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field field-wide">
+              <label for="{{ central_form.api_token.id_for_label }}">{{ central_form.api_token.label }}</label>
+              {{ central_form.api_token }}
+              {% if central_settings.encrypted_api_token %}
+                <small>Token guardado. Completa este campo solo si necesitas reemplazarlo.</small>
+              {% elif central_form.api_token.help_text %}
+                <small>{{ central_form.api_token.help_text }}</small>
+              {% endif %}
+              {% for error in central_form.api_token.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ central_form.report_interval_seconds.id_for_label }}">{{ central_form.report_interval_seconds.label }} <span>seg</span></label>
+              {{ central_form.report_interval_seconds }}
+              {% if central_form.report_interval_seconds.help_text %}<small>{{ central_form.report_interval_seconds.help_text }}</small>{% endif %}
+              {% for error in central_form.report_interval_seconds.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ central_form.timeout_seconds.id_for_label }}">{{ central_form.timeout_seconds.label }} <span>seg</span></label>
+              {{ central_form.timeout_seconds }}
+              {% if central_form.timeout_seconds.help_text %}<small>{{ central_form.timeout_seconds.help_text }}</small>{% endif %}
+              {% for error in central_form.timeout_seconds.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ central_form.max_batch.id_for_label }}">{{ central_form.max_batch.label }}</label>
+              {{ central_form.max_batch }}
+              {% if central_form.max_batch.help_text %}<small>{{ central_form.max_batch.help_text }}</small>{% endif %}
+              {% for error in central_form.max_batch.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+          </div>
+
+          {% for error in central_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+
+          <div class="form-actions">
+            <a class="ghost-button" href="{% url 'device-list' %}">Cancelar</a>
+            <button class="submit-button" type="submit" data-loading-label="Guardando...">Guardar monitor central</button>
+          </div>
+        </form>
+
+        <section class="profile-card settings-card">
+          <div class="profile-card-head">
+            <div>
+              <h2>Prueba funcional</h2>
+              <p>Envia un reporte minimo al endpoint central usando la configuracion guardada.</p>
+            </div>
+          </div>
+          <div class="central-test-summary">
+            <span>Endpoint</span>
+            <code>{{ central_settings.central_api_url|default:"Sin URL" }}/api/v1/satellites/report</code>
+          </div>
+          <form method="post" class="test-actions" onsubmit="return confirm('Enviar reporte de prueba al monitor central?');">
+            {% csrf_token %}
+            <button class="submit-button" type="submit" name="action" value="test_central">Probar monitor central</button>
+          </form>
+          <p class="tls-note">La prueba usa POST HTTPS con autenticacion Bearer Token. Si falla, el monitoreo local sigue funcionando.</p>
+        </section>
+      </section>
     {% endif %}
 
     {% if active_settings_tab == 'smtp' %}

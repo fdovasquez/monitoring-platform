@@ -6,9 +6,10 @@ from django.views.generic import TemplateView
 from alerts.forms import SmtpSettingsForm, TestEmailForm
 from alerts.models import SmtpSettings
 from alerts.services import send_test_email, test_smtp_connection
+from metrics.central_reporter import test_central_connection
 
-from .models import SiteSettings, TlsCertificate
-from .site_forms import SiteSettingsForm, TlsCertificateForm
+from .models import CentralMonitorSettings, SiteSettings, TlsCertificate
+from .site_forms import CentralMonitorSettingsForm, SiteSettingsForm, TlsCertificateForm
 
 
 def user_can_manage_site_settings(user):
@@ -25,9 +26,12 @@ class SiteSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         settings = SiteSettings.load()
         tls_certificate = TlsCertificate.load()
+        central_settings = CentralMonitorSettings.load()
         smtp = SmtpSettings.load()
         context["settings_form"] = kwargs.get("settings_form") or SiteSettingsForm(instance=settings)
         context["site_settings_edit"] = settings
+        context["central_settings"] = central_settings
+        context["central_form"] = kwargs.get("central_form") or CentralMonitorSettingsForm(instance=central_settings)
         context["smtp_settings"] = smtp
         context["smtp_form"] = kwargs.get("smtp_form") or SmtpSettingsForm(instance=smtp)
         context["test_email_form"] = kwargs.get("test_email_form") or TestEmailForm()
@@ -58,6 +62,24 @@ class SiteSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 return redirect("/app/settings/?tab=smtp")
             messages.error(request, "No se pudo guardar SMTP. Revisa los campos.")
             return self.render_to_response(self.get_context_data(smtp_form=form, active_settings_tab="smtp"))
+
+        if action == "save_central":
+            central_settings = CentralMonitorSettings.load()
+            form = CentralMonitorSettingsForm(request.POST, instance=central_settings)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Configuracion del monitor central guardada correctamente.")
+                return redirect("/app/settings/?tab=central")
+            messages.error(request, "No se pudo guardar el monitor central. Revisa los campos.")
+            return self.render_to_response(self.get_context_data(central_form=form, active_settings_tab="central"))
+
+        if action == "test_central":
+            try:
+                test_central_connection()
+                messages.success(request, "Prueba con monitor central exitosa. El endpoint recibio el reporte de prueba.")
+            except Exception as exc:
+                messages.error(request, f"No se pudo conectar con el monitor central: {exc}")
+            return redirect("/app/settings/?tab=central")
 
         if action == "test_connection":
             try:

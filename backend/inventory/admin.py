@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     AgentToken,
+    CentralMonitorSettings,
     DeviceGroup,
     MachineCredential,
     Server,
@@ -77,3 +78,9 @@ class UserProfileAdmin(admin.ModelAdmin):
 class SiteSettingsAdmin(admin.ModelAdmin):
     list_display = ("site_name", "subtitle", "updated_at")
     readonly_fields = ("updated_at",)
+
+
+@admin.register(CentralMonitorSettings)
+class CentralMonitorSettingsAdmin(admin.ModelAdmin):
+    list_display = ("satellite_id", "satellite_name", "central_api_url", "reporting_enabled", "updated_at")
+    readonly_fields = ("encrypted_api_token", "updated_at")

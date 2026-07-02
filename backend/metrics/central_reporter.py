@@ -9,7 +9,7 @@ from django.db.models import Count, Max
 from django.utils import timezone
 
 from alerts.models import AlertEvent
-from inventory.models import Server, SiteSettings
+from inventory.models import CentralMonitorSettings, Server, SiteSettings
 from metrics.models import CentralReportQueue, MetricSample
 
 
@@ -24,26 +24,75 @@ class CentralReporterConfigurationError(CentralReporterError):
     pass
 
 
+class CentralReporterConfig:
+    def __init__(
+        self,
+        enabled,
+        api_url,
+        satellite_id,
+        satellite_name,
+        api_token,
+        report_interval_seconds,
+        timeout_seconds,
+        max_batch,
+    ):
+        self.enabled = enabled
+        self.api_url = api_url.rstrip("/") if api_url else ""
+        self.satellite_id = satellite_id
+        self.satellite_name = satellite_name
+        self.api_token = api_token
+        self.report_interval_seconds = report_interval_seconds
+        self.timeout_seconds = timeout_seconds
+        self.max_batch = max_batch
+
+
+def get_config():
+    database_settings = CentralMonitorSettings.load()
+    if database_settings.is_configured or database_settings.reporting_enabled:
+        return CentralReporterConfig(
+            enabled=database_settings.reporting_enabled,
+            api_url=database_settings.central_api_url,
+            satellite_id=database_settings.satellite_id,
+            satellite_name=database_settings.satellite_name,
+            api_token=database_settings.get_api_token(),
+            report_interval_seconds=database_settings.report_interval_seconds,
+            timeout_seconds=database_settings.timeout_seconds,
+            max_batch=database_settings.max_batch,
+        )
+    return CentralReporterConfig(
+        enabled=settings.CENTRAL_REPORTING_ENABLED,
+        api_url=settings.CENTRAL_API_URL,
+        satellite_id=settings.SATELLITE_ID,
+        satellite_name=settings.SATELLITE_NAME,
+        api_token=settings.API_TOKEN,
+        report_interval_seconds=settings.REPORT_INTERVAL_SECONDS,
+        timeout_seconds=settings.CENTRAL_REPORT_TIMEOUT_SECONDS,
+        max_batch=settings.CENTRAL_REPORT_MAX_BATCH,
+    )
+
+
 def is_enabled():
-    return bool(settings.CENTRAL_REPORTING_ENABLED)
+    return bool(get_config().enabled)
 
 
-def validate_configuration():
+def validate_configuration(config=None):
+    config = config or get_config()
     missing = []
-    if not settings.CENTRAL_API_URL:
+    if not config.api_url:
         missing.append("CENTRAL_API_URL")
-    if not settings.SATELLITE_ID:
+    if not config.satellite_id:
         missing.append("SATELLITE_ID")
-    if not settings.SATELLITE_NAME:
+    if not config.satellite_name:
         missing.append("SATELLITE_NAME")
-    if not settings.API_TOKEN:
+    if not config.api_token:
         missing.append("API_TOKEN")
     if missing:
         raise CentralReporterConfigurationError(f"Faltan variables de reporte central: {', '.join(missing)}")
 
 
-def report_endpoint():
-    return f"{settings.CENTRAL_API_URL.rstrip('/')}/api/v1/satellites/report"
+def report_endpoint(config=None):
+    config = config or get_config()
+    return f"{config.api_url}/api/v1/satellites/report"
 
 
 def latest_metric_by_server():
@@ -142,8 +191,8 @@ def build_payload():
         "queued_reports": CentralReportQueue.objects.filter(status=CentralReportQueue.STATUS_PENDING).count(),
     }
     return {
-        "satellite_id": settings.SATELLITE_ID,
-        "satellite_name": settings.SATELLITE_NAME,
+        "satellite_id": get_config().satellite_id,
+        "satellite_name": get_config().satellite_name,
         "timestamp": timezone.now().isoformat(),
         "hostname": socket.gethostname(),
         "site_name": site_settings.site_name,
@@ -161,21 +210,22 @@ def build_payload():
     }
 
 
-def post_payload(payload):
-    validate_configuration()
+def post_payload(payload, config=None):
+    config = config or get_config()
+    validate_configuration(config)
     body = json.dumps(payload).encode("utf-8")
     request = Request(
-        report_endpoint(),
+        report_endpoint(config),
         data=body,
         headers={
-            "Authorization": f"Bearer {settings.API_TOKEN}",
+            "Authorization": f"Bearer {config.api_token}",
             "Content-Type": "application/json",
             "Accept": "application/json",
         },
         method="POST",
     )
     try:
-        with urlopen(request, timeout=settings.CENTRAL_REPORT_TIMEOUT_SECONDS) as response:
+        with urlopen(request, timeout=config.timeout_seconds) as response:
             status_code = response.getcode()
             if 200 <= status_code < 300:
                 logger.info("Reporte central enviado correctamente. HTTP %s", status_code)
@@ -206,13 +256,14 @@ def enqueue_payload(payload, error_message):
 
 
 def flush_pending_reports(limit=None):
+    config = get_config()
     sent = 0
     failed = 0
-    limit = limit or settings.CENTRAL_REPORT_MAX_BATCH
+    limit = limit or config.max_batch
     pending_reports = CentralReportQueue.objects.filter(status=CentralReportQueue.STATUS_PENDING).order_by("created_at")[:limit]
     for queued_report in pending_reports:
         try:
-            post_payload(queued_report.payload)
+            post_payload(queued_report.payload, config)
         except CentralReporterError as exc:
             queued_report.attempts += 1
             queued_report.last_error = str(exc)
@@ -229,15 +280,16 @@ def flush_pending_reports(limit=None):
 
 
 def run_report_cycle():
-    if not is_enabled():
+    config = get_config()
+    if not config.enabled:
         logger.info("Reporte central desactivado por CENTRAL_REPORTING_ENABLED=false.")
         return {"enabled": False, "sent": 0, "queued": 0, "pending_sent": 0, "pending_failed": 0}
 
-    validate_configuration()
+    validate_configuration(config)
     pending_result = flush_pending_reports()
     payload = build_payload()
     try:
-        post_payload(payload)
+        post_payload(payload, config)
     except CentralReporterError as exc:
         enqueue_payload(payload, exc)
         return {
@@ -255,3 +307,23 @@ def run_report_cycle():
         "pending_sent": pending_result["sent"],
         "pending_failed": pending_result["failed"],
     }
+
+
+def test_central_connection():
+    config = get_config()
+    validate_configuration(config)
+    payload = {
+        "satellite_id": config.satellite_id,
+        "satellite_name": config.satellite_name,
+        "timestamp": timezone.now().isoformat(),
+        "hostname": socket.gethostname(),
+        "site_name": SiteSettings.load().site_name,
+        "agents": [],
+        "metrics": [],
+        "alerts": [],
+        "status": {
+            "test": True,
+            "message": "Prueba funcional desde configuracion del satelite",
+        },
+    }
+    return post_payload(payload, config)

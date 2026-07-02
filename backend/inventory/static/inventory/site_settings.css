@@ -138,6 +138,27 @@
   font-size: 13px;
 }
 
+.central-test-summary {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.central-test-summary span {
+  color: var(--ink-500);
+  font-size: 12px;
+}
+
+.central-test-summary code {
+  color: #0f172a;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 640px) {
   .settings-layout {
     grid-template-columns: 1fr;
