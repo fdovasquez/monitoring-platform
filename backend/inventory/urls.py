@@ -34,7 +34,7 @@ def can_manage_devices(user):
 def device_manager_required(view_func):
     def wrapped(request, *args, **kwargs):
         if can_manage_devices(request.user):
-            return view_func(request.user)
+            return view_func(request, *args, **kwargs)
         raise PermissionDenied
 
     return wrapped
