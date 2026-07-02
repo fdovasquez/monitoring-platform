@@ -16,7 +16,7 @@ import (
     "time"
 )
 
-const agentVersion = "1.6.0-standalone"
+const agentVersion = "1.7.0-standalone"
 
 var lastPatchCheck time.Time
 var cachedPatchSecurity map[string]interface{}
@@ -176,12 +176,18 @@ func diskEncryptionSecurity() map[string]interface{} {
         return pendingSecurity("No fue posible identificar el volumen raiz")
     }
 
-    volumeType := strings.ToLower(command("lsblk", "-no", "TYPE", rootSource))
-    if volumeType == "crypt" {
+    volumeChain := strings.ToLower(command("lsblk", "-nrpo", "TYPE", "-s", rootSource))
+    for _, volumeType := range strings.Fields(volumeChain) {
+        if volumeType == "crypt" {
+            return map[string]interface{}{"enabled": true, "detail": "Volumen raiz protegido por cifrado en la cadena del dispositivo"}
+        }
+    }
+    directType := strings.ToLower(command("lsblk", "-no", "TYPE", rootSource))
+    if directType == "crypt" {
         return map[string]interface{}{"enabled": true, "detail": "Volumen raiz protegido con LUKS/dm-crypt"}
     }
 
-    return map[string]interface{}{"enabled": false, "detail": "El volumen raiz no usa cifrado LUKS/dm-crypt"}
+    return map[string]interface{}{"enabled": false, "detail": "No se detecto cifrado en la cadena del volumen raiz"}
 }
 
 func osSecurity() map[string]interface{} {
@@ -200,7 +206,12 @@ func pendingSecurity(detail string) map[string]interface{} {
 }
 
 func latestInstalledPackage() string {
-    output := command("rpm", "-qa", "--last")
+    output := ""
+    if _, err := exec.LookPath("rpm"); err == nil {
+        output = command("rpm", "-qa", "--last")
+    } else if _, err := exec.LookPath("dpkg-query"); err == nil {
+        output = command("sh", "-c", "grep -h ' install ' /var/log/dpkg.log /var/log/dpkg.log.1 2>/dev/null | tail -1 | awk '{print $4\" \"$1\" \"$2}'")
+    }
     lines := strings.Split(output, "\n")
     if len(lines) == 0 || strings.TrimSpace(lines[0]) == "" {
         return ""
@@ -221,29 +232,49 @@ func patchSecurity() map[string]interface{} {
     }
 
     packageManager := ""
+    args := []string{}
+    updateAvailableCode := 100
     if _, err := exec.LookPath("dnf"); err == nil {
         packageManager = "dnf"
+        args = []string{"-q", "check-update", "--cacheonly"}
     } else if _, err := exec.LookPath("yum"); err == nil {
         packageManager = "yum"
+        args = []string{"-q", "check-update", "--cacheonly"}
+    } else if _, err := exec.LookPath("apt-get"); err == nil {
+        packageManager = "apt-get"
+        args = []string{"-s", "upgrade"}
+        updateAvailableCode = 0
     }
     if packageManager == "" {
         cachedPatchSecurity = map[string]interface{}{
             "up_to_date": false,
-            "detail": patchDetail("No se encontro dnf ni yum para revisar actualizaciones"),
+            "detail": patchDetail("No se encontro dnf, yum ni apt-get para revisar actualizaciones"),
             "pending": true,
         }
         lastPatchCheck = time.Now()
         return cachedPatchSecurity
     }
 
-    args := []string{"-q", "check-update", "--cacheonly"}
     if strings.EqualFold(env("MONITORING_PACKAGE_QUERY_ONLINE", "false"), "true") {
-        args = []string{"-q", "check-update"}
+        if packageManager == "apt-get" {
+            exec.Command("apt-get", "update").Run()
+        } else {
+            args = []string{"-q", "check-update"}
+        }
     }
     run := exec.Command(packageManager, args...)
-    if err := run.Run(); err == nil {
+    output, err := run.CombinedOutput()
+    outputText := string(output)
+    if packageManager == "apt-get" && err == nil {
+        hasUpdates := strings.Contains(outputText, "upgraded,") && !strings.Contains(outputText, "0 upgraded,")
+        if hasUpdates {
+            cachedPatchSecurity = map[string]interface{}{"up_to_date": false, "detail": patchDetail("Hay actualizaciones disponibles via apt")}
+        } else {
+            cachedPatchSecurity = map[string]interface{}{"up_to_date": true, "detail": patchDetail("Sin actualizaciones pendientes via apt")}
+        }
+    } else if err == nil {
         cachedPatchSecurity = map[string]interface{}{"up_to_date": true, "detail": patchDetail("Sin actualizaciones pendientes")}
-    } else if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 100 {
+    } else if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == updateAvailableCode {
         cachedPatchSecurity = map[string]interface{}{"up_to_date": false, "detail": patchDetail("Hay actualizaciones disponibles")}
     } else {
         cachedPatchSecurity = map[string]interface{}{

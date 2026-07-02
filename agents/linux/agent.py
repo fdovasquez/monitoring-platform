@@ -255,13 +255,36 @@ def collect_os_security_status():
 
 
 def collect_disk_encryption_status():
-    encrypted = any(line.strip() == "crypt" for line in command_output(["lsblk", "-no", "TYPE"]).splitlines())
     root_source = command_output(["findmnt", "-n", "-o", "SOURCE", "/"])
-    return {"enabled": encrypted or root_source.startswith("/dev/mapper/"), "detail": "Disco principal cifrado" if encrypted else "Disco principal no cifrado"}
+    if not root_source:
+        return {"enabled": False, "detail": "No fue posible identificar el volumen raiz", "pending": True}
+    chain = command_output(["lsblk", "-nrpo", "TYPE", "-s", root_source]).lower().split()
+    encrypted = "crypt" in chain or command_output(["lsblk", "-no", "TYPE", root_source]).lower() == "crypt"
+    return {
+        "enabled": encrypted,
+        "detail": "Volumen raiz protegido por cifrado en la cadena del dispositivo"
+        if encrypted
+        else "No se detecto cifrado en la cadena del volumen raiz",
+    }
 
 
 def collect_patch_status():
-    return {"up_to_date": True, "detail": "No evaluado sin repositorio local"}
+    if command_exists("apt-get"):
+        output = command_output(["apt-get", "-s", "upgrade"])
+        if output:
+            has_updates = "upgraded," in output and "0 upgraded," not in output
+            return {
+                "up_to_date": not has_updates,
+                "detail": "Hay actualizaciones disponibles via apt" if has_updates else "Sin actualizaciones pendientes via apt",
+            }
+    if command_exists("dnf") or command_exists("yum"):
+        manager = "dnf" if command_exists("dnf") else "yum"
+        status = subprocess.run([manager, "-q", "check-update", "--cacheonly"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if status.returncode == 0:
+            return {"up_to_date": True, "detail": "Sin actualizaciones pendientes"}
+        if status.returncode == 100:
+            return {"up_to_date": False, "detail": "Hay actualizaciones disponibles"}
+    return {"up_to_date": False, "detail": "No fue posible consultar actualizaciones desde el cache local", "pending": True}
 
 
 def collect_security_status():
