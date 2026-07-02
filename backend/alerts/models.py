@@ -127,6 +127,26 @@ class AlertRule(models.Model):
         return timezone.now() >= wait_until
 
 
+class ServerMonitorAssignment(models.Model):
+    server = models.ForeignKey("inventory.Server", on_delete=models.CASCADE, related_name="monitor_assignments")
+    rule = models.ForeignKey(AlertRule, on_delete=models.CASCADE, related_name="server_assignments")
+    is_enabled = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["server__hostname", "rule__name"]
+        unique_together = ("server", "rule")
+        indexes = [
+            models.Index(fields=["server", "is_enabled"]),
+            models.Index(fields=["rule", "is_enabled"]),
+        ]
+
+    def __str__(self):
+        state = "habilitado" if self.is_enabled else "deshabilitado"
+        return f"{self.server} - {self.rule} ({state})"
+
+
 class AlertEvent(models.Model):
     rule = models.ForeignKey(AlertRule, on_delete=models.CASCADE, related_name="events")
     server = models.ForeignKey("inventory.Server", on_delete=models.CASCADE, related_name="alert_events")
