@@ -152,13 +152,22 @@
 
 .monitor-pick-actions form {
   display: block;
+  width: 112px;
+  height: 34px;
   margin: 0;
 }
 
 .monitor-action-btn {
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
   display: inline-flex;
   width: 112px;
   height: 34px;
+  min-width: 112px;
+  max-width: 112px;
+  min-height: 34px;
+  max-height: 34px;
   align-items: center;
   justify-content: center;
   padding: 0 12px;
@@ -173,6 +182,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  font-family: inherit;
+  font-weight: 400;
   transition: background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
 }
 
@@ -210,6 +221,8 @@
 
 .monitor-action-btn.neutral {
   width: 112px;
+  min-width: 112px;
+  max-width: 112px;
 }
 
 .monitor-empty-state {
@@ -250,5 +263,7 @@
 
   .monitor-action-btn {
     width: 100%;
+    min-width: 100%;
+    max-width: 100%;
   }
 }
