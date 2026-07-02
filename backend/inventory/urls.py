@@ -8,7 +8,6 @@ from .views import (
     AgentInstallWizardView,
     DeviceConsoleView,
     DeviceDeleteView,
-    DeviceDetailView,
     DeviceEditView,
     DeviceListView,
     MachineCredentialCreateView,
@@ -21,6 +20,7 @@ from .views import (
     agent_download,
     linux_install_script,
 )
+from .monitor_assignment_views import DeviceDetailWithMonitorsView
 from .runtime_views import DeviceRuntimeView
 from .site_views import SiteSettingsView
 
@@ -34,7 +34,7 @@ def can_manage_devices(user):
 def device_manager_required(view_func):
     def wrapped(request, *args, **kwargs):
         if can_manage_devices(request.user):
-            return view_func(request, *args, **kwargs)
+            return view_func(request.user)
         raise PermissionDenied
 
     return wrapped
@@ -44,7 +44,7 @@ urlpatterns = [
     path("login/", CorporateLoginView.as_view(), name="login"),
     path("login/verify/", LoginCodeVerifyView.as_view(), name="login-verify"),
     path("devices/", DeviceListView.as_view(), name="device-list"),
-    path("devices/<int:pk>/", DeviceDetailView.as_view(), name="device-detail"),
+    path("devices/<int:pk>/", DeviceDetailWithMonitorsView.as_view(), name="device-detail"),
     path("devices/<int:pk>/edit/", DeviceEditView.as_view(), name="device-edit"),
     path("devices/<int:pk>/runtime/", DeviceRuntimeView.as_view(), name="device-runtime"),
     path("devices/<int:pk>/delete/", DeviceDeleteView.as_view(), name="device-delete"),
@@ -68,4 +68,3 @@ urlpatterns = [
     path("settings/", SiteSettingsView.as_view(), name="site-settings"),
     path("logout/", CorporateLogoutView.as_view(), name="logout"),
 ]
-
