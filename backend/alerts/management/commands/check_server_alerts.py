@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from alerts.models import AlertEvent, AlertRule, SmtpSettings
+from alerts.models import AlertEvent, AlertRule, ServerMonitorAssignment, SmtpSettings
 from alerts.services import send_email
 from inventory.models import Server
 
@@ -18,7 +18,11 @@ class Command(BaseCommand):
         for rule in rules:
             threshold_minutes = max(1, int(rule.threshold or 1))
             cutoff = timezone.now() - timezone.timedelta(minutes=threshold_minutes)
-            for server in Server.objects.filter(is_active=True):
+            assigned_server_ids = ServerMonitorAssignment.objects.filter(
+                rule=rule,
+                is_enabled=True,
+            ).values_list("server_id", flat=True)
+            for server in Server.objects.filter(is_active=True, id__in=assigned_server_ids):
                 is_offline = not server.last_seen or server.last_seen < cutoff
                 if is_offline:
                     if self.open_offline_event(rule, server, threshold_minutes, settings):
@@ -137,4 +141,3 @@ class Command(BaseCommand):
         if not server.last_seen:
             return 999999.0
         return max(0.0, (timezone.now() - server.last_seen).total_seconds() / 60)
-
