@@ -12,32 +12,62 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 96px;
-  padding: 20px 8px;
+  min-height: 112px;
+  padding: 24px 16px;
   background: #ffffff;
   border-bottom: 1px solid #dbe3ef;
 }
 
-.monitor-identity,
-.monitor-title-line,
-.monitor-actions {
+.monitor-identity {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
+.monitor-identity > div:last-child {
+  display: grid;
+  gap: 6px;
+}
+
+.monitor-title-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .monitor-actions {
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 132px;
+  align-items: center;
   justify-content: flex-end;
+  gap: 10px;
 }
 
 .monitor-actions .ghost-button,
 .monitor-actions .submit-button {
   box-sizing: border-box;
-  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  width: 132px;
+  height: 38px;
+  min-width: 132px;
+  max-width: 132px;
   min-height: 38px;
-  padding: 0 14px;
+  max-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .monitor-primary-action {
@@ -57,11 +87,15 @@
 
 .monitor-title-line h1 {
   margin: 0;
-  font-size: 19px;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .monitor-kind {
   display: inline-flex;
+  width: fit-content;
   min-height: 22px;
   align-items: center;
   padding: 0 8px;
@@ -70,6 +104,27 @@
   border: 1px solid #cbd5e1;
   border-radius: 5px;
   font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .monitor-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .monitor-actions {
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .monitor-actions .ghost-button,
+  .monitor-actions .submit-button {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+  }
 }
 
 .monitor-tabs {
