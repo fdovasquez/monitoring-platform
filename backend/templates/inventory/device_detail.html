@@ -307,6 +307,18 @@
   </main>
 
   <script>
+    const closeToolMenus = () => {
+      document.querySelectorAll("[data-tool-menu]").forEach((menu) => {
+        menu.classList.remove("open");
+      });
+      document.querySelectorAll("[data-tool-menu-panel]").forEach((panel) => {
+        panel.hidden = true;
+      });
+      document.querySelectorAll("[data-tool-menu-trigger]").forEach((trigger) => {
+        trigger.setAttribute("aria-expanded", "false");
+      });
+    };
+
     document.querySelectorAll("[data-tool-menu]").forEach((menu) => {
       const trigger = menu.querySelector("[data-tool-menu-trigger]");
       const panel = menu.querySelector("[data-tool-menu-panel]");
@@ -315,28 +327,27 @@
       trigger.addEventListener("click", (event) => {
         event.stopPropagation();
         const willOpen = panel.hidden;
-        document.querySelectorAll("[data-tool-menu-panel]").forEach((otherPanel) => {
-          otherPanel.hidden = true;
-        });
-        panel.hidden = !willOpen;
-        trigger.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        closeToolMenus();
+        if (willOpen) {
+          menu.classList.add("open");
+          panel.hidden = false;
+          trigger.setAttribute("aria-expanded", "true");
+        }
+      });
+
+      panel.addEventListener("click", (event) => {
+        event.stopPropagation();
       });
 
       panel.querySelectorAll("a, button").forEach((item) => {
         item.addEventListener("click", () => {
-          panel.hidden = true;
-          trigger.setAttribute("aria-expanded", "false");
+          closeToolMenus();
         });
       });
     });
 
     document.addEventListener("click", () => {
-      document.querySelectorAll("[data-tool-menu-panel]").forEach((panel) => {
-        panel.hidden = true;
-      });
-      document.querySelectorAll("[data-tool-menu-trigger]").forEach((trigger) => {
-        trigger.setAttribute("aria-expanded", "false");
-      });
+      closeToolMenus();
     });
 
     document.querySelectorAll("[data-open-modal]").forEach((button) => {

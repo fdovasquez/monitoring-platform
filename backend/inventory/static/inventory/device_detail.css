@@ -101,6 +101,7 @@
 .header-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -222,6 +223,9 @@
 
 .tool-menu {
   position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  isolation: isolate;
 }
 
 .tool-menu-trigger {
@@ -253,12 +257,13 @@
 }
 
 .tool-menu-panel {
-  position: absolute;
-  z-index: 30;
+  position: absolute !important;
+  z-index: 80;
   top: calc(100% + 8px);
   right: 0;
-  display: grid;
-  min-width: 230px;
+  display: none;
+  width: 260px;
+  min-width: 260px;
   padding: 6px;
   background: #fff;
   border: 1px solid #dbe3ee;
@@ -266,14 +271,20 @@
   box-shadow: 0 18px 38px rgba(15, 23, 42, .16);
 }
 
+.tool-menu.open .tool-menu-panel {
+  display: flex !important;
+  flex-direction: column;
+}
+
 .tool-menu-panel[hidden] {
-  display: none;
+  display: none !important;
 }
 
 .tool-menu-item {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   min-height: 38px;
   padding: 0 10px;
   color: #334155;
@@ -284,6 +295,7 @@
   font-size: 13px;
   text-align: left;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -1556,6 +1568,7 @@
   .tool-menu-panel {
     left: 0;
     right: 0;
+    width: 100%;
     min-width: 100%;
   }
 }
