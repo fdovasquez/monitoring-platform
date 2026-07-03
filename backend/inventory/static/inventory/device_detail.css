@@ -1161,80 +1161,16 @@
   word-break: normal;
 }
 
-.location-card,
-.system-summary-card,
 .active-alerts-card,
 .telemetry-card {
   padding: 16px;
 }
 
-.location-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 160px;
-  min-height: 112px;
-  overflow: hidden;
-}
-
-.location-card h2,
-.system-summary-card h2,
 .telemetry-title h2 {
   margin: 0;
   color: var(--detail-text);
   font-size: 16px;
   font-weight: 400;
-}
-
-.location-card p {
-  margin: 8px 0 0;
-  color: var(--detail-muted);
-  font-size: 13px;
-}
-
-.map-preview {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 52%;
-  background:
-    radial-gradient(circle at 58% 48%, #2563eb 0 4px, transparent 5px),
-    linear-gradient(125deg, transparent 0 42%, rgba(37, 99, 235, .10) 43% 62%, transparent 63%),
-    linear-gradient(180deg, #f8fafc, #eef4ff);
-  clip-path: polygon(28% 0, 100% 0, 100% 100%, 0 100%);
-}
-
-.map-preview span {
-  position: absolute;
-  right: 30%;
-  top: 43%;
-  width: 12px;
-  height: 12px;
-  border: 3px solid #2563eb;
-  border-radius: 999px;
-  background: #fff;
-}
-
-.system-summary-list {
-  display: grid;
-  gap: 10px;
-  margin: 14px 0 0;
-}
-
-.system-summary-list div {
-  display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 12px;
-}
-
-.system-summary-list dt {
-  color: var(--detail-muted);
-  font-size: 12px;
-}
-
-.system-summary-list dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-  color: var(--detail-text);
-  font-size: 13px;
 }
 
 .metric-panel-grid {
@@ -1463,13 +1399,6 @@
     background: #111827;
   }
 
-  .map-preview {
-    background:
-      radial-gradient(circle at 58% 48%, #60a5fa 0 4px, transparent 5px),
-      linear-gradient(125deg, transparent 0 42%, rgba(96, 165, 250, .12) 43% 62%, transparent 63%),
-      linear-gradient(180deg, #0f172a, #111827);
-  }
-
   .telemetry-chart {
     background: linear-gradient(180deg, transparent 0 55%, rgba(37, 99, 235, .12) 55% 100%);
   }
@@ -1529,24 +1458,6 @@
   .chart-grid-main,
   .metric-panel-grid {
     grid-template-columns: 1fr;
-  }
-
-  .location-card {
-    grid-template-columns: 1fr;
-  }
-
-  .map-preview {
-    position: relative;
-    width: 100%;
-    min-height: 96px;
-    margin-top: 14px;
-    clip-path: none;
-    border-radius: 10px;
-  }
-
-  .system-summary-list div {
-    grid-template-columns: 1fr;
-    gap: 3px;
   }
 
   .disk-telemetry-card {

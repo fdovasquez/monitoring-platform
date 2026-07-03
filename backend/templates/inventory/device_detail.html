@@ -143,29 +143,6 @@
         </section>
         {% endwith %}
 
-        <article class="card location-card">
-          <div>
-            <h2>{{ server.ip_address|default:"Sin IP registrada" }}</h2>
-            <p>{{ inventory.record.timezone|default:"Ubicacion no configurada" }}</p>
-          </div>
-          <div class="map-preview" aria-hidden="true">
-            <span></span>
-          </div>
-        </article>
-
-        <article class="card system-summary-card">
-          <h2>Sistema</h2>
-          <dl class="system-summary-list">
-            <div><dt>Hostname</dt><dd>{{ server.hostname }}</dd></div>
-            <div><dt>Tipo</dt><dd>Servidor</dd></div>
-            <div><dt>Sistema operativo</dt><dd>{{ inventory.record.os_name|default:server.get_os_type_display }}</dd></div>
-            <div><dt>Version</dt><dd>{{ inventory.record.os_version|default:"-" }}</dd></div>
-            <div><dt>Arquitectura</dt><dd>{{ inventory.record.architecture|default:"-" }}</dd></div>
-            <div><dt>Agente</dt><dd>{% if latest.agent_version %}{{ latest.agent_version }}{% else %}-{% endif %}</dd></div>
-            <div><dt>Ultimo monitoreo</dt><dd>{{ server.last_seen|default:"-" }}</dd></div>
-            <div><dt>Estado agente</dt><dd>{% if online %}Activo{% else %}Sin reporte{% endif %}</dd></div>
-          </dl>
-        </article>
       </aside>
 
       <section class="server-main-column">
