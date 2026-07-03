@@ -179,7 +179,7 @@
               <h2>Disk</h2>
             </div>
             <div class="compact-disk-list">
-              {% for disk in disk_details|slice:":4" %}
+              {% for disk in disk_details %}
                 <div class="compact-disk-row">
                   <div>
                     <span>{{ disk.label }}</span>

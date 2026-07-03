@@ -1146,6 +1146,18 @@
 .compact-disk-list {
   display: grid;
   gap: 14px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.compact-disk-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.compact-disk-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
 }
 
 .compact-disk-row {
