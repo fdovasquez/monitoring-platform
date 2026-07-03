@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ server.name|default:server.hostname }} | Detalle</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
-  <link rel="stylesheet" href="{% static 'inventory/device_detail.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/monitor_assignments.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/security_score.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/device_detail.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
 </head>
 <body class="detail-body">
@@ -146,7 +146,7 @@
             {% if serie.label == "CPU" or serie.label == "Memoria" %}
               <article class="card telemetry-card">
                 <div class="telemetry-title">
-                  <span class="metric-symbol {{ serie.class }}"></span>
+                  <span class="metric-symbol {{ serie.class }}">{% if serie.label == "CPU" %}CPU{% else %}MEM{% endif %}</span>
                   <h2>{% if serie.label == "Memoria" %}Memory{% else %}{{ serie.label }}{% endif %}</h2>
                 </div>
                 <strong class="telemetry-value">
@@ -176,7 +176,7 @@
 
           <article class="card telemetry-card disk-telemetry-card">
             <div class="telemetry-title">
-              <span class="metric-symbol disk"></span>
+              <span class="metric-symbol disk">DSK</span>
               <h2>Disk</h2>
             </div>
             <div class="compact-disk-list">
@@ -202,7 +202,7 @@
 
           <article class="card telemetry-card">
             <div class="telemetry-title">
-              <span class="metric-symbol uptime"></span>
+              <span class="metric-symbol uptime">UP</span>
               <h2>Uptime</h2>
             </div>
             <strong class="telemetry-value">100%</strong>
