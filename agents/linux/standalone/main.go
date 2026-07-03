@@ -16,7 +16,7 @@ import (
     "time"
 )
 
-const agentVersion = "1.7.0-standalone"
+const agentVersion = "1.8.0-standalone"
 
 var lastPatchCheck time.Time
 var cachedPatchSecurity map[string]interface{}
@@ -322,13 +322,82 @@ func inventory(hostname string) map[string]interface{} {
 func uptime() int64 { return int64(number(strings.Fields(read("/proc/uptime"))[0])) }
 func round(value float64, decimals int) float64 { factor := 1.0; for i:=0; i<decimals; i++ { factor *= 10 }; return float64(int(value*factor+0.5))/factor }
 
+func collectServices() []map[string]interface{} {
+    output := command("systemctl", "list-units", "--type=service", "--all", "--no-legend", "--no-pager")
+    services := []map[string]interface{}{}
+    for _, line := range strings.Split(output, "\n") {
+        fields := strings.Fields(line)
+        if len(fields) < 4 { continue }
+        description := ""
+        if len(fields) > 4 { description = strings.Join(fields[4:], " ") }
+        services = append(services, map[string]interface{}{
+            "name": fields[0],
+            "load": fields[1],
+            "state": fields[2],
+            "sub_state": fields[3],
+            "description": description,
+        })
+        if len(services) >= 80 { break }
+    }
+    return services
+}
+
+func collectProcesses() []map[string]interface{} {
+    output := command("ps", "-eo", "pid,user,pcpu,pmem,etime,comm,args", "--sort=-pmem")
+    processes := []map[string]interface{}{}
+    lines := strings.Split(output, "\n")
+    for _, line := range lines[1:] {
+        fields := strings.Fields(line)
+        if len(fields) < 6 { continue }
+        path := fields[5]
+        if len(fields) > 6 { path = strings.Join(fields[6:], " ") }
+        processes = append(processes, map[string]interface{}{
+            "pid": int(number(fields[0])),
+            "user": fields[1],
+            "cpu_percent": number(fields[2]),
+            "memory_percent": number(fields[3]),
+            "time": fields[4],
+            "name": fields[5],
+            "path": path,
+        })
+        if len(processes) >= 40 { break }
+    }
+    return processes
+}
+
+func collectPorts() []map[string]interface{} {
+    output := command("ss", "-H", "-lntuap")
+    ports := []map[string]interface{}{}
+    for _, line := range strings.Split(output, "\n") {
+        fields := strings.Fields(line)
+        if len(fields) < 5 { continue }
+        local := fields[4]
+        index := strings.LastIndex(local, ":")
+        if index < 0 { continue }
+        address := strings.Trim(local[:index], "[]")
+        if address == "" { address = "0.0.0.0" }
+        process := ""
+        if len(fields) > 5 { process = fields[len(fields)-1] }
+        ports = append(ports, map[string]interface{}{
+            "protocol": strings.ToUpper(fields[0]),
+            "local_address": address,
+            "local_port": int(number(local[index+1:])),
+            "status": "LISTEN",
+            "pid": nil,
+            "process": process,
+        })
+        if len(ports) >= 120 { break }
+    }
+    return ports
+}
+
 func payload() map[string]interface{} {
     hostname, err := os.Hostname(); if err != nil { hostname = "unknown" }
     diskList, diskRoot := disks()
     return map[string]interface{}{
         "hostname": hostname, "agent_version": agentVersion, "timestamp": time.Now().UTC().Format(time.RFC3339),
         "metrics": map[string]interface{}{"cpu_percent": cpuPercent(), "memory_percent": memoryPercent(), "disk_root_percent": diskRoot, "disk_count": len(diskList), "disks": diskList, "uptime_seconds": uptime(), "security": security()},
-        "inventory": inventory(hostname), "services": []interface{}{}, "processes": []interface{}{}, "ports": []interface{}{},
+        "inventory": inventory(hostname), "services": collectServices(), "processes": collectProcesses(), "ports": collectPorts(),
     }
 }
 
