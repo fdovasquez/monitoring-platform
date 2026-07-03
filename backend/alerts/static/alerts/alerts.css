@@ -345,6 +345,63 @@
   margin: 16px 0;
 }
 
+.server-monitor-assignment-card {
+  margin: 16px 8px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+}
+
+.server-monitor-assignment-card .section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.server-monitor-assignment-card .section-title h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.server-monitor-assignment-card .section-title p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.server-monitor-selector {
+  display: grid;
+  grid-template-columns: 90px minmax(260px, 460px);
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.server-monitor-selector label {
+  color: #475569;
+  font-size: 13px;
+}
+
+.server-monitor-selector select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.server-monitor-assignment-card .monitor-assignment-grid {
+  margin-top: 0;
+}
+
 .alert-health span,
 .status-pill {
   display: inline-flex;
@@ -705,7 +762,8 @@
 
   .alerts-grid,
   .history-filters,
-  .bulk-recipients-form {
+  .bulk-recipients-form,
+  .server-monitor-selector {
     grid-template-columns: 1fr;
   }
 
@@ -717,6 +775,11 @@
   .bulk-recipients-footer {
     justify-content: flex-start;
     padding-bottom: 0;
+  }
+
+  .server-monitor-assignment-card .section-title {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .alert-rule-grid,

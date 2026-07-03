@@ -8,8 +8,11 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.generic import TemplateView
 
+from inventory.models import Server
+from inventory.monitor_assignment_views import DeviceDetailWithMonitorsView
+
 from .forms import AlertHistoryFilterForm, AlertRuleForm, BulkRecipientsForm
-from .models import AlertEmailLog, AlertRule
+from .models import AlertEmailLog, AlertRule, ServerMonitorAssignment
 
 
 def user_can_manage_alerts(user):
@@ -39,6 +42,13 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         rule_form = kwargs.get("rule_form")
         if rule_form is None:
             rule_form = AlertRuleForm(instance=edit_rule) if edit_rule else AlertRuleForm()
+        servers = Server.objects.select_related("group").order_by("hostname")
+        selected_server = self.selected_server(servers)
+        monitor_assignments = (
+            DeviceDetailWithMonitorsView.monitor_assignments(selected_server)
+            if selected_server
+            else None
+        )
         AlertEmailLog.objects.filter(created_at__lt=cutoff).delete()
         context.update(
             {
@@ -48,6 +58,9 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 "edit_rule": edit_rule,
                 "show_create_rule": show_create_rule,
                 "rules": self.filtered_rules(),
+                "servers": servers,
+                "selected_server": selected_server,
+                "monitor_assignments": monitor_assignments,
                 "history_filter": history_filter,
                 "logs": logs[:200],
                 "sent_count": AlertEmailLog.objects.filter(created_at__gte=cutoff, status=AlertEmailLog.STATUS_SENT).count(),
@@ -58,6 +71,9 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
     def post(self, request):
         action = request.POST.get("action", "")
+
+        if action in {"assign_monitor", "remove_monitor", "toggle_monitor"}:
+            return self.update_server_monitor(request, action)
 
         if action in {"bulk_add_recipients", "bulk_remove_recipients"}:
             form = BulkRecipientsForm(request.POST)
@@ -134,6 +150,41 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             return redirect("/app/alerts/?tab=monitors")
 
         return redirect("alert-settings")
+
+    def selected_server(self, servers):
+        server_id = self.request.GET.get("server")
+        if server_id:
+            server = servers.filter(id=server_id).first()
+            if server:
+                return server
+        return servers.first()
+
+    def update_server_monitor(self, request, action):
+        server = Server.objects.filter(id=request.POST.get("server_id")).first()
+        if not server:
+            messages.error(request, "Selecciona un servidor valido para modificar sus monitores.")
+            return redirect("/app/alerts/?tab=monitors")
+
+        rule = AlertRule.objects.filter(id=request.POST.get("rule_id"), is_active=True).first()
+        if not rule:
+            messages.error(request, "No se encontro el monitor seleccionado.")
+            return redirect(f"/app/alerts/?tab=monitors&server={server.id}#server-monitors")
+
+        assignment, _ = ServerMonitorAssignment.objects.get_or_create(server=server, rule=rule)
+        if action == "assign_monitor":
+            assignment.is_enabled = True
+            assignment.save(update_fields=["is_enabled", "updated_at"])
+            messages.success(request, f"Monitor '{rule.name}' asignado a {server.hostname}.")
+        elif action == "remove_monitor":
+            assignment.delete()
+            messages.success(request, f"Monitor '{rule.name}' removido de {server.hostname}.")
+        elif action == "toggle_monitor":
+            assignment.is_enabled = not assignment.is_enabled
+            assignment.save(update_fields=["is_enabled", "updated_at"])
+            state = "habilitado" if assignment.is_enabled else "deshabilitado"
+            messages.success(request, f"Monitor '{rule.name}' {state} en {server.hostname}.")
+
+        return redirect(f"/app/alerts/?tab=monitors&server={server.id}#server-monitors")
 
     def filtered_rules(self):
         rules = AlertRule.objects.order_by("name")

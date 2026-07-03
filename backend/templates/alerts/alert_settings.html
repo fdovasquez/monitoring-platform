@@ -7,6 +7,7 @@
   <title>Alertas</title>
   <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/profile.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/monitor_assignments.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
   <link rel="stylesheet" href="{% static 'alerts/alerts.css' %}">
   <link rel="stylesheet" href="{% static 'inventory/layout_width.css' %}">
@@ -70,6 +71,110 @@
             <button class="ghost-button" type="submit" name="action" value="bulk_remove_recipients" title="Quitar estos correos de todas las alertas">Quitar</button>
           </div>
         </form>
+      </section>
+
+      <section id="server-monitors" class="card server-monitor-assignment-card monitor-assignment-card" data-monitor-board data-action-url="{% url 'alert-settings' %}?tab=monitors{% if selected_server %}&server={{ selected_server.id }}{% endif %}" data-csrf-token="{{ csrf_token }}" data-server-id="{% if selected_server %}{{ selected_server.id }}{% endif %}">
+        <div class="section-title">
+          <div>
+            <h2>Monitoreos por servidor</h2>
+            <p>Selecciona una maquina y define que reglas de alerta se evaluan para ella.</p>
+          </div>
+          {% if selected_server %}
+            <span class="monitor-count">{{ monitor_assignments.active_count }} asignados</span>
+          {% endif %}
+        </div>
+        <form class="server-monitor-selector" method="get">
+          <input type="hidden" name="tab" value="monitors">
+          <label for="server-monitor-select">Servidor</label>
+          <select id="server-monitor-select" name="server" onchange="this.form.submit()">
+            {% for server in servers %}
+              <option value="{{ server.id }}" {% if selected_server and selected_server.id == server.id %}selected{% endif %}>
+                {{ server.name|default:server.hostname }}{% if server.ip_address %} - {{ server.ip_address }}{% endif %}
+              </option>
+            {% empty %}
+              <option value="">Sin servidores registrados</option>
+            {% endfor %}
+          </select>
+        </form>
+
+        {% if selected_server %}
+          <div class="monitor-assignment-grid">
+            <div class="monitor-drop-column assigned" data-monitor-zone="assigned">
+              <div class="monitor-drop-head">
+                <span>Monitores asignados</span>
+                <small>Se evaluaran para {{ selected_server.hostname }}</small>
+              </div>
+              <div class="monitor-card-list">
+                {% for item in monitor_assignments.active %}
+                  <article class="monitor-pick-card {% if not item.assignment.is_enabled %}disabled{% endif %}" draggable="true" data-rule-id="{{ item.rule.id }}" data-current-zone="assigned" data-edit-url="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}&server={{ selected_server.id }}">
+                    <div class="monitor-pick-main">
+                      <span class="monitor-pick-type">{{ item.rule.get_priority_display }}</span>
+                      <h3>{{ item.rule.name }}</h3>
+                      <p>{{ item.description }}</p>
+                    </div>
+                    <div class="monitor-pick-meta">
+                      <span>{{ item.rule.get_event_type_display }}</span>
+                      <span>{{ item.threshold }}</span>
+                    </div>
+                    <div class="monitor-pick-actions">
+                      <a class="monitor-action-btn neutral" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}&server={{ selected_server.id }}">Editar</a>
+                      <form method="post" action="{% url 'alert-settings' %}?tab=monitors&server={{ selected_server.id }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="server_id" value="{{ selected_server.id }}">
+                        <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
+                        <button class="monitor-action-btn secondary" type="submit" name="action" value="toggle_monitor">
+                          {% if item.assignment.is_enabled %}Deshabilitar{% else %}Habilitar{% endif %}
+                        </button>
+                      </form>
+                      <form method="post" action="{% url 'alert-settings' %}?tab=monitors&server={{ selected_server.id }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="server_id" value="{{ selected_server.id }}">
+                        <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
+                        <button class="monitor-action-btn danger" type="submit" name="action" value="remove_monitor">Quitar</button>
+                      </form>
+                    </div>
+                  </article>
+                {% empty %}
+                  <div class="monitor-empty-state">Arrastra aqui los monitores que quieres aplicar a este servidor.</div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="monitor-drop-column available" data-monitor-zone="available">
+              <div class="monitor-drop-head">
+                <span>Monitores disponibles</span>
+                <small>Reglas creadas en Alertas</small>
+              </div>
+              <div class="monitor-card-list">
+                {% for item in monitor_assignments.available %}
+                  <article class="monitor-pick-card" draggable="true" data-rule-id="{{ item.rule.id }}" data-current-zone="available" data-edit-url="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}&server={{ selected_server.id }}">
+                    <div class="monitor-pick-main">
+                      <span class="monitor-pick-type">{{ item.rule.get_priority_display }}</span>
+                      <h3>{{ item.rule.name }}</h3>
+                      <p>{{ item.description }}</p>
+                    </div>
+                    <div class="monitor-pick-meta">
+                      <span>{{ item.rule.get_event_type_display }}</span>
+                      <span>{{ item.threshold }}</span>
+                    </div>
+                    <div class="monitor-pick-actions">
+                      <a class="monitor-action-btn neutral" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}&server={{ selected_server.id }}">Editar</a>
+                      <form method="post" action="{% url 'alert-settings' %}?tab=monitors&server={{ selected_server.id }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="server_id" value="{{ selected_server.id }}">
+                        <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
+                        <button class="monitor-action-btn primary" type="submit" name="action" value="assign_monitor">Agregar</button>
+                      </form>
+                    </div>
+                  </article>
+                {% empty %}
+                  <div class="monitor-empty-state">No hay mas monitores disponibles para asignar.</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="monitor-empty-state">No hay servidores registrados para asignar monitores.</div>
+        {% endif %}
       </section>
 
       {% if show_create_rule and not edit_rule %}
@@ -278,6 +383,95 @@
   </main>
 
   <script>
+    function refreshMonitorBoardFromHtml(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const nextBoard = doc.querySelector("[data-monitor-board]");
+      const currentBoard = document.querySelector("[data-monitor-board]");
+      if (nextBoard && currentBoard) {
+        currentBoard.replaceWith(nextBoard);
+        initMonitorBoard();
+      }
+    }
+
+    function submitMonitorData(monitorBoard, formData) {
+      if (monitorBoard.dataset.serverId) {
+        formData.set("server_id", monitorBoard.dataset.serverId);
+      }
+      return fetch(monitorBoard.dataset.actionUrl, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+        .then((response) => response.text())
+        .then(refreshMonitorBoardFromHtml);
+    }
+
+    function initMonitorBoard() {
+      const monitorBoard = document.querySelector("[data-monitor-board]");
+      if (!monitorBoard || monitorBoard.dataset.bound === "true") return;
+      monitorBoard.dataset.bound = "true";
+      let draggedCard = null;
+
+      function submitMonitorAction(ruleId, action) {
+        const formData = new FormData();
+        formData.append("csrfmiddlewaretoken", monitorBoard.dataset.csrfToken);
+        formData.append("rule_id", ruleId);
+        formData.append("action", action);
+        submitMonitorData(monitorBoard, formData);
+      }
+
+      monitorBoard.querySelectorAll(".monitor-pick-actions form").forEach((form) => {
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const formData = new FormData(form);
+          if (event.submitter && event.submitter.name) {
+            formData.set(event.submitter.name, event.submitter.value);
+          }
+          submitMonitorData(monitorBoard, formData);
+        });
+      });
+
+      monitorBoard.querySelectorAll("[data-rule-id]").forEach((card) => {
+        card.addEventListener("click", (event) => {
+          if (event.target.closest("a, button, form, input, select")) return;
+          if (card.dataset.editUrl) window.location.href = card.dataset.editUrl;
+        });
+        card.addEventListener("dragstart", () => {
+          draggedCard = card;
+          card.classList.add("dragging");
+        });
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+          draggedCard = null;
+        });
+      });
+
+      monitorBoard.querySelectorAll("[data-monitor-zone]").forEach((zone) => {
+        zone.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          zone.classList.add("drag-over");
+        });
+        zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+        zone.addEventListener("drop", (event) => {
+          event.preventDefault();
+          zone.classList.remove("drag-over");
+          if (!draggedCard) return;
+          const currentZone = draggedCard.dataset.currentZone;
+          const targetZone = zone.dataset.monitorZone;
+          if (currentZone === targetZone) return;
+          submitMonitorAction(
+            draggedCard.dataset.ruleId,
+            targetZone === "assigned" ? "assign_monitor" : "remove_monitor"
+          );
+        });
+      });
+    }
+
+    initMonitorBoard();
+
     document.querySelectorAll("[data-confirm]").forEach((form) => {
       form.addEventListener("submit", (event) => {
         if (!confirm(form.dataset.confirm)) event.preventDefault();
