@@ -54,7 +54,7 @@
     <header class="card runtime-header">
       <div class="runtime-title">
         <h1>Runtime del servidor</h1>
-        <p>{{ server.name|default:server.hostname }} · {{ server.ip_address|default:"Sin IP" }} · actualiza cada 30 segundos</p>
+        <p>{{ server.name|default:server.hostname }} - {{ server.ip_address|default:"Sin IP" }} - actualiza cada 30 segundos</p>
       </div>
       <div class="runtime-actions">
         <a class="btn secondary" href="{% url 'device-detail' server.id %}">Volver al detalle</a>
@@ -83,7 +83,7 @@
       </section>
 
       <section class="runtime-grid">
-        <article class="card runtime-card">
+        <article id="services" class="card runtime-card">
           <div class="runtime-card-header">
             <div>
               <h2>Servicios</h2>
@@ -125,7 +125,17 @@
           {% endif %}
         </article>
 
-        <article class="card runtime-card">
+        <article id="file-explorer" class="card runtime-card">
+          <div class="runtime-card-header">
+            <div>
+              <h2>Explorador de archivos</h2>
+              <p>Acceso futuro a rutas autorizadas del servidor monitoreado.</p>
+            </div>
+          </div>
+          <div class="runtime-empty">Esta funcionalidad requiere habilitar exploracion segura de archivos en el agente.</div>
+        </article>
+
+        <article id="processes" class="card runtime-card">
           <div class="runtime-card-header">
             <div>
               <h2>Procesos</h2>
@@ -164,7 +174,7 @@
           {% endif %}
         </article>
 
-        <article class="card runtime-card">
+        <article id="ports" class="card runtime-card">
           <div class="runtime-card-header">
             <div>
               <h2>Puertos abiertos</h2>
