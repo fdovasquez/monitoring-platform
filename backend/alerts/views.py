@@ -168,7 +168,7 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         rule = AlertRule.objects.filter(id=request.POST.get("rule_id"), is_active=True).first()
         if not rule:
             messages.error(request, "No se encontro el monitor seleccionado.")
-            return redirect(f"/app/alerts/?tab=monitors&server={server.id}#server-monitors")
+            return redirect(f"/app/alerts/?tab=server_monitors&server={server.id}#server-monitors")
 
         assignment, _ = ServerMonitorAssignment.objects.get_or_create(server=server, rule=rule)
         if action == "assign_monitor":
@@ -184,7 +184,7 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             state = "habilitado" if assignment.is_enabled else "deshabilitado"
             messages.success(request, f"Monitor '{rule.name}' {state} en {server.hostname}.")
 
-        return redirect(f"/app/alerts/?tab=monitors&server={server.id}#server-monitors")
+        return redirect(f"/app/alerts/?tab=server_monitors&server={server.id}#server-monitors")
 
     def filtered_rules(self):
         rules = AlertRule.objects.order_by("name")

@@ -38,6 +38,7 @@
 
     <nav class="monitor-tabs" aria-label="Secciones de alertas">
       <a class="{% if active_tab == 'monitors' %}active{% endif %}" href="?tab=monitors">Monitores</a>
+      <a class="{% if active_tab == 'server_monitors' %}active{% endif %}" href="?tab=server_monitors">Monitores por servidor</a>
       <a class="{% if active_tab == 'history' %}active{% endif %}" href="?tab=history">Historial de alertas</a>
     </nav>
 
@@ -73,7 +74,10 @@
         </form>
       </section>
 
-      <section id="server-monitors" class="card server-monitor-assignment-card monitor-assignment-card" data-monitor-board data-action-url="{% url 'alert-settings' %}?tab=monitors{% if selected_server %}&server={{ selected_server.id }}{% endif %}" data-csrf-token="{{ csrf_token }}" data-server-id="{% if selected_server %}{{ selected_server.id }}{% endif %}">
+    {% endif %}
+
+    {% if active_tab == 'server_monitors' %}
+      <section id="server-monitors" class="card server-monitor-assignment-card monitor-assignment-card" data-monitor-board data-action-url="{% url 'alert-settings' %}?tab=server_monitors{% if selected_server %}&server={{ selected_server.id }}{% endif %}" data-csrf-token="{{ csrf_token }}" data-server-id="{% if selected_server %}{{ selected_server.id }}{% endif %}">
         <div class="section-title">
           <div>
             <h2>Monitoreos por servidor</h2>
@@ -84,7 +88,7 @@
           {% endif %}
         </div>
         <form class="server-monitor-selector" method="get">
-          <input type="hidden" name="tab" value="monitors">
+          <input type="hidden" name="tab" value="server_monitors">
           <label for="server-monitor-select">Servidor</label>
           <select id="server-monitor-select" name="server" onchange="this.form.submit()">
             {% for server in servers %}
@@ -118,7 +122,7 @@
                     </div>
                     <div class="monitor-pick-actions">
                       <a class="monitor-action-btn neutral" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}&server={{ selected_server.id }}">Editar</a>
-                      <form method="post" action="{% url 'alert-settings' %}?tab=monitors&server={{ selected_server.id }}">
+                      <form method="post" action="{% url 'alert-settings' %}?tab=server_monitors&server={{ selected_server.id }}">
                         {% csrf_token %}
                         <input type="hidden" name="server_id" value="{{ selected_server.id }}">
                         <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
@@ -126,7 +130,7 @@
                           {% if item.assignment.is_enabled %}Deshabilitar{% else %}Habilitar{% endif %}
                         </button>
                       </form>
-                      <form method="post" action="{% url 'alert-settings' %}?tab=monitors&server={{ selected_server.id }}">
+                      <form method="post" action="{% url 'alert-settings' %}?tab=server_monitors&server={{ selected_server.id }}">
                         {% csrf_token %}
                         <input type="hidden" name="server_id" value="{{ selected_server.id }}">
                         <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
@@ -158,7 +162,7 @@
                     </div>
                     <div class="monitor-pick-actions">
                       <a class="monitor-action-btn neutral" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ item.rule.id }}&server={{ selected_server.id }}">Editar</a>
-                      <form method="post" action="{% url 'alert-settings' %}?tab=monitors&server={{ selected_server.id }}">
+                      <form method="post" action="{% url 'alert-settings' %}?tab=server_monitors&server={{ selected_server.id }}">
                         {% csrf_token %}
                         <input type="hidden" name="server_id" value="{{ selected_server.id }}">
                         <input type="hidden" name="rule_id" value="{{ item.rule.id }}">
@@ -176,7 +180,9 @@
           <div class="monitor-empty-state">No hay servidores registrados para asignar monitores.</div>
         {% endif %}
       </section>
+    {% endif %}
 
+    {% if active_tab == 'monitors' %}
       {% if show_create_rule and not edit_rule %}
         <form class="profile-card alert-rule-form compact-edit-form" method="post" data-confirm="Crear nueva alerta?">
           {% csrf_token %}
