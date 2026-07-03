@@ -1061,6 +1061,11 @@
   min-height: 242px;
 }
 
+.disk-telemetry-card {
+  max-height: 242px;
+  overflow: hidden;
+}
+
 .telemetry-title {
   display: flex;
   align-items: center;
@@ -1145,10 +1150,12 @@
 
 .compact-disk-list {
   display: grid;
-  gap: 14px;
-  max-height: 330px;
+  gap: 11px;
+  max-height: 166px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .compact-disk-list::-webkit-scrollbar {
@@ -1354,6 +1361,14 @@
   .system-summary-list div {
     grid-template-columns: 1fr;
     gap: 3px;
+  }
+
+  .disk-telemetry-card {
+    max-height: 320px;
+  }
+
+  .compact-disk-list {
+    max-height: 238px;
   }
 
   .btn {
