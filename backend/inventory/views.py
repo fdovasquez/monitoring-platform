@@ -250,6 +250,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         inventory = self.inventory_snapshot(server)
         runtime = self.runtime_snapshot(server)
         security = DeviceListView.security_assessment(latest)
+        active_alerts = server.alert_events.select_related("rule").filter(is_resolved=False).order_by("-created_at")[:8]
         context.update(
             {
                 "server": server,
@@ -271,6 +272,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "runtime": runtime,
                 "chart_series": self.chart_series(samples),
                 "recent_events": self.recent_events(server, samples, latest, online),
+                "active_alerts": active_alerts,
                 "credential_form": MachineCredentialForm(),
                 "credentials": server.credentials.all(),
                 "can_manage_credentials": user_can_manage_credentials(self.request.user),
