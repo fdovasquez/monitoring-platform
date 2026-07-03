@@ -29,9 +29,40 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
         except ServerRuntimeSnapshot.DoesNotExist:
             return None
 
-        services = runtime.services or []
-        processes = runtime.processes or []
-        ports = runtime.ports or []
+        services = [
+            {
+                "name": service.get("name") or service.get("display_name") or "-",
+                "state": service.get("state") or "-",
+                "start_type": service.get("start_type") or service.get("sub_state") or "-",
+                "description": service.get("description") or service.get("display_name") or "-",
+            }
+            for service in runtime.services or []
+            if isinstance(service, dict)
+        ]
+        processes = [
+            {
+                "pid": process.get("pid") or "-",
+                "name": process.get("name") or process.get("command") or "-",
+                "cpu_percent": process.get("cpu_percent") or 0,
+                "memory_mb": process.get("memory_mb") or 0,
+                "username": process.get("username") or process.get("user") or "-",
+                "path": process.get("path") or process.get("exe") or "-",
+            }
+            for process in runtime.processes or []
+            if isinstance(process, dict)
+        ]
+        ports = [
+            {
+                "protocol": port.get("protocol") or "-",
+                "local_address": port.get("local_address") or port.get("address") or "-",
+                "local_port": port.get("local_port") or port.get("port") or "-",
+                "status": port.get("status") or port.get("state") or "open",
+                "pid": port.get("pid") or "-",
+                "process": port.get("process") or port.get("process_name") or "-",
+            }
+            for port in runtime.ports or []
+            if isinstance(port, dict)
+        ]
         stopped_services = [
             service
             for service in services

@@ -113,8 +113,8 @@
                           <span class="runtime-pill warn">{{ service.state|default:"-" }}</span>
                         {% endif %}
                       </td>
-                      <td>{{ service.start_type|default:service.sub_state|default:"-" }}</td>
-                      <td class="runtime-muted">{{ service.description|default:service.display_name|default:"-" }}</td>
+                      <td>{{ service.start_type }}</td>
+                      <td class="runtime-muted">{{ service.description }}</td>
                     </tr>
                   {% endfor %}
                 </tbody>
