@@ -103,10 +103,10 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                         updated += 1
                 verb = "agregados a" if action == "bulk_add_recipients" else "eliminados de"
                 messages.success(request, f"Destinatarios {verb} {updated} alerta(s).")
-                return redirect("/app/alerts/?tab=monitors")
+                return redirect("/app/alerts/?tab=recipients")
             messages.error(request, "No se pudieron actualizar los destinatarios. Revisa los correos ingresados.")
             return self.render_to_response(
-                self.get_context_data(bulk_recipients_form=form, active_tab="monitors")
+                self.get_context_data(bulk_recipients_form=form, active_tab="recipients")
             )
 
         if action == "create_rule":

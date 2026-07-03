@@ -39,6 +39,7 @@
     <nav class="monitor-tabs" aria-label="Secciones de alertas">
       <a class="{% if active_tab == 'monitors' %}active{% endif %}" href="?tab=monitors">Monitores</a>
       <a class="{% if active_tab == 'server_monitors' %}active{% endif %}" href="?tab=server_monitors">Monitores por servidor</a>
+      <a class="{% if active_tab == 'recipients' %}active{% endif %}" href="?tab=recipients">Destinatarios globales</a>
       <a class="{% if active_tab == 'history' %}active{% endif %}" href="?tab=history">Historial de alertas</a>
     </nav>
 
@@ -50,7 +51,7 @@
       </section>
     {% endif %}
 
-    {% if active_tab == 'monitors' %}
+    {% if active_tab == 'recipients' %}
       <section class="bulk-recipients-panel">
         <div class="bulk-recipients-copy">
           <div>
@@ -73,7 +74,6 @@
           </div>
         </form>
       </section>
-
     {% endif %}
 
     {% if active_tab == 'server_monitors' %}
