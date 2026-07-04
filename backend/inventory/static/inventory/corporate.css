@@ -67,7 +67,7 @@ a {
   align-items: center !important;
   justify-content: center !important;
   gap: 0 !important;
-  min-height: 62px !important;
+  min-height: 96px !important;
   padding: 0 !important;
   background: rgba(255, 255, 255, .97) !important;
   border-bottom: 1px solid var(--corp-line) !important;
@@ -81,7 +81,7 @@ a {
   gap: 18px !important;
   width: 100% !important;
   max-width: var(--app-max-width) !important;
-  min-height: 72px !important;
+  min-height: 96px !important;
   margin: 0 auto !important;
   padding: 0 var(--app-page-padding) !important;
 }
@@ -92,18 +92,18 @@ a {
   justify-content: center !important;
   align-items: flex-start !important;
   gap: 1px !important;
-  min-width: 214px !important;
-  height: 72px !important;
+  min-width: 236px !important;
+  height: 96px !important;
   padding: 0 !important;
   text-decoration: none !important;
 }
 
 .app-brand img {
   display: block !important;
-  width: auto;
-  min-width: 136px !important;
-  max-width: 196px !important;
-  max-height: 54px !important;
+  width: clamp(170px, var(--brand-logo-width, 190px), 220px) !important;
+  height: auto !important;
+  max-width: 220px !important;
+  max-height: none !important;
   object-fit: contain !important;
   object-position: left center !important;
 }

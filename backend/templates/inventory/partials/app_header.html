@@ -3,9 +3,9 @@
   <div class="app-header-inner">
     <a class="app-brand" href="{% url 'device-list' %}">
       {% if site_settings.logo %}
-        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="width: {{ site_settings.logo_width }}px; height: auto; max-height: {{ site_settings.logo_height }}px;">
+        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">
       {% else %}
-        <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}" style="width: {{ site_settings.logo_width }}px; height: auto; max-height: {{ site_settings.logo_height }}px;">
+        <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">
       {% endif %}
       <span>{{ site_settings.subtitle }}</span>
     </a>
