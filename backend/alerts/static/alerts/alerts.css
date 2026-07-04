@@ -199,7 +199,7 @@
 
 .monitor-table {
   width: 100%;
-  min-width: 1180px;
+  min-width: 1040px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -213,15 +213,13 @@
   overflow-wrap: anywhere;
 }
 
-.monitor-table th:nth-child(1) { width: 18%; }
-.monitor-table th:nth-child(2) { width: 11%; }
-.monitor-table th:nth-child(3) { width: 18%; }
-.monitor-table th:nth-child(4) { width: 15%; }
-.monitor-table th:nth-child(5) { width: 8%; }
+.monitor-table th:nth-child(1) { width: 19%; }
+.monitor-table th:nth-child(2) { width: 13%; }
+.monitor-table th:nth-child(3) { width: 21%; }
+.monitor-table th:nth-child(4) { width: 16%; }
+.monitor-table th:nth-child(5) { width: 9%; }
 .monitor-table th:nth-child(6) { width: 8%; }
-.monitor-table th:nth-child(7) { width: 7%; }
-.monitor-table th:nth-child(8) { width: 8%; }
-.monitor-table th:nth-child(9) { width: 13%; }
+.monitor-table th:nth-child(7) { width: 14%; }
 
 .monitor-table th {
   height: 38px;

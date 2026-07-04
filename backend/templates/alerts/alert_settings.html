@@ -273,8 +273,6 @@
               <th>Tipo</th>
               <th>Umbral / Duracion</th>
               <th>Gravedad</th>
-              <th>Remediaciones</th>
-              <th>Auto-resolve</th>
               <th>Notificaciones</th>
               <th></th>
             </tr>
@@ -307,8 +305,6 @@
                   </div>
                 </td>
                 <td><span class="severity-pill {{ rule.priority }}">{{ rule.get_priority_display }}</span></td>
-                <td><span class="check-muted">-</span></td>
-                <td><span class="check-ok">OK</span></td>
                 <td><span class="check-ok">OK</span></td>
                 <td>
                   <div class="monitor-row-actions">
@@ -323,7 +319,7 @@
               </tr>
             {% empty %}
               <tr>
-                <td colspan="9">
+                <td colspan="7">
                   <div class="empty-state"><strong>Sin monitores</strong><span>No hay reglas configuradas.</span></div>
                 </td>
               </tr>

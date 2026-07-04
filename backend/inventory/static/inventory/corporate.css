@@ -100,8 +100,8 @@ a {
 
 .app-brand img {
   display: block !important;
-  width: 126px !important;
-  height: 34px !important;
+  max-width: 168px !important;
+  max-height: 48px !important;
   object-fit: contain !important;
   object-position: left center !important;
 }
