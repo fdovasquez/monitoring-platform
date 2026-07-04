@@ -81,7 +81,7 @@ a {
   gap: 18px !important;
   width: 100% !important;
   max-width: var(--app-max-width) !important;
-  min-height: 62px !important;
+  min-height: 72px !important;
   margin: 0 auto !important;
   padding: 0 var(--app-page-padding) !important;
 }
@@ -92,16 +92,18 @@ a {
   justify-content: center !important;
   align-items: flex-start !important;
   gap: 1px !important;
-  min-width: 178px !important;
-  height: 62px !important;
+  min-width: 214px !important;
+  height: 72px !important;
   padding: 0 !important;
   text-decoration: none !important;
 }
 
 .app-brand img {
   display: block !important;
-  max-width: 168px !important;
-  max-height: 48px !important;
+  width: auto;
+  min-width: 136px !important;
+  max-width: 196px !important;
+  max-height: 54px !important;
   object-fit: contain !important;
   object-position: left center !important;
 }
