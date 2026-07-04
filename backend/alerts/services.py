@@ -7,7 +7,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 from django.utils import timezone
 
-from .models import AlertEmailLog, AlertRule, SmtpSettings
+from .models import AlertEmailLog, AlertRule, ServerMonitorAssignment, SmtpSettings
 
 
 def smtp_backend(settings):
@@ -206,12 +206,19 @@ def threshold_triggered(rule, value):
 
 def evaluate_metric_sample(sample):
     settings = SmtpSettings.load()
-    rules = AlertRule.objects.filter(is_active=True, event_type__in=[
+    metric_events = [
         AlertRule.EVENT_CPU,
         AlertRule.EVENT_MEMORY,
         AlertRule.EVENT_DISK,
         AlertRule.EVENT_FREE_SPACE,
-    ])
+    ]
+    assignments = ServerMonitorAssignment.objects.select_related("rule").filter(
+        server=sample.server,
+        is_enabled=True,
+        rule__is_active=True,
+        rule__event_type__in=metric_events,
+    )
+    rules = [assignment.rule for assignment in assignments]
     for rule in rules:
         value = value_for_rule(sample, rule)
         if not threshold_triggered(rule, value) or not rule.can_notify():
