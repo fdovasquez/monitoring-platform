@@ -67,7 +67,7 @@ a {
   align-items: center !important;
   justify-content: center !important;
   gap: 0 !important;
-  min-height: 96px !important;
+  min-height: 72px !important;
   padding: 0 !important;
   background: rgba(255, 255, 255, .97) !important;
   border-bottom: 1px solid var(--corp-line) !important;
@@ -81,7 +81,7 @@ a {
   gap: 18px !important;
   width: 100% !important;
   max-width: var(--app-max-width) !important;
-  min-height: 96px !important;
+  min-height: 72px !important;
   margin: 0 auto !important;
   padding: 0 var(--app-page-padding) !important;
 }
@@ -92,17 +92,18 @@ a {
   justify-content: center !important;
   align-items: flex-start !important;
   gap: 1px !important;
-  min-width: 236px !important;
-  height: 96px !important;
+  min-width: max(180px, calc(var(--brand-logo-width, 120px) + 36px)) !important;
+  min-height: 72px !important;
+  height: auto !important;
   padding: 0 !important;
   text-decoration: none !important;
 }
 
 .app-brand img {
   display: block !important;
-  width: clamp(170px, var(--brand-logo-width, 190px), 220px) !important;
-  height: auto !important;
-  max-width: 220px !important;
+  width: var(--brand-logo-width, 120px) !important;
+  height: var(--brand-logo-height, 32px) !important;
+  max-width: none !important;
   max-height: none !important;
   object-fit: contain !important;
   object-position: left center !important;
