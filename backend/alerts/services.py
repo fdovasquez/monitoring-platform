@@ -8,7 +8,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 from django.utils import timezone
 
-from .models import AlertEmailLog, AlertRule, ServerMonitorAssignment, SmtpSettings
+from .models import AlertEmailLog, AlertEvent, AlertRule, ServerMonitorAssignment, SmtpSettings
 
 
 def smtp_backend(settings):
@@ -272,6 +272,48 @@ def can_notify_rule(rule, server, service_name=""):
     ).exists()
 
 
+def selected_metric_value(rule, values):
+    if rule.event_type == AlertRule.EVENT_FREE_SPACE:
+        return min(values, key=lambda item: item["value"])
+    return max(values, key=lambda item: item["value"])
+
+
+def metric_event_label(rule, target=""):
+    label = rule.get_event_type_display()
+    if target:
+        return f"{label} ({target})"
+    return label
+
+
+def upsert_metric_event(rule, sample, selected):
+    value = selected["value"]
+    target = selected["target"]
+    event_label = metric_event_label(rule, target)
+    message = f"{event_label}: valor actual {value:.2f}% / umbral {rule.threshold:.2f}%"
+    event, created = AlertEvent.objects.get_or_create(
+        rule=rule,
+        server=sample.server,
+        is_resolved=False,
+        defaults={
+            "value": value,
+            "message": message,
+        },
+    )
+    if not created and (event.value != value or event.message != message):
+        event.value = value
+        event.message = message
+        event.save(update_fields=["value", "message"])
+    return event
+
+
+def resolve_metric_event(rule, server):
+    resolved_at = timezone.now()
+    AlertEvent.objects.filter(rule=rule, server=server, is_resolved=False).update(
+        is_resolved=True,
+        resolved_at=resolved_at,
+    )
+
+
 def evaluate_metric_sample(sample):
     settings = SmtpSettings.load()
     metric_events = [
@@ -288,24 +330,31 @@ def evaluate_metric_sample(sample):
     )
     rules = [assignment.rule for assignment in assignments]
     for rule in rules:
+        values = values_for_rule(sample, rule)
         triggered_values = [
-            item for item in values_for_rule(sample, rule)
-            if threshold_triggered(rule, item["value"]) and can_notify_rule(rule, sample.server, item["target"])
+            item for item in values
+            if threshold_triggered(rule, item["value"])
         ]
         if not triggered_values:
+            resolve_metric_event(rule, sample.server)
             continue
-        if rule.event_type == AlertRule.EVENT_FREE_SPACE:
-            selected = min(triggered_values, key=lambda item: item["value"])
-        else:
-            selected = max(triggered_values, key=lambda item: item["value"])
+
+        selected_active = selected_metric_value(rule, triggered_values)
+        upsert_metric_event(rule, sample, selected_active)
+
+        notifiable_values = [
+            item for item in values
+            if threshold_triggered(rule, item["value"]) and can_notify_rule(rule, sample.server, item["target"])
+        ]
+        if not notifiable_values:
+            continue
+        selected = selected_metric_value(rule, notifiable_values)
         value = selected["value"]
         target = selected["target"]
         recipients = rule.recipient_list()
         if not recipients:
             continue
-        event_label = rule.get_event_type_display()
-        if target:
-            event_label = f"{event_label} ({target})"
+        event_label = metric_event_label(rule, target)
         subject = f"[{rule.get_priority_display()}] {rule.name} - {sample.server.hostname}"
         body = (
             f"Servidor: {sample.server.hostname}\n"
