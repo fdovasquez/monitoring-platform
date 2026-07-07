@@ -164,7 +164,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
                         "alert_count": 0,
                         "alert_level": "ok",
                         "alert_label": "Sin alertas",
-                        "alert_title": "Operativo",
+                        "alert_title": "Normal",
                         "alert_message": "Sin alertas activas",
                         "alert_event": None,
                     }
@@ -179,7 +179,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
                 {
                     "alert_count": len(alerts),
                     "alert_level": alert_level,
-                    "alert_label": "Critico" if is_critical else "Warning",
+                    "alert_label": "Critico" if is_critical else "Advertencia",
                     "alert_title": highest_alert.rule.name,
                     "alert_message": highest_alert.message,
                     "alert_event": highest_alert,
