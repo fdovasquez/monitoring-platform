@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 import shlex
 import uuid
 
@@ -342,27 +343,58 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
     def chart_series(samples):
         ordered_samples = list(reversed(samples))
         return [
-            {"label": "CPU", "points": DeviceDetailView.svg_points(ordered_samples, "cpu_percent"), "class": "cpu"},
-            {"label": "Memoria", "points": DeviceDetailView.svg_points(ordered_samples, "memory_percent"), "class": "memory"},
-            {"label": "Disco", "points": DeviceDetailView.svg_points(ordered_samples, "disk_percent"), "class": "disk"},
-            {"label": "Red", "points": DeviceDetailView.svg_payload_points(ordered_samples, "network_percent"), "class": "network"},
+            DeviceDetailView.chart_definition(ordered_samples, "CPU", "cpu", "cpu_percent"),
+            DeviceDetailView.chart_definition(ordered_samples, "Memoria", "memory", "memory_percent"),
+            DeviceDetailView.chart_definition(ordered_samples, "Disco", "disk", "disk_percent"),
+            DeviceDetailView.chart_definition(ordered_samples, "Red", "network", "network_percent", from_payload=True),
         ]
 
     @staticmethod
-    def svg_points(samples, field_name):
-        values = [getattr(sample, field_name) for sample in samples if getattr(sample, field_name) is not None]
+    def chart_definition(samples, label, class_name, metric_name, from_payload=False):
+        points = DeviceDetailView.chart_points(samples, metric_name, from_payload)
+        return {
+            "label": label,
+            "points": " ".join(f"{point['x']},{point['y']}" for point in points),
+            "points_json": json.dumps(points),
+            "class": class_name,
+        }
+
+    @staticmethod
+    def chart_points(samples, metric_name, from_payload=False):
+        values = []
+        for sample in samples:
+            if from_payload:
+                metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
+                value = metrics.get(metric_name)
+            else:
+                value = getattr(sample, metric_name)
+            if value is None:
+                continue
+            try:
+                values.append((sample, float(value)))
+            except (TypeError, ValueError):
+                continue
         if not values:
-            return ""
+            return []
         if len(values) == 1:
             x_positions = [150]
         else:
             step = 300 / (len(values) - 1)
             x_positions = [round(index * step, 2) for index in range(len(values))]
         points = []
-        for x_position, value in zip(x_positions, values):
+        for x_position, (sample, value) in zip(x_positions, values):
             y_position = round(80 - max(0, min(float(value), 100)) * 0.8, 2)
-            points.append(f"{x_position},{y_position}")
-        return " ".join(points)
+            local_timestamp = timezone.localtime(sample.timestamp)
+            points.append(
+                {
+                    "x": x_position,
+                    "y": y_position,
+                    "value": round(value, 2),
+                    "label": f"{round(value, 2):g}%",
+                    "timestamp": local_timestamp.strftime("%d/%m/%Y %I:%M %p").replace("AM", "a.m.").replace("PM", "p.m."),
+                }
+            )
+        return points
 
     @staticmethod
     def svg_payload_points(samples, metric_name):

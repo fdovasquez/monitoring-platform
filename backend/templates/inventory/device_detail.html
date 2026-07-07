@@ -164,13 +164,16 @@
                     Uso actual de memoria
                   {% endif %}
                 </p>
-                <div class="telemetry-chart">
+                <div class="telemetry-chart interactive-chart" data-chart-points='{{ serie.points_json|escape }}'>
                   {% if serie.points %}
                     <svg viewBox="0 0 300 100" preserveAspectRatio="none" role="img" aria-label="Tendencia {{ serie.label }}">
                       <line x1="0" y1="36" x2="300" y2="36"></line>
                       <line x1="0" y1="68" x2="300" y2="68"></line>
                       <polyline points="{{ serie.points }}"></polyline>
                     </svg>
+                    <span class="chart-hover-line" aria-hidden="true"></span>
+                    <span class="chart-hover-dot" aria-hidden="true"></span>
+                    <span class="chart-tooltip" role="status"></span>
                   {% else %}
                     <span class="flatline"></span>
                   {% endif %}
@@ -212,17 +215,24 @@
             </div>
             <strong class="telemetry-value">100%</strong>
             <p>{{ uptime }} activo</p>
-            <div class="telemetry-chart">
+            <div class="telemetry-chart interactive-chart">
               {% for serie in chart_series %}
                 {% if serie.label == "Red" and serie.points %}
-                  <svg viewBox="0 0 300 100" preserveAspectRatio="none" role="img" aria-label="Tendencia de conectividad">
-                    <line x1="0" y1="36" x2="300" y2="36"></line>
-                    <line x1="0" y1="68" x2="300" y2="68"></line>
-                    <polyline points="{{ serie.points }}"></polyline>
-                  </svg>
+                  <div class="interactive-chart-fill" data-chart-points='{{ serie.points_json|escape }}'>
+                    <svg viewBox="0 0 300 100" preserveAspectRatio="none" role="img" aria-label="Tendencia de conectividad">
+                      <line x1="0" y1="36" x2="300" y2="36"></line>
+                      <line x1="0" y1="68" x2="300" y2="68"></line>
+                      <polyline points="{{ serie.points }}"></polyline>
+                    </svg>
+                    <span class="chart-hover-line" aria-hidden="true"></span>
+                    <span class="chart-hover-dot" aria-hidden="true"></span>
+                    <span class="chart-tooltip" role="status"></span>
+                  </div>
                 {% endif %}
               {% endfor %}
-              <span class="flatline"></span>
+              {% if not chart_series.3.points %}
+                <span class="flatline"></span>
+              {% endif %}
             </div>
           </article>
         </div>
@@ -242,16 +252,19 @@
                   <th>Severidad</th>
                   <th>Detalle</th>
                   <th>Inicio</th>
-                  <th>Automatizacion</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {% for alert in active_alerts %}
                   <tr>
-                    <td><span class="pill severity-{{ alert.rule.priority }}">{{ alert.rule.get_priority_display }}</span></td>
-                    <td><strong>{{ alert.rule.name }}</strong><span>{{ alert.message }}</span></td>
-                    <td>{{ alert.created_at|timesince }}<span>{{ alert.created_at }}</span></td>
-                    <td>-</td>
+                    <td><span class="severity-pill {{ alert.rule.priority }}">{{ alert.rule.get_priority_display }}</span></td>
+                    <td>
+                      <span>{{ alert.rule.name }}</span>
+                      <small>{{ alert.message }}</small>
+                    </td>
+                    <td>{{ alert.created_at|date:"d/m/Y H:i" }}</td>
+                    <td>Activa</td>
                   </tr>
                 {% empty %}
                   <tr><td colspan="4">Sin alertas activas.</td></tr>
@@ -372,6 +385,49 @@
         URL.revokeObjectURL(link.href);
       });
     }
+
+    document.querySelectorAll("[data-chart-points]").forEach((chart) => {
+      let points = [];
+      try {
+        points = JSON.parse(chart.dataset.chartPoints || "[]");
+      } catch (error) {
+        points = [];
+      }
+      if (!points.length) return;
+
+      const line = chart.querySelector(".chart-hover-line");
+      const dot = chart.querySelector(".chart-hover-dot");
+      const tooltip = chart.querySelector(".chart-tooltip");
+      if (!line || !dot || !tooltip) return;
+
+      const showPoint = (event) => {
+        const rect = chart.getBoundingClientRect();
+        const relativeX = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+        const svgX = rect.width ? (relativeX / rect.width) * 300 : 0;
+        const point = points.reduce((closest, current) => (
+          Math.abs(current.x - svgX) < Math.abs(closest.x - svgX) ? current : closest
+        ), points[0]);
+
+        const left = (point.x / 300) * rect.width;
+        const top = (point.y / 100) * rect.height;
+        const tooltipLeft = Math.max(74, Math.min(left, rect.width - 74));
+        const tooltipTop = Math.max(8, top - 12);
+
+        line.style.left = `${left}px`;
+        dot.style.left = `${left}px`;
+        dot.style.top = `${top}px`;
+        tooltip.style.left = `${tooltipLeft}px`;
+        tooltip.style.top = `${tooltipTop}px`;
+        tooltip.innerHTML = `<strong>${point.timestamp}</strong><span>${point.label}</span>`;
+        chart.classList.add("show-tooltip");
+      };
+
+      chart.addEventListener("mousemove", showPoint);
+      chart.addEventListener("mouseenter", showPoint);
+      chart.addEventListener("mouseleave", () => {
+        chart.classList.remove("show-tooltip");
+      });
+    });
 
     setInterval(() => {
       const active = document.activeElement;

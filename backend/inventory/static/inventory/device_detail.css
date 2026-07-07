@@ -1244,6 +1244,16 @@
   background: linear-gradient(180deg, transparent 0 55%, rgba(37, 99, 235, .06) 55% 100%);
 }
 
+.interactive-chart,
+.interactive-chart-fill {
+  position: relative;
+}
+
+.interactive-chart-fill {
+  width: 100%;
+  min-height: 108px;
+}
+
 .telemetry-chart svg {
   width: 100%;
   height: 108px;
@@ -1259,6 +1269,65 @@
   stroke: #2563eb;
   stroke-width: 2.2;
   vector-effect: non-scaling-stroke;
+}
+
+.chart-hover-line,
+.chart-hover-dot,
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s ease, transform .12s ease;
+}
+
+.chart-hover-line {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(37, 99, 235, .55);
+}
+
+.chart-hover-dot {
+  width: 8px;
+  height: 8px;
+  background: #2563eb;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, .35);
+  transform: translate(-50%, -50%);
+}
+
+.chart-tooltip {
+  z-index: 3;
+  min-width: 128px;
+  padding: 9px 10px;
+  color: #ffffff;
+  background: #111827;
+  border-radius: 5px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .22);
+  font-size: 11px;
+  line-height: 1.35;
+  transform: translate(-50%, -8px);
+}
+
+.chart-tooltip strong,
+.chart-tooltip span {
+  display: block;
+  color: #ffffff;
+}
+
+.chart-tooltip span {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.interactive-chart.show-tooltip .chart-hover-line,
+.interactive-chart.show-tooltip .chart-hover-dot,
+.interactive-chart.show-tooltip .chart-tooltip,
+.interactive-chart-fill.show-tooltip .chart-hover-line,
+.interactive-chart-fill.show-tooltip .chart-hover-dot,
+.interactive-chart-fill.show-tooltip .chart-tooltip {
+  opacity: 1;
 }
 
 .flatline {
