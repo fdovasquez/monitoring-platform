@@ -191,10 +191,111 @@
   padding: 0 12px !important;
 }
 
+.monitor-category-list {
+  display: grid;
+  gap: 14px;
+  padding: 14px 8px 20px;
+  background: #f8fafc;
+}
+
+.monitor-category-card {
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+}
+
+.monitor-category-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 74px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.monitor-category-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.monitor-category-title h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.monitor-category-title p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.monitor-category-icon {
+  display: inline-grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.monitor-category-card.performance .monitor-category-icon {
+  color: #7c2d12;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.monitor-category-card.storage .monitor-category-icon {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.monitor-category-card.services .monitor-category-icon {
+  color: #6d28d9;
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
+.monitor-category-card.applications .monitor-category-icon {
+  color: #0f766e;
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
+.monitor-category-count {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 10px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .monitor-table-card {
   overflow-x: auto;
   background: #ffffff;
   border-bottom: 1px solid #dbe3ef;
+}
+
+.monitor-table-card.categorized {
+  border-bottom: 0;
 }
 
 .monitor-table {
@@ -230,6 +331,17 @@
 
 .monitor-table td {
   height: 58px;
+}
+
+.monitor-category-card .monitor-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.category-empty {
+  min-height: 160px;
+  background: #ffffff;
+  border: 1px dashed #bfdbfe;
+  border-radius: 10px;
 }
 
 .monitor-name span,
@@ -755,6 +867,11 @@
   .monitor-toolbar,
   .monitor-actions {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .monitor-category-head {
+    align-items: flex-start;
     flex-direction: column;
   }
 

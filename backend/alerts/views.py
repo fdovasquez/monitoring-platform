@@ -19,6 +19,52 @@ def user_can_manage_alerts(user):
     return user.is_superuser or user.groups.filter(name="Administrador").exists()
 
 
+MONITOR_CATEGORY_DEFINITIONS = [
+    {
+        "key": "availability",
+        "title": "Disponibilidad",
+        "description": "Conectividad, reinicios y continuidad del servidor.",
+        "icon": "UP",
+        "events": {AlertRule.EVENT_OFFLINE, AlertRule.EVENT_REBOOT},
+    },
+    {
+        "key": "performance",
+        "title": "Rendimiento",
+        "description": "Uso de procesador y memoria.",
+        "icon": "CPU",
+        "events": {AlertRule.EVENT_CPU, AlertRule.EVENT_MEMORY},
+    },
+    {
+        "key": "storage",
+        "title": "Almacenamiento",
+        "description": "Uso de disco, espacio libre y salud de unidades.",
+        "icon": "DSK",
+        "events": {AlertRule.EVENT_DISK, AlertRule.EVENT_FREE_SPACE},
+    },
+    {
+        "key": "services",
+        "title": "Servicios",
+        "description": "Servicios detenidos o servicios criticos con error.",
+        "icon": "SVC",
+        "events": {AlertRule.EVENT_SERVICE_STOPPED, AlertRule.EVENT_CRITICAL_SERVICE},
+    },
+    {
+        "key": "applications",
+        "title": "Aplicaciones y datos",
+        "description": "Respaldos, bases de datos y dependencias de aplicacion.",
+        "icon": "APP",
+        "events": {AlertRule.EVENT_BACKUP, AlertRule.EVENT_DATABASE},
+    },
+    {
+        "key": "other",
+        "title": "Otros monitores",
+        "description": "Reglas que no pertenecen a una categoria principal.",
+        "icon": "AL",
+        "events": set(),
+    },
+]
+
+
 class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "alerts/alert_settings.html"
 
@@ -50,6 +96,7 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             else None
         )
         AlertEmailLog.objects.filter(created_at__lt=cutoff).delete()
+        rules = list(self.filtered_rules())
         context.update(
             {
                 "active_tab": kwargs.get("active_tab") or self.request.GET.get("tab", "monitors"),
@@ -57,7 +104,8 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 "bulk_recipients_form": kwargs.get("bulk_recipients_form") or BulkRecipientsForm(),
                 "edit_rule": edit_rule,
                 "show_create_rule": show_create_rule,
-                "rules": self.filtered_rules(),
+                "rules": rules,
+                "rule_categories": self.categorized_rules(rules),
                 "servers": servers,
                 "selected_server": selected_server,
                 "monitor_assignments": monitor_assignments,
@@ -68,6 +116,24 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             }
         )
         return context
+
+    def categorized_rules(self, rules):
+        categories = [
+            {**definition, "rules": []}
+            for definition in MONITOR_CATEGORY_DEFINITIONS
+        ]
+        by_key = {category["key"]: category for category in categories}
+        for rule in rules:
+            category = next(
+                (
+                    category
+                    for category in categories
+                    if rule.event_type in category["events"]
+                ),
+                by_key["other"],
+            )
+            category["rules"].append(rule)
+        return [category for category in categories if category["rules"]]
 
     def post(self, request):
         action = request.POST.get("action", "")
