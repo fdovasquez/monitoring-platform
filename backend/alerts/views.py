@@ -97,6 +97,7 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         )
         AlertEmailLog.objects.filter(created_at__lt=cutoff).delete()
         rules = list(self.filtered_rules())
+        category_rules = list(self.filtered_rules(apply_category=False))
         context.update(
             {
                 "active_tab": kwargs.get("active_tab") or self.request.GET.get("tab", "monitors"),
@@ -106,6 +107,8 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 "show_create_rule": show_create_rule,
                 "rules": rules,
                 "rule_categories": self.categorized_rules(rules),
+                "category_filters": self.category_filters(category_rules),
+                "active_category": self.request.GET.get("category", "all"),
                 "servers": servers,
                 "selected_server": selected_server,
                 "monitor_assignments": monitor_assignments,
@@ -134,6 +137,34 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             )
             category["rules"].append(rule)
         return [category for category in categories if category["rules"]]
+
+    def category_filters(self, rules):
+        categories = [
+            {**definition, "count": 0, "is_active": self.request.GET.get("category", "all") == definition["key"]}
+            for definition in MONITOR_CATEGORY_DEFINITIONS
+        ]
+        by_key = {category["key"]: category for category in categories}
+        for rule in rules:
+            category = next(
+                (
+                    category
+                    for category in categories
+                    if rule.event_type in category["events"]
+                ),
+                by_key["other"],
+            )
+            category["count"] += 1
+        total = len(rules)
+        return [
+            {
+                "key": "all",
+                "title": "Todos",
+                "icon": "ALL",
+                "count": total,
+                "is_active": self.request.GET.get("category", "all") == "all",
+            },
+            *categories,
+        ]
 
     def post(self, request):
         action = request.POST.get("action", "")
@@ -252,7 +283,7 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
         return redirect(f"/app/alerts/?tab=server_monitors&server={server.id}#server-monitors")
 
-    def filtered_rules(self):
+    def filtered_rules(self, apply_category=True):
         rules = AlertRule.objects.order_by("name")
         query = self.request.GET.get("q", "").strip()
         if query:
@@ -261,6 +292,18 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 | Q(event_type__icontains=query)
                 | Q(service_name__icontains=query)
             )
+        category_key = self.request.GET.get("category", "all")
+        if apply_category and category_key != "all":
+            category = next(
+                (
+                    definition
+                    for definition in MONITOR_CATEGORY_DEFINITIONS
+                    if definition["key"] == category_key
+                ),
+                None,
+            )
+            if category:
+                rules = rules.filter(event_type__in=category["events"])
         return rules
 
     def filtered_logs(self, form):

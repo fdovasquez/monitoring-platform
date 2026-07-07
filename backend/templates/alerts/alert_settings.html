@@ -256,6 +256,7 @@
       <section class="monitor-toolbar">
         <form class="monitor-search" method="get">
           <input type="hidden" name="tab" value="monitors">
+          <input type="hidden" name="category" value="{{ active_category }}">
           <span aria-hidden="true">Buscar</span>
           <input name="q" value="{{ request.GET.q }}" placeholder="Buscar monitor, tipo o servicio">
         </form>
@@ -264,75 +265,62 @@
         </div>
       </section>
 
-      <section class="monitor-category-list">
-        {% for category in rule_categories %}
-          <article class="monitor-category-card {{ category.key }}">
-            <div class="monitor-category-head">
-              <div class="monitor-category-title">
-                <span class="monitor-category-icon">{{ category.icon }}</span>
-                <div>
-                  <h2>{{ category.title }}</h2>
-                  <p>{{ category.description }}</p>
-                </div>
-              </div>
-              <span class="monitor-category-count">{{ category.rules|length }} monitor{% if category.rules|length != 1 %}es{% endif %}</span>
+      <section class="monitor-category-filter" aria-label="Categorias de monitores">
+        {% for category in category_filters %}
+          <a class="monitor-filter-chip {% if category.is_active %}active{% endif %}" href="{% url 'alert-settings' %}?tab=monitors&category={{ category.key }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}">
+            <span>{{ category.icon }}</span>
+            <strong>{{ category.title }}</strong>
+            <em>{{ category.count }}</em>
+          </a>
+        {% endfor %}
+      </section>
+
+      <section class="monitor-card-grid">
+        {% for rule in rules %}
+          <article class="monitor-rule-card {% if not rule.is_active %}disabled{% endif %}">
+            <div class="monitor-rule-top">
+              <span class="severity-pill {{ rule.priority }}">{{ rule.get_priority_display }}</span>
+              <span class="monitor-state {% if rule.is_active %}enabled{% else %}disabled{% endif %}">
+                {% if rule.is_active %}Activo{% else %}Deshabilitado{% endif %}
+              </span>
             </div>
-            <div class="monitor-table-card categorized">
-              <table class="monitor-table">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Politica</th>
-                    <th>Tipo</th>
-                    <th>Umbral / Duracion</th>
-                    <th>Gravedad</th>
-                    <th>Notificaciones</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for rule in category.rules %}
-                    <tr>
-                      <td>
-                        <div class="monitor-name">
-                          <span>{{ rule.name }}</span>
-                          {% if not rule.is_active %}<small>Deshabilitado</small>{% endif %}
-                        </div>
-                      </td>
-                      <td>Monitoreo - Global</td>
-                      <td>{{ rule.get_event_type_display }}</td>
-                      <td>
-                        <div class="threshold-copy">
-                          {% if rule.event_type == "cpu_percent" or rule.event_type == "memory_percent" or rule.event_type == "disk_percent" %}
-                            Mayor que {{ rule.threshold|floatformat:"0" }}%
-                          {% elif rule.event_type == "free_space_percent" %}
-                            Menos de {{ rule.threshold|floatformat:"0" }}% libre
-                          {% elif rule.event_type == "server_offline" %}
-                            Sin reporte por {{ rule.threshold|floatformat:"0" }} minuto(s)
-                          {% elif rule.event_type == "unexpected_reboot" and rule.threshold == 30 %}
-                            {{ rule.threshold|floatformat:"0" }} dias
-                          {% else %}
-                            {{ rule.threshold|floatformat:"0" }} vez
-                          {% endif %}
-                          <small>Cada {{ rule.min_interval_minutes }} min minimo</small>
-                        </div>
-                      </td>
-                      <td><span class="severity-pill {{ rule.priority }}">{{ rule.get_priority_display }}</span></td>
-                      <td><span class="check-ok">OK</span></td>
-                      <td>
-                        <div class="monitor-row-actions">
-                          <a class="row-action row-action-edit" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ rule.id }}">Editar</a>
-                          <form method="post" class="row-action-form">
-                            {% csrf_token %}
-                            <button class="row-action" type="submit" name="action" value="toggle_rule:{{ rule.id }}">{% if rule.is_active %}Deshabilitar{% else %}Habilitar{% endif %}</button>
-                            <button class="row-action row-action-danger" type="submit" name="action" value="delete_rule:{{ rule.id }}">Eliminar</button>
-                          </form>
-                        </div>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+            <div class="monitor-rule-body">
+              <h2>{{ rule.name }}</h2>
+              <p>{{ rule.get_event_type_display }}</p>
+            </div>
+            <div class="monitor-rule-metrics">
+              <div>
+                <span>Umbral</span>
+                <strong>
+                  {% if rule.event_type == "cpu_percent" or rule.event_type == "memory_percent" or rule.event_type == "disk_percent" %}
+                    Mayor que {{ rule.threshold|floatformat:"0" }}%
+                  {% elif rule.event_type == "free_space_percent" %}
+                    Menos de {{ rule.threshold|floatformat:"0" }}% libre
+                  {% elif rule.event_type == "server_offline" %}
+                    {{ rule.threshold|floatformat:"0" }} minuto(s)
+                  {% elif rule.event_type == "unexpected_reboot" and rule.threshold == 30 %}
+                    {{ rule.threshold|floatformat:"0" }} dias
+                  {% else %}
+                    {{ rule.threshold|floatformat:"0" }} evento
+                  {% endif %}
+                </strong>
+              </div>
+              <div>
+                <span>Frecuencia</span>
+                <strong>{{ rule.min_interval_minutes }} min</strong>
+              </div>
+              <div>
+                <span>Destinatarios</span>
+                <strong>{% if rule.recipients %}Configurados{% else %}Sin correos{% endif %}</strong>
+              </div>
+            </div>
+            <div class="monitor-rule-actions">
+              <a class="row-action row-action-edit" href="{% url 'alert-settings' %}?tab=monitors&edit_rule={{ rule.id }}">Editar</a>
+              <form method="post" class="row-action-form">
+                {% csrf_token %}
+                <button class="row-action" type="submit" name="action" value="toggle_rule:{{ rule.id }}">{% if rule.is_active %}Deshabilitar{% else %}Habilitar{% endif %}</button>
+                <button class="row-action row-action-danger" type="submit" name="action" value="delete_rule:{{ rule.id }}">Eliminar</button>
+              </form>
             </div>
           </article>
         {% empty %}
