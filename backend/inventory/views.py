@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import timedelta
 import json
 import shlex
@@ -16,6 +17,7 @@ from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.generic import TemplateView
 
+from alerts.models import AlertEvent, AlertRule
 from metrics.models import MetricSample
 
 from .forms import (
@@ -119,6 +121,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
             )
 
         context["devices"] = devices
+        context["alert_dashboard"] = self.alert_dashboard(devices)
         context["total_devices"] = len(devices)
         context["online_devices"] = sum(1 for device in devices if device["online"])
         context["offline_devices"] = sum(1 for device in devices if not device["online"])
@@ -128,6 +131,71 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
         context["can_manage_devices"] = user_can_manage_devices(self.request.user)
         context.update(sidebar_context())
         return context
+
+    @staticmethod
+    def alert_dashboard(devices):
+        server_ids = [device["server"].id for device in devices]
+        alerts_by_server = defaultdict(list)
+        if server_ids:
+            active_alerts = (
+                AlertEvent.objects.select_related("rule", "server")
+                .filter(server_id__in=server_ids, is_resolved=False)
+                .order_by("-created_at")
+            )
+            for alert in active_alerts:
+                alerts_by_server[alert.server_id].append(alert)
+
+        priority_rank = {
+            AlertRule.PRIORITY_CRITICAL: 3,
+            AlertRule.PRIORITY_WARNING: 2,
+            AlertRule.PRIORITY_INFO: 1,
+        }
+        buckets = {
+            "critical": [],
+            "warning": [],
+            "ok": [],
+        }
+
+        for device in devices:
+            alerts = alerts_by_server.get(device["server"].id, [])
+            if not alerts:
+                device.update(
+                    {
+                        "alert_count": 0,
+                        "alert_level": "ok",
+                        "alert_label": "Sin alertas",
+                        "alert_title": "Operativo",
+                        "alert_message": "Sin alertas activas",
+                        "alert_event": None,
+                    }
+                )
+                buckets["ok"].append(device)
+                continue
+
+            highest_alert = max(alerts, key=lambda alert: priority_rank.get(alert.rule.priority, 1))
+            is_critical = highest_alert.rule.priority == AlertRule.PRIORITY_CRITICAL
+            alert_level = "critical" if is_critical else "warning"
+            device.update(
+                {
+                    "alert_count": len(alerts),
+                    "alert_level": alert_level,
+                    "alert_label": "Critico" if is_critical else "Warning",
+                    "alert_title": highest_alert.rule.name,
+                    "alert_message": highest_alert.message,
+                    "alert_event": highest_alert,
+                }
+            )
+            buckets[alert_level].append(device)
+
+        return {
+            "critical": buckets["critical"],
+            "warning": buckets["warning"],
+            "ok": buckets["ok"],
+            "critical_count": len(buckets["critical"]),
+            "warning_count": len(buckets["warning"]),
+            "ok_count": len(buckets["ok"]),
+            "total_count": len(devices),
+        }
 
     @staticmethod
     def security_score(sample):

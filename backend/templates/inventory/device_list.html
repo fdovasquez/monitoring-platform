@@ -25,6 +25,109 @@
       {% endif %}
     </header>
 
+    <section class="ops-dashboard" aria-label="Dashboard operativo de alertas">
+      <div class="ops-dashboard-head">
+        <div>
+          <span class="ops-eyebrow">Operacion en tiempo real</span>
+          <h2>Estado de servidores por alerta</h2>
+          <p>Prioriza la atencion segun criticidad: rojo para servidores criticos, amarillo para warning y verde para equipos sin alertas activas.</p>
+        </div>
+        <a class="ops-history-link" href="{% url 'alert-settings' %}?tab=history">Ver historial de alertas</a>
+      </div>
+
+      <div class="ops-summary-grid">
+        <article class="ops-summary-card critical">
+          <div>
+            <span class="ops-dot"></span>
+            <p>Criticos</p>
+          </div>
+          <strong>{{ alert_dashboard.critical_count }}</strong>
+          <small>Requieren atencion inmediata</small>
+        </article>
+        <article class="ops-summary-card warning">
+          <div>
+            <span class="ops-dot"></span>
+            <p>Warning</p>
+          </div>
+          <strong>{{ alert_dashboard.warning_count }}</strong>
+          <small>Con eventos pendientes de revision</small>
+        </article>
+        <article class="ops-summary-card ok">
+          <div>
+            <span class="ops-dot"></span>
+            <p>OK</p>
+          </div>
+          <strong>{{ alert_dashboard.ok_count }}</strong>
+          <small>Sin alertas activas</small>
+        </article>
+      </div>
+
+      <div class="ops-lanes">
+        <section class="ops-lane critical">
+          <header>
+            <span>Criticos</span>
+            <strong>{{ alert_dashboard.critical_count }}</strong>
+          </header>
+          <div class="ops-server-list">
+            {% for device in alert_dashboard.critical|slice:":5" %}
+              <a class="ops-server-card" href="{% url 'device-detail' device.server.id %}">
+                <span class="ops-server-status"></span>
+                <div>
+                  <strong>{{ device.server.name|default:device.server.hostname }}</strong>
+                  <small>{{ device.alert_title }} · {{ device.alert_count }} alerta{{ device.alert_count|pluralize }}</small>
+                </div>
+                <em>{{ device.alert_event.created_at|date:"d/m H:i" }}</em>
+              </a>
+            {% empty %}
+              <div class="ops-empty">Sin servidores criticos.</div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="ops-lane warning">
+          <header>
+            <span>Warning</span>
+            <strong>{{ alert_dashboard.warning_count }}</strong>
+          </header>
+          <div class="ops-server-list">
+            {% for device in alert_dashboard.warning|slice:":5" %}
+              <a class="ops-server-card" href="{% url 'device-detail' device.server.id %}">
+                <span class="ops-server-status"></span>
+                <div>
+                  <strong>{{ device.server.name|default:device.server.hostname }}</strong>
+                  <small>{{ device.alert_title }} · {{ device.alert_count }} alerta{{ device.alert_count|pluralize }}</small>
+                </div>
+                <em>{{ device.alert_event.created_at|date:"d/m H:i" }}</em>
+              </a>
+            {% empty %}
+              <div class="ops-empty">Sin servidores en warning.</div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="ops-lane ok">
+          <header>
+            <span>OK</span>
+            <strong>{{ alert_dashboard.ok_count }}</strong>
+          </header>
+          <div class="ops-server-list">
+            {% for device in alert_dashboard.ok|slice:":5" %}
+              <a class="ops-server-card" href="{% url 'device-detail' device.server.id %}">
+                <span class="ops-server-status"></span>
+                <div>
+                  <strong>{{ device.server.name|default:device.server.hostname }}</strong>
+                  <small>{{ device.server.ip_address|default:"Sin IP" }} · {{ device.uptime }}</small>
+                </div>
+                <em>OK</em>
+              </a>
+            {% empty %}
+              <div class="ops-empty">Aun no hay servidores sin alertas.</div>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+    </section>
+
     <section class="group-strip" aria-label="Grupos de dispositivos">
       <span>Grupos</span>
       {% for group in device_groups %}
