@@ -1,4 +1,5 @@
 import smtplib
+import re
 from email.utils import formataddr
 
 from django.conf import settings as django_settings
@@ -196,12 +197,79 @@ def value_for_rule(sample, rule):
     return None
 
 
+def disk_label(disk):
+    return disk.get("mountpoint") or disk.get("device") or "Disco"
+
+
+def monitored_disks(sample):
+    metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
+    disks = metrics.get("disks")
+    if not isinstance(disks, list):
+        disks = []
+
+    monitored = []
+    for disk in disks:
+        if not isinstance(disk, dict):
+            continue
+        device = str(disk.get("device") or "")
+        mountpoint = str(disk.get("mountpoint") or "")
+        fstype = str(disk.get("fstype") or "").lower()
+        if fstype in {"tmpfs", "devtmpfs", "squashfs", "proc", "sysfs", "cgroup", "cgroup2", "overlay"}:
+            continue
+        if device.startswith("/dev/") or re.match(r"^[A-Za-z]:", mountpoint) or re.match(r"^[A-Za-z]:", device):
+            monitored.append(disk)
+
+    if monitored:
+        return monitored
+    if sample.disk_percent is not None:
+        return [{"mountpoint": "Principal", "percent": sample.disk_percent}]
+    return []
+
+
+def values_for_rule(sample, rule):
+    if rule.event_type == AlertRule.EVENT_DISK:
+        values = []
+        for disk in monitored_disks(sample):
+            try:
+                value = float(disk.get("percent"))
+            except (TypeError, ValueError):
+                continue
+            values.append({"value": value, "target": disk_label(disk), "disk": disk})
+        return values
+
+    if rule.event_type == AlertRule.EVENT_FREE_SPACE:
+        values = []
+        for disk in monitored_disks(sample):
+            try:
+                used = float(disk.get("percent"))
+            except (TypeError, ValueError):
+                continue
+            values.append({"value": 100 - used, "target": disk_label(disk), "disk": disk})
+        return values
+
+    value = value_for_rule(sample, rule)
+    if value is None:
+        return []
+    return [{"value": value, "target": "", "disk": None}]
+
+
 def threshold_triggered(rule, value):
     if value is None:
         return False
     if rule.event_type == AlertRule.EVENT_FREE_SPACE:
         return value < rule.threshold
     return value > rule.threshold
+
+
+def can_notify_rule(rule, server, service_name=""):
+    cutoff = timezone.now() - timezone.timedelta(minutes=rule.min_interval_minutes)
+    return not AlertEmailLog.objects.filter(
+        alert_type=rule.event_type,
+        server=server,
+        service_name=service_name,
+        status=AlertEmailLog.STATUS_SENT,
+        created_at__gte=cutoff,
+    ).exists()
 
 
 def evaluate_metric_sample(sample):
@@ -220,16 +288,28 @@ def evaluate_metric_sample(sample):
     )
     rules = [assignment.rule for assignment in assignments]
     for rule in rules:
-        value = value_for_rule(sample, rule)
-        if not threshold_triggered(rule, value) or not rule.can_notify():
+        triggered_values = [
+            item for item in values_for_rule(sample, rule)
+            if threshold_triggered(rule, item["value"]) and can_notify_rule(rule, sample.server, item["target"])
+        ]
+        if not triggered_values:
             continue
+        if rule.event_type == AlertRule.EVENT_FREE_SPACE:
+            selected = min(triggered_values, key=lambda item: item["value"])
+        else:
+            selected = max(triggered_values, key=lambda item: item["value"])
+        value = selected["value"]
+        target = selected["target"]
         recipients = rule.recipient_list()
         if not recipients:
             continue
+        event_label = rule.get_event_type_display()
+        if target:
+            event_label = f"{event_label} ({target})"
         subject = f"[{rule.get_priority_display()}] {rule.name} - {sample.server.hostname}"
         body = (
             f"Servidor: {sample.server.hostname}\n"
-            f"Evento: {rule.get_event_type_display()}\n"
+            f"Evento: {event_label}\n"
             f"Valor actual: {value:.2f}%\n"
             f"Umbral configurado: {rule.threshold:.2f}%\n"
             f"Fecha: {timezone.localtime(sample.timestamp).strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -243,11 +323,11 @@ def evaluate_metric_sample(sample):
                 rule.event_type,
                 rule.priority,
                 sample.server,
-                rule.service_name,
+                target or rule.service_name,
                 title=rule.name,
                 details=[
                     ("Servidor", sample.server.hostname),
-                    ("Evento", rule.get_event_type_display()),
+                    ("Evento", event_label),
                     ("Valor actual", f"{value:.2f}%"),
                     ("Umbral configurado", f"{rule.threshold:.2f}%"),
                     ("Fecha", timezone.localtime(sample.timestamp).strftime("%Y-%m-%d %H:%M:%S")),
