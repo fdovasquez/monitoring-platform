@@ -89,6 +89,64 @@ def identity_audit_from_payload(sample, security):
     }
 
 
+def inventory_visibility_from_payload(sample, inventory):
+    required_fields = [
+        ("hostname", "Hostname"),
+        ("fqdn", "FQDN"),
+        ("primary_ip", "IP principal"),
+        ("os_name", "Sistema operativo"),
+        ("os_version", "Version del sistema"),
+        ("architecture", "Arquitectura"),
+        ("manufacturer", "Fabricante"),
+        ("model", "Modelo"),
+        ("serial_number", "Numero de serie"),
+    ]
+    present = []
+    missing = []
+    for key, label in required_fields:
+        value = inventory.get(key)
+        if value not in [None, "", [], {}]:
+            present.append(label)
+        else:
+            missing.append(label)
+
+    payload = getattr(sample, "payload", {}) if sample else {}
+    metrics = payload.get("metrics", {}) if isinstance(payload, dict) else {}
+    interfaces = inventory.get("interfaces")
+    if interfaces:
+        present.append("Interfaces de red")
+    else:
+        missing.append("Interfaces de red")
+    if getattr(sample, "agent_version", ""):
+        present.append("Version del agente")
+    else:
+        missing.append("Version del agente")
+    if metrics.get("uptime_seconds") is not None:
+        present.append("Uptime")
+    else:
+        missing.append("Uptime")
+
+    total = len(present) + len(missing)
+    coverage = round(len(present) / total * 100) if total else 0
+    if coverage >= 80:
+        return {
+            "passed": True,
+            "detail": f"Inventario suficiente ({len(present)}/{total} datos clave, {coverage}%)",
+            "pending": False,
+        }
+    if coverage >= 50:
+        return {
+            "passed": False,
+            "detail": f"Inventario incompleto ({len(present)}/{total} datos clave). Faltan: {', '.join(missing[:3])}",
+            "pending": True,
+        }
+    return {
+        "passed": False,
+        "detail": f"Inventario insuficiente ({len(present)}/{total} datos clave)",
+        "pending": False,
+    }
+
+
 def security_summary(checks):
     score = sum(check["weight"] for check in checks if check["passed"])
     score = max(0, min(score, 100))
@@ -118,13 +176,13 @@ def security_assessment(sample):
     metrics, inventory = metric_payload(sample)
     security = metrics.get("security", {}) if isinstance(metrics.get("security"), dict) else {}
 
-    disk_encryption = security.get("disk_encryption", {}) if isinstance(security.get("disk_encryption"), dict) else {}
     firewall = security.get("firewall", {}) if isinstance(security.get("firewall"), dict) else {}
     os_security = security.get("os_security", {}) if isinstance(security.get("os_security"), dict) else {}
     patch_compliance = security.get("patch_compliance", {}) if isinstance(security.get("patch_compliance"), dict) else {}
     os_version = security.get("os_version", {}) if isinstance(security.get("os_version"), dict) else {}
 
     if not security:
+        inventory_visibility = inventory_visibility_from_payload(sample, inventory)
         checks = [
             security_check(
                 "Actualizaciones y vulnerabilidades",
@@ -150,12 +208,12 @@ def security_assessment(sample):
                 20,
             ),
             security_check(
-                "Proteccion de datos",
-                "Verifica cifrado de disco y proteccion basica de volumenes sensibles.",
-                False,
-                "Pendiente de reporte del agente",
+                "Inventario y visibilidad del activo",
+                "Verifica que el servidor reporte informacion tecnica suficiente para identificacion y gestion.",
+                inventory_visibility["passed"],
+                inventory_visibility["detail"],
                 15,
-                pending=True,
+                pending=inventory_visibility["pending"],
             ),
             security_check(
                 "Identidad, auditoria y trazabilidad",
@@ -177,6 +235,7 @@ def security_assessment(sample):
     os_version_detail = display_os_version(os_version.get("detail") or inventory.get("os_version"))
     if os_version_detail:
         os_security_detail = f"{os_security_detail}. Version: {os_version_detail}"
+    inventory_visibility = inventory_visibility_from_payload(sample, inventory)
 
     checks = [
         security_check(
@@ -205,12 +264,12 @@ def security_assessment(sample):
             pending=os_security.get("pending", False),
         ),
         security_check(
-            "Proteccion de datos",
-            "Verifica cifrado de disco y proteccion basica de volumenes sensibles.",
-            disk_encryption.get("enabled"),
-            disk_encryption.get("detail") or "El disco principal no esta cifrado",
+            "Inventario y visibilidad del activo",
+            "Verifica que el servidor reporte informacion tecnica suficiente para identificacion y gestion.",
+            inventory_visibility["passed"],
+            inventory_visibility["detail"],
             15,
-            pending=disk_encryption.get("pending", False),
+            pending=inventory_visibility["pending"],
         ),
         security_check(
             "Identidad, auditoria y trazabilidad",
