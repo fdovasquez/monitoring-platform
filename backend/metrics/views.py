@@ -8,7 +8,7 @@ from inventory.models import AgentToken, Server, ServerInventory, ServerRuntimeS
 from alerts.services import evaluate_metric_sample
 
 from .models import MetricSample
-from .serializers import MetricIngestSerializer
+from .serializers import MetricIngestSerializer, RhapsodyIngestSerializer
 
 
 def bearer_token(request):
@@ -69,6 +69,41 @@ class MetricIngestView(APIView):
 
         evaluate_metric_sample(sample)
         return Response({"status": "ok", "sample_id": sample.id}, status=status.HTTP_201_CREATED)
+
+
+class RhapsodyIngestView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        token_value = bearer_token(request)
+        if not token_value:
+            return Response({"detail": "Missing bearer token."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            agent_token = AgentToken.objects.select_related("server").get(token=token_value, is_active=True)
+        except AgentToken.DoesNotExist:
+            return Response({"detail": "Invalid token."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = RhapsodyIngestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        application_payload = dict(request.data)
+
+        with transaction.atomic():
+            server = agent_token.server
+            hostname = clean_text(data.get("hostname"))
+            if hostname and server.hostname.startswith("pendiente-"):
+                server.hostname = hostname
+                if server.name == "Agente pendiente de registro":
+                    server.name = hostname
+                server.save(update_fields=["hostname", "name", "updated_at"])
+
+            agent_token.last_used_at = timezone.now()
+            agent_token.save(update_fields=["last_used_at"])
+            update_application_snapshot(server, "rhapsody", application_payload, data["timestamp"])
+
+        return Response({"status": "ok", "application": "rhapsody"}, status=status.HTTP_201_CREATED)
 
 
 def resolve_server_for_token(agent_token, data):
@@ -160,4 +195,15 @@ def update_runtime_snapshot(server, services, processes, ports, collected_at):
         "collected_at": collected_at,
     }
     ServerRuntimeSnapshot.objects.update_or_create(server=server, defaults=defaults)
+
+
+def update_application_snapshot(server, application_name, application_data, collected_at):
+    runtime, _ = ServerRuntimeSnapshot.objects.get_or_create(server=server)
+    raw_data = runtime.raw_data if isinstance(runtime.raw_data, dict) else {}
+    applications = raw_data.get("applications") if isinstance(raw_data.get("applications"), dict) else {}
+    applications[application_name] = application_data
+    raw_data["applications"] = applications
+    runtime.raw_data = raw_data
+    runtime.collected_at = collected_at
+    runtime.save(update_fields=["raw_data", "collected_at", "updated_at"])
 

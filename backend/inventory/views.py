@@ -66,6 +66,8 @@ def agent_download(request, platform, filename):
         / "linux"
         / "monitoring-agent-linux-x86_64",
         ("windows", "agent.ps1"): settings.BASE_DIR.parent / "agents" / "windows" / "agent.ps1",
+        ("rhapsody", "rhapsody-agent.py"): settings.BASE_DIR.parent / "agents" / "rhapsody" / "linux" / "rhapsody-agent.py",
+        ("rhapsody", "rhapsody-agent.service"): settings.BASE_DIR.parent / "agents" / "rhapsody" / "linux" / "rhapsody-agent.service",
     }
     file_path = allowed_files.get((platform, filename))
     if not file_path or not file_path.exists():
@@ -237,6 +239,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         disk_count = self.disk_count(latest, disk_details)
         inventory = self.inventory_snapshot(server)
         runtime = self.runtime_snapshot(server)
+        rhapsody = self.rhapsody_snapshot(runtime)
         security = DeviceListView.security_assessment(latest)
         active_alerts = server.alert_events.select_related("rule").filter(is_resolved=False).order_by("-created_at")[:8]
         context.update(
@@ -258,6 +261,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "disk_details": disk_details,
                 "inventory": inventory,
                 "runtime": runtime,
+                "rhapsody": rhapsody,
                 "chart_series": self.chart_series(samples),
                 "recent_events": self.recent_events(server, samples, latest, online),
                 "active_alerts": active_alerts,
@@ -324,6 +328,43 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             "process_count": len(processes),
             "port_count": len(ports),
             "stopped_count": len(stopped_services),
+        }
+
+    @staticmethod
+    def rhapsody_snapshot(runtime):
+        if not runtime:
+            return None
+        raw_data = runtime["record"].raw_data if isinstance(runtime["record"].raw_data, dict) else {}
+        applications = raw_data.get("applications") if isinstance(raw_data.get("applications"), dict) else {}
+        rhapsody = applications.get("rhapsody") if isinstance(applications.get("rhapsody"), dict) else {}
+        if not rhapsody:
+            return None
+
+        status_value = str(rhapsody.get("status", "unknown")).lower()
+        tone_map = {
+            "healthy": "success",
+            "warning": "warning",
+            "critical": "danger",
+            "not_detected": "muted",
+            "unknown": "muted",
+        }
+        label_map = {
+            "healthy": "Normal",
+            "warning": "Advertencia",
+            "critical": "Critico",
+            "not_detected": "No detectado",
+            "unknown": "Sin datos",
+        }
+        return {
+            "tone": tone_map.get(status_value, "muted"),
+            "label": label_map.get(status_value, status_value.title() or "Sin datos"),
+            "summary": rhapsody.get("summary", "Sin resumen reportado."),
+            "services": rhapsody.get("services") if isinstance(rhapsody.get("services"), list) else [],
+            "processes": rhapsody.get("processes") if isinstance(rhapsody.get("processes"), list) else [],
+            "ports": rhapsody.get("ports") if isinstance(rhapsody.get("ports"), list) else [],
+            "log_findings": rhapsody.get("log_findings") if isinstance(rhapsody.get("log_findings"), list) else [],
+            "checked_at": rhapsody.get("timestamp") or rhapsody.get("checked_at"),
+            "agent_version": rhapsody.get("agent_version", ""),
         }
 
     @staticmethod

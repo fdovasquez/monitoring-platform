@@ -1403,6 +1403,115 @@
   color: var(--detail-muted);
 }
 
+.rhapsody-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.rhapsody-status {
+  align-items: center;
+  border: 1px solid var(--detail-border);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  min-height: 30px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.rhapsody-status.success {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.rhapsody-status.warning {
+  background: #fef3c7;
+  border-color: #facc15;
+  color: #a16207;
+}
+
+.rhapsody-status.danger {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.rhapsody-status.muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.rhapsody-summary {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid var(--detail-border);
+  border-radius: 8px;
+  color: var(--detail-text);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.rhapsody-summary small {
+  color: var(--detail-muted);
+  white-space: nowrap;
+}
+
+.rhapsody-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.rhapsody-panel {
+  border: 1px solid var(--detail-border);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.rhapsody-panel h3 {
+  color: var(--detail-text);
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+
+.rhapsody-panel ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rhapsody-panel li {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rhapsody-panel span,
+.rhapsody-panel small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rhapsody-panel span {
+  color: var(--detail-text);
+  font-size: 13px;
+}
+
+.rhapsody-panel small,
+.rhapsody-panel p {
+  color: var(--detail-muted);
+  font-size: 12px;
+  margin: 0;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --detail-bg: #020617;
@@ -1439,6 +1548,12 @@
   .storage-row-meta,
   .storage-free {
     color: #94a3b8;
+  }
+
+  .rhapsody-summary,
+  .rhapsody-panel {
+    background: #111827;
+    border-color: #1e293b;
   }
 
   .storage-percent {
@@ -1511,6 +1626,10 @@
   .server-observability-grid {
     grid-template-columns: 1fr;
   }
+
+  .rhapsody-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -1550,6 +1669,15 @@
     right: 0;
     width: 100%;
     min-width: 100%;
+  }
+
+  .rhapsody-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rhapsody-grid {
+    grid-template-columns: 1fr;
   }
 }
 

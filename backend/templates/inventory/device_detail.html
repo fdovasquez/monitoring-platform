@@ -237,6 +237,74 @@
           </article>
         </div>
 
+        {% if rhapsody %}
+          <article class="card rhapsody-card">
+            <div class="section-title">
+              <div>
+                <h2>Rhapsody</h2>
+                <p>Estado del motor de integracion, procesos, puertos y logs recientes.</p>
+              </div>
+              <span class="rhapsody-status {{ rhapsody.tone }}">{{ rhapsody.label }}</span>
+            </div>
+            <div class="rhapsody-summary">
+              <span>{{ rhapsody.summary }}</span>
+              {% if rhapsody.agent_version %}
+                <small>Agente {{ rhapsody.agent_version }}</small>
+              {% endif %}
+            </div>
+            <div class="rhapsody-grid">
+              <section class="rhapsody-panel">
+                <h3>Servicios</h3>
+                {% if rhapsody.services %}
+                  <ul>
+                    {% for service in rhapsody.services|slice:":4" %}
+                      <li><span>{{ service.display_name|default:service.name|default:"Servicio" }}</span><small>{{ service.state|default:service.sub_state|default:"-" }}</small></li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p>Sin servicios reportados.</p>
+                {% endif %}
+              </section>
+              <section class="rhapsody-panel">
+                <h3>Procesos</h3>
+                {% if rhapsody.processes %}
+                  <ul>
+                    {% for process in rhapsody.processes|slice:":4" %}
+                      <li><span>{{ process.name|default:"Proceso" }}</span><small>PID {{ process.pid|default:"-" }}</small></li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p>Sin procesos reportados.</p>
+                {% endif %}
+              </section>
+              <section class="rhapsody-panel">
+                <h3>Puertos</h3>
+                {% if rhapsody.ports %}
+                  <ul>
+                    {% for port in rhapsody.ports|slice:":5" %}
+                      <li><span>{{ port.protocol|default:"TCP" }} {{ port.local_port|default:"-" }}</span><small>{{ port.status|default:"open" }}</small></li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p>Sin puertos reportados.</p>
+                {% endif %}
+              </section>
+              <section class="rhapsody-panel">
+                <h3>Logs</h3>
+                {% if rhapsody.log_findings %}
+                  <ul>
+                    {% for finding in rhapsody.log_findings|slice:":4" %}
+                      <li><span>{{ finding.keyword|default:"hallazgo" }}</span><small>{{ finding.message|default:finding.file|truncatechars:90 }}</small></li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p>Sin hallazgos recientes.</p>
+                {% endif %}
+              </section>
+            </div>
+          </article>
+        {% endif %}
+
         <article class="card active-alerts-card">
           <div class="section-title">
             <div>
