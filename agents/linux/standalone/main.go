@@ -16,7 +16,7 @@ import (
     "time"
 )
 
-const agentVersion = "1.8.0-standalone"
+const agentVersion = "1.9.0-standalone"
 
 var lastPatchCheck time.Time
 var cachedPatchSecurity map[string]interface{}
@@ -287,12 +287,23 @@ func patchSecurity() map[string]interface{} {
     return cachedPatchSecurity
 }
 
+func identityAuditSecurity() map[string]interface{} {
+    if serviceActive("auditd") {
+        return map[string]interface{}{"enabled": true, "name": "auditd", "detail": "Auditoria activa (auditd)"}
+    }
+    if serviceActive("systemd-journald") {
+        return map[string]interface{}{"enabled": true, "name": "systemd-journald", "detail": "Trazabilidad basica activa (systemd-journald)"}
+    }
+    return map[string]interface{}{"enabled": false, "detail": "No se detecto auditoria activa"}
+}
+
 func security() map[string]interface{} {
     return map[string]interface{}{
         "disk_encryption": diskEncryptionSecurity(),
         "firewall": firewallSecurity(),
         "os_security": osSecurity(),
         "patch_compliance": patchSecurity(),
+        "identity_audit": identityAuditSecurity(),
         "os_version": map[string]interface{}{
             "supported": true,
             "detail": osVersion(),

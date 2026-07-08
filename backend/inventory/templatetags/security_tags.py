@@ -51,6 +51,44 @@ def split_patch_detail(value):
     return status.strip(), package.strip()
 
 
+def service_is_active(service):
+    state = str(service.get("state") or service.get("status") or "").lower()
+    sub_state = str(service.get("sub_state") or "").lower()
+    return state in {"active", "running"} or sub_state == "running"
+
+
+def identity_audit_from_payload(sample, security):
+    identity_audit = security.get("identity_audit", {})
+    if isinstance(identity_audit, dict) and identity_audit:
+        return {
+            "passed": bool(identity_audit.get("enabled")),
+            "detail": identity_audit.get("detail") or "Auditoria no evaluada",
+            "pending": bool(identity_audit.get("pending", False)),
+        }
+
+    payload = getattr(sample, "payload", {}) if sample else {}
+    services = payload.get("services", []) if isinstance(payload, dict) else []
+    if not isinstance(services, list):
+        services = []
+
+    audit_candidates = {"auditd.service", "systemd-journald.service", "eventlog", "windows event log"}
+    for service in services:
+        if not isinstance(service, dict):
+            continue
+        name = str(service.get("name") or service.get("display_name") or "").lower()
+        description = str(service.get("description") or service.get("display_name") or "").lower()
+        if any(candidate in name or candidate in description for candidate in audit_candidates):
+            if service_is_active(service):
+                return {"passed": True, "detail": f"Auditoria activa ({service.get('name') or service.get('display_name')})", "pending": False}
+            return {"passed": False, "detail": f"Servicio de auditoria no activo ({service.get('name') or service.get('display_name')})", "pending": False}
+
+    return {
+        "passed": False,
+        "detail": "No se recibio evidencia de auditoria o trazabilidad desde el agente",
+        "pending": True,
+    }
+
+
 def security_summary(checks):
     score = sum(check["weight"] for check in checks if check["passed"])
     score = max(0, min(score, 100))
@@ -89,43 +127,43 @@ def security_assessment(sample):
     if not security:
         checks = [
             security_check(
-                "Cifrado de disco",
-                "Verifica si la unidad principal utiliza cifrado.",
-                False,
-                "Pendiente de reporte del agente",
-                5,
-                pending=True,
-            ),
-            security_check(
-                "Firewall",
-                "Valida que el firewall del sistema este habilitado.",
+                "Actualizaciones y vulnerabilidades",
+                "Verifica parches pendientes, actualizaciones criticas y exposicion por software vulnerable.",
                 False,
                 "Pendiente de reporte del agente",
                 25,
                 pending=True,
             ),
             security_check(
-                "Seguridad del sistema",
-                "Revisa los controles de seguridad nativos del sistema operativo.",
+                "Firewall y exposicion de red",
+                "Valida firewall activo y reduce la exposicion innecesaria de servicios de red.",
                 False,
                 "Pendiente de reporte del agente",
-                25,
+                20,
                 pending=True,
             ),
             security_check(
-                "Actualizaciones de seguridad",
-                "Comprueba el estado de actualizaciones y parches de seguridad.",
-                False,
-                "Pendiente de reporte del agente",
-                25,
-                pending=True,
-            ),
-            security_check(
-                "Version del sistema",
-                "Comprueba que la version informada por el sistema sea compatible.",
+                "Endurecimiento del sistema operativo",
+                "Revisa controles nativos de seguridad y compatibilidad de la version del sistema.",
                 bool(inventory.get("os_version")),
                 display_os_version(inventory.get("os_version")),
                 20,
+            ),
+            security_check(
+                "Proteccion de datos",
+                "Verifica cifrado de disco y proteccion basica de volumenes sensibles.",
+                False,
+                "Pendiente de reporte del agente",
+                15,
+                pending=True,
+            ),
+            security_check(
+                "Identidad, auditoria y trazabilidad",
+                "Comprueba evidencia de auditoria, trazabilidad de eventos y controles de acceso.",
+                False,
+                "Pendiente de reporte del agente",
+                20,
+                pending=True,
             ),
         ]
         return security_summary(checks)
@@ -133,35 +171,17 @@ def security_assessment(sample):
     patch_detail, latest_update = split_patch_detail(
         patch_compliance.get("detail") or "No evaluado"
     )
+    identity_audit = identity_audit_from_payload(sample, security)
+    os_security_passed = bool(os_security.get("enabled")) and bool(os_version.get("supported", True))
+    os_security_detail = os_security.get("detail") or "Control de seguridad no activo"
+    os_version_detail = display_os_version(os_version.get("detail") or inventory.get("os_version"))
+    if os_version_detail:
+        os_security_detail = f"{os_security_detail}. Version: {os_version_detail}"
 
     checks = [
         security_check(
-            "Cifrado de disco",
-            "Verifica si la unidad principal utiliza cifrado.",
-            disk_encryption.get("enabled"),
-            disk_encryption.get("detail") or "El disco principal no esta cifrado",
-            5,
-            pending=disk_encryption.get("pending", False),
-        ),
-        security_check(
-            "Firewall",
-            "Valida que el firewall del sistema este habilitado.",
-            firewall.get("enabled"),
-            firewall.get("detail") or "Firewall no activo",
-            25,
-            pending=firewall.get("pending", False),
-        ),
-        security_check(
-            "Seguridad del sistema",
-            "Revisa los controles de seguridad nativos del sistema operativo.",
-            os_security.get("enabled"),
-            os_security.get("detail") or "Control de seguridad no activo",
-            25,
-            pending=os_security.get("pending", False),
-        ),
-        security_check(
-            "Actualizaciones de seguridad",
-            "Comprueba el estado de actualizaciones y parches de seguridad.",
+            "Actualizaciones y vulnerabilidades",
+            "Verifica parches pendientes, actualizaciones criticas y exposicion por software vulnerable.",
             patch_compliance.get("up_to_date"),
             patch_detail,
             25,
@@ -169,12 +189,36 @@ def security_assessment(sample):
             latest_update=latest_update,
         ),
         security_check(
-            "Version del sistema",
-            "Comprueba que la version informada por el sistema sea compatible.",
-            os_version.get("supported", True),
-            display_os_version(os_version.get("detail") or inventory.get("os_version")),
+            "Firewall y exposicion de red",
+            "Valida firewall activo y reduce la exposicion innecesaria de servicios de red.",
+            firewall.get("enabled"),
+            firewall.get("detail") or "Firewall no activo",
             20,
-            pending=os_version.get("pending", False),
+            pending=firewall.get("pending", False),
+        ),
+        security_check(
+            "Endurecimiento del sistema operativo",
+            "Revisa controles nativos de seguridad y compatibilidad de la version del sistema.",
+            os_security_passed,
+            os_security_detail,
+            20,
+            pending=os_security.get("pending", False),
+        ),
+        security_check(
+            "Proteccion de datos",
+            "Verifica cifrado de disco y proteccion basica de volumenes sensibles.",
+            disk_encryption.get("enabled"),
+            disk_encryption.get("detail") or "El disco principal no esta cifrado",
+            15,
+            pending=disk_encryption.get("pending", False),
+        ),
+        security_check(
+            "Identidad, auditoria y trazabilidad",
+            "Comprueba evidencia de auditoria, trazabilidad de eventos y controles de acceso.",
+            identity_audit["passed"],
+            identity_audit["detail"],
+            20,
+            pending=identity_audit["pending"],
         ),
     ]
     return security_summary(checks)

@@ -160,9 +160,19 @@ try {
     $PatchDetail = "Parches no evaluados"
 }
 
+$IdentityAuditEnabled = $false
+$IdentityAuditDetail = "Auditoria no evaluada"
+try {
+    $EventLogService = Get-CimInstance Win32_Service -Filter "Name='EventLog'" -ErrorAction Stop
+    $IdentityAuditEnabled = $EventLogService.State -eq "Running"
+    $IdentityAuditDetail = if ($IdentityAuditEnabled) { "Trazabilidad activa (Windows Event Log)" } else { "Windows Event Log no activo" }
+} catch {
+    $IdentityAuditDetail = "Auditoria no evaluada"
+}
+
 $Payload = @{
     hostname = $Hostname
-    agent_version = "1.0.0"
+    agent_version = "1.1.0"
     timestamp = (Get-Date).ToUniversalTime().ToString("o")
     metrics = @{
         cpu_percent = [double]$Cpu
@@ -193,6 +203,11 @@ $Payload = @{
             os_version = @{
                 supported = $true
                 detail = $Os.Caption
+            }
+            identity_audit = @{
+                enabled = $IdentityAuditEnabled
+                name = "Windows Event Log"
+                detail = $IdentityAuditDetail
             }
         }
     }

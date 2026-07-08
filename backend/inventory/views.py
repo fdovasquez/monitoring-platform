@@ -39,6 +39,7 @@ from .models import (
     ServerRuntimeSnapshot,
     UserProfile,
 )
+from .templatetags.security_tags import security_assessment as standard_security_assessment
 
 
 def sidebar_context():
@@ -203,89 +204,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
 
     @staticmethod
     def security_assessment(sample):
-        if not sample:
-            checks = [
-                DeviceListView.security_check("Disk encryption", False, "Sin datos del agente", 5),
-                DeviceListView.security_check("Firewall", False, "Sin datos del agente", 25),
-                DeviceListView.security_check("OS security", False, "Sin datos del agente", 25),
-                DeviceListView.security_check("Patch compliance", False, "Sin datos del agente", 25),
-                DeviceListView.security_check("OS version", False, "Sin datos del agente", 20),
-            ]
-            return DeviceListView.security_summary(checks)
-
-        metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
-        security = metrics.get("security", {}) if isinstance(metrics.get("security"), dict) else {}
-        inventory = sample.payload.get("inventory", {}) if isinstance(sample.payload, dict) else {}
-
-        disk_encryption = security.get("disk_encryption", {}) if isinstance(security.get("disk_encryption"), dict) else {}
-        firewall = security.get("firewall", {}) if isinstance(security.get("firewall"), dict) else {}
-        os_security = security.get("os_security", {}) if isinstance(security.get("os_security"), dict) else {}
-        patch_compliance = security.get("patch_compliance", {}) if isinstance(security.get("patch_compliance"), dict) else {}
-        os_version = security.get("os_version", {}) if isinstance(security.get("os_version"), dict) else {}
-
-        checks = [
-            DeviceListView.security_check(
-                "Disk encryption",
-                bool(disk_encryption.get("enabled")),
-                disk_encryption.get("detail") or "Primary disk not encrypted",
-                5,
-            ),
-            DeviceListView.security_check(
-                "Firewall",
-                bool(firewall.get("enabled")),
-                firewall.get("detail") or "Firewall no activo",
-                25,
-            ),
-            DeviceListView.security_check(
-                "OS security",
-                bool(os_security.get("enabled")),
-                os_security.get("detail") or "Control de seguridad no activo",
-                25,
-            ),
-            DeviceListView.security_check(
-                "Patch compliance",
-                bool(patch_compliance.get("up_to_date")),
-                patch_compliance.get("detail") or "No evaluado",
-                25,
-            ),
-            DeviceListView.security_check(
-                "OS version",
-                bool(os_version.get("supported", True)),
-                os_version.get("detail") or inventory.get("os_version") or "Version no informada",
-                20,
-            ),
-        ]
-        return DeviceListView.security_summary(checks)
-
-    @staticmethod
-    def security_check(label, passed, detail, weight):
-        return {
-            "label": label,
-            "passed": passed,
-            "detail": detail,
-            "weight": weight,
-        }
-
-    @staticmethod
-    def security_summary(checks):
-        score = sum(check["weight"] for check in checks if check["passed"])
-        score = max(0, min(score, 100))
-        if score >= 90:
-            level = "Bajo riesgo"
-            tone = "success"
-        elif score >= 70:
-            level = "Riesgo medio"
-            tone = "warning"
-        else:
-            level = "Riesgo alto"
-            tone = "danger"
-        return {
-            "score": score,
-            "level": level,
-            "tone": tone,
-            "checks": checks,
-            "gauge_rotation": round(-75 + (score * 1.5), 2),
-        }
+        return standard_security_assessment(sample)
 
     @staticmethod
     def synthetic_latency(server_id):

@@ -287,6 +287,14 @@ def collect_patch_status():
     return {"up_to_date": False, "detail": "No fue posible consultar actualizaciones desde el cache local", "pending": True}
 
 
+def collect_identity_audit_status():
+    if command_output(["systemctl", "is-active", "auditd"]) == "active":
+        return {"enabled": True, "name": "auditd", "detail": "Auditoria activa (auditd)"}
+    if command_output(["systemctl", "is-active", "systemd-journald"]) == "active":
+        return {"enabled": True, "name": "systemd-journald", "detail": "Trazabilidad basica activa (systemd-journald)"}
+    return {"enabled": False, "name": "", "detail": "No se detecto auditoria activa"}
+
+
 def collect_security_status():
     return {
         "disk_encryption": collect_disk_encryption_status(),
@@ -294,6 +302,7 @@ def collect_security_status():
         "os_security": collect_os_security_status(),
         "patch_compliance": collect_patch_status(),
         "os_version": {"supported": True, "detail": platform.platform()},
+        "identity_audit": collect_identity_audit_status(),
     }
 
 
@@ -301,7 +310,7 @@ def collect_metrics():
     disks, disk_root_percent = disk_usage()
     return {
         "hostname": HOSTNAME,
-        "agent_version": "1.1.0-stdlib",
+        "agent_version": "1.2.0-stdlib",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "metrics": {
             "cpu_percent": cpu_percent(),
