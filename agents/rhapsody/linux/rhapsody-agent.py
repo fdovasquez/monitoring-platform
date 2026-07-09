@@ -12,7 +12,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/rhapsody-monitoring-agent.env"
-AGENT_VERSION = "1.0.0-rhapsody"
+AGENT_VERSION = "1.0.1-rhapsody"
 
 
 def load_env_file(path):
@@ -54,6 +54,9 @@ def log_patterns():
     return split_env(
         "RHAPSODY_LOG_PATHS",
         [
+            "/opt/rhapsody/log/*.log",
+            "/opt/rhapsody/log/**/*.log",
+            "/opt/rhapsody/rhapsody/data/logs/**/*.log",
             "/opt/rhapsody/logs/*.log",
             "/opt/rhapsody*/logs/*.log",
             "/var/log/rhapsody/*.log",
@@ -71,6 +74,10 @@ def keywords():
 
 def configured_service_names():
     return [item.lower() for item in split_env("RHAPSODY_SERVICE_NAMES", [])]
+
+
+def expected_ports():
+    return split_env("RHAPSODY_EXPECTED_PORTS", [])
 
 
 def collect_services():
@@ -122,24 +129,32 @@ def collect_processes():
     return processes[:40]
 
 
-def collect_ports():
+def collect_ports(processes):
     output = command_output(["ss", "-lntup"])
+    rhapsody_pids = {str(process.get("pid", "")) for process in processes if process.get("pid")}
+    configured_ports = {str(port) for port in expected_ports()}
     ports = []
     for line in output.splitlines():
-        if "rhapsody" not in line.lower():
-            continue
         parts = line.split()
         if len(parts) < 5:
             continue
         local_address = parts[4]
         port = local_address.rsplit(":", 1)[-1] if ":" in local_address else local_address
+        process_info = " ".join(parts[5:]) if len(parts) > 5 else ""
+        if (
+            "rhapsody" not in line.lower()
+            and not any(f"pid={pid}" in process_info for pid in rhapsody_pids)
+            and port not in configured_ports
+        ):
+            continue
         ports.append(
             {
                 "protocol": parts[0].upper(),
                 "local_address": local_address,
                 "local_port": port,
                 "status": parts[1],
-                "process": " ".join(parts[5:]) if len(parts) > 5 else "",
+                "process": process_info,
+                "expected": port in configured_ports,
             }
         )
     return ports[:80]
@@ -149,8 +164,9 @@ def collect_log_findings():
     findings = []
     file_paths = []
     for pattern in log_patterns():
-        file_paths.extend(glob.glob(pattern))
-    for path in sorted(set(file_paths))[-8:]:
+        file_paths.extend(glob.glob(pattern, recursive=True))
+    recent_paths = sorted(set(file_paths), key=lambda item: Path(item).stat().st_mtime if Path(item).exists() else 0)[-12:]
+    for path in recent_paths:
         try:
             lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()[-300:]
         except OSError:
@@ -168,7 +184,7 @@ def collect_log_findings():
 def build_payload():
     services = collect_services()
     processes = collect_processes()
-    ports = collect_ports()
+    ports = collect_ports(processes)
     log_findings = collect_log_findings()
     running_services = [
         service for service in services

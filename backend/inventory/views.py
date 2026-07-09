@@ -985,8 +985,9 @@ RHAPSODY_AGENT_TOKEN=$TOKEN
 RHAPSODY_INTERVAL=60
 RHAPSODY_VERIFY_TLS=false
 RHAPSODY_CA_FILE=/opt/rhapsody-monitoring-agent/monitor-ca-chain.pem
-RHAPSODY_LOG_PATHS=/opt/rhapsody/logs/*.log,/opt/rhapsody*/logs/*.log,/var/log/rhapsody/*.log,/var/opt/rhapsody/logs/*.log
+RHAPSODY_LOG_PATHS=/opt/rhapsody/log/*.log,/opt/rhapsody/log/**/*.log,/opt/rhapsody/rhapsody/data/logs/**/*.log,/opt/rhapsody/logs/*.log,/opt/rhapsody*/logs/*.log,/var/log/rhapsody/*.log,/var/opt/rhapsody/logs/*.log
 RHAPSODY_KEYWORDS=fatal,error,route stopped,channel stopped,message failed,queue full,outofmemory,license expired
+RHAPSODY_EXPECTED_PORTS=8081,8449,8444,2324,2325,3041,3333,3334,3335
 EOF
 
 chmod 600 /etc/rhapsody-monitoring-agent.env
