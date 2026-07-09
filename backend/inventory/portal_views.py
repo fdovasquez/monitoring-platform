@@ -38,6 +38,8 @@ class PortalDataMixin:
             sample = samples.get(server.latest_sample_id)
             alerts = active_alerts.get(server.id, [])
             security = security_assessment(sample)
+            inventory = getattr(server, "inventory", None)
+            runtime = getattr(server, "runtime_snapshot", None)
             rows.append(
                 {
                     "server": server,
@@ -47,8 +49,11 @@ class PortalDataMixin:
                     "alert_level": self.alert_level(alerts),
                     "security": security,
                     "risk_score": self.risk_score(server, sample, alerts, security),
-                    "inventory": getattr(server, "inventory", None),
-                    "runtime": getattr(server, "runtime_snapshot", None),
+                    "inventory": inventory,
+                    "runtime": runtime,
+                    "os_label": inventory.os_name if inventory and inventory.os_name else server.get_os_type_display(),
+                    "ip_label": server.ip_address or (inventory.primary_ip if inventory and inventory.primary_ip else "-"),
+                    "serial_label": inventory.serial_number if inventory and inventory.serial_number else "-",
                 }
             )
         return rows

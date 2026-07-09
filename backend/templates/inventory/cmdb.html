@@ -49,9 +49,9 @@
               <tr>
                 <td><a href="{% url 'device-detail' row.server.id %}">{{ row.server.hostname }}</a></td>
                 <td>{{ row.server.group.name|default:"Sin grupo" }}</td>
-                <td>{{ row.inventory.os_name|default:row.server.get_os_type_display }}</td>
-                <td>{{ row.server.ip_address|default:row.inventory.primary_ip|default:"-" }}</td>
-                <td>{{ row.inventory.serial_number|default:"-" }}</td>
+                <td>{{ row.os_label }}</td>
+                <td>{{ row.ip_label }}</td>
+                <td>{{ row.serial_label }}</td>
                 <td>{% if row.online %}<span class="state ok">En linea</span>{% else %}<span class="state critical">Fuera de linea</span>{% endif %}</td>
                 <td>{{ row.security.score }}/100</td>
               </tr>
