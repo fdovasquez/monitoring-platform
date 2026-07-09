@@ -238,9 +238,19 @@ def update_application_snapshot(server, application_name, application_data, coll
     runtime, _ = ServerRuntimeSnapshot.objects.get_or_create(server=server)
     raw_data = runtime.raw_data if isinstance(runtime.raw_data, dict) else {}
     applications = raw_data.get("applications") if isinstance(raw_data.get("applications"), dict) else {}
-    applications[application_name] = application_data
+    applications[application_name] = sanitize_json_value(application_data)
     raw_data["applications"] = applications
     runtime.raw_data = raw_data
     runtime.collected_at = collected_at
     runtime.save(update_fields=["raw_data", "collected_at", "updated_at"])
+
+
+def sanitize_json_value(value):
+    if isinstance(value, dict):
+        return {str(key): sanitize_json_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [sanitize_json_value(item) for item in value]
+    if isinstance(value, str):
+        return "".join(char for char in value if char == "\n" or char == "\t" or ord(char) >= 32)
+    return value
 
