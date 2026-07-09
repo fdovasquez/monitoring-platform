@@ -135,13 +135,14 @@ def resolve_server_for_rhapsody_token(agent_token, data):
     hostname = clean_text(data.get("hostname"))
     is_pending = server.hostname.startswith("pendiente-")
     existing = Server.objects.filter(hostname=hostname).exclude(pk=server.pk).first() if hostname else None
-    if is_pending and existing:
+    if existing:
         AgentToken.objects.filter(server=existing).exclude(pk=agent_token.pk).delete()
         previous_server = server
         agent_token.server = existing
         agent_token.save(update_fields=["server"])
         server = existing
-        previous_server.delete()
+        if is_pending:
+            previous_server.delete()
     elif is_pending:
         server.hostname = hostname
         if server.name == "Agente pendiente de registro":
