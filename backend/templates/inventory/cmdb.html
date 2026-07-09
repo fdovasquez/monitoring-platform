@@ -12,24 +12,93 @@
 <body>
   {% include "inventory/partials/app_header.html" with active_menu="cmdb" %}
   <main class="content portal-shell">
-    <section class="portal-title">
-      <span class="portal-eyebrow">Inventario y CMDB</span>
-      <h1>Activos y relaciones autogestionadas</h1>
-      <p>Informacion tecnica detectada por el agente, relaciones por grupo, runtime y aplicaciones reportadas.</p>
+    <section class="portal-title cmdb-title">
+      <div>
+        <span class="portal-eyebrow">Inventario y CMDB</span>
+        <h1>Activos, relaciones y cobertura de inventario</h1>
+        <p>Vista autogestionada desde los agentes: hardware, sistema operativo, red, runtime, aplicaciones, metricas y brechas de inventario.</p>
+      </div>
+      <a class="portal-button" href="{% url 'device-list' %}">Ver dispositivos</a>
+    </section>
+
+    <section class="kpi-grid cmdb-kpis">
+      <article>
+        <span>Activos registrados</span>
+        <strong>{{ summary.total }}</strong>
+        <small>{{ summary.with_inventory }} con inventario tecnico</small>
+      </article>
+      <article>
+        <span>Cobertura CMDB</span>
+        <strong>{{ summary.avg_coverage }}%</strong>
+        <small>Inventario, runtime, red y agente</small>
+      </article>
+      <article>
+        <span>Runtime reportado</span>
+        <strong>{{ summary.with_runtime }}</strong>
+        <small>Servicios, procesos y puertos</small>
+      </article>
+      <article>
+        <span>Aplicaciones detectadas</span>
+        <strong>{{ summary.with_apps }}</strong>
+        <small>Relaciones de aplicacion disponibles</small>
+      </article>
+    </section>
+
+    <section class="portal-grid three-columns cmdb-overview">
+      <article class="portal-card">
+        <div class="portal-card-head">
+          <h2>Grupos de activos</h2>
+          <small>Clasificacion operacional</small>
+        </div>
+        <div class="chip-list cmdb-chips">
+          {% for name, count in groups %}
+            <span>{{ name }} <strong>{{ count }}</strong></span>
+          {% empty %}
+            <p class="empty-state">No hay grupos creados.</p>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="portal-card">
+        <div class="portal-card-head">
+          <h2>Sistemas operativos</h2>
+          <small>Distribucion detectada</small>
+        </div>
+        <div class="cmdb-stack">
+          {% for name, count in os_groups %}
+            <div class="cmdb-mini-row"><span>{{ name }}</span><strong>{{ count }}</strong></div>
+          {% empty %}
+            <p class="empty-state">Sin datos de sistema operativo.</p>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="portal-card">
+        <div class="portal-card-head">
+          <h2>Brechas de inventario</h2>
+          <small>Prioridad de normalizacion</small>
+        </div>
+        <div class="cmdb-stack">
+          {% for row in inventory_gaps %}
+            <a class="cmdb-gap" href="{% url 'device-detail' row.server.id %}">
+              <span>{{ row.server.hostname }}</span>
+              <small>{{ row.missing_inventory|join:", " }}</small>
+              <strong>{{ row.coverage_score }}%</strong>
+            </a>
+          {% empty %}
+            <p class="empty-state">Inventario completo para los datos disponibles.</p>
+          {% endfor %}
+        </div>
+      </article>
     </section>
 
     <section class="portal-grid two-columns">
       <article class="portal-card">
-        <h2>Activos por grupo</h2>
-        <div class="chip-list">
-          {% for name, count in groups %}
-            <span>{{ name }} <strong>{{ count }}</strong></span>
-          {% endfor %}
+        <div class="portal-card-head">
+          <h2>Relaciones detectadas</h2>
+          <small>CMDB generada desde agentes</small>
         </div>
-      </article>
-      <article class="portal-card">
-        <h2>Relaciones detectadas</h2>
-        <div class="relationship-list">
+        <div class="relationship-list cmdb-relationship-list">
           {% for source, relation, target in relationships %}
             <div><span>{{ source }}</span><small>{{ relation }}</small><strong>{{ target }}</strong></div>
           {% empty %}
@@ -37,24 +106,98 @@
           {% endfor %}
         </div>
       </article>
+
+      <article class="portal-card">
+        <div class="portal-card-head">
+          <h2>Datos que alimentan la CMDB</h2>
+          <small>Recolectados automaticamente</small>
+        </div>
+        <div class="cmdb-capability-grid">
+          <span>Identidad del activo</span>
+          <span>Hardware y serie</span>
+          <span>Sistema operativo</span>
+          <span>Interfaces de red</span>
+          <span>Servicios</span>
+          <span>Procesos</span>
+          <span>Puertos abiertos</span>
+          <span>Aplicaciones</span>
+          <span>Metricas recientes</span>
+          <span>Alertas activas</span>
+        </div>
+      </article>
     </section>
 
-    <article class="portal-card">
-      <h2>Activos</h2>
+    <article class="portal-card cmdb-assets-card">
+      <div class="portal-card-head">
+        <h2>Inventario de activos</h2>
+        <small>Detalle tecnico consolidado</small>
+      </div>
       <div class="portal-table-wrap">
-        <table class="portal-table">
-          <thead><tr><th>Activo</th><th>Grupo</th><th>Sistema</th><th>IP</th><th>Serie</th><th>Estado</th><th>Seguridad</th></tr></thead>
+        <table class="portal-table cmdb-table">
+          <thead>
+            <tr>
+              <th>Activo</th>
+              <th>Clasificacion</th>
+              <th>Hardware</th>
+              <th>Red</th>
+              <th>Runtime</th>
+              <th>Recursos</th>
+              <th>Aplicaciones</th>
+              <th>Cobertura</th>
+            </tr>
+          </thead>
           <tbody>
             {% for row in rows %}
               <tr>
-                <td><a href="{% url 'device-detail' row.server.id %}">{{ row.server.hostname }}</a></td>
-                <td>{{ row.server.group.name|default:"Sin grupo" }}</td>
-                <td>{{ row.os_label }}</td>
-                <td>{{ row.ip_label }}</td>
-                <td>{{ row.serial_label }}</td>
-                <td>{% if row.online %}<span class="state ok">En linea</span>{% else %}<span class="state critical">Fuera de linea</span>{% endif %}</td>
-                <td>{{ row.security.score }}/100</td>
+                <td>
+                  <a class="cmdb-asset-link" href="{% url 'device-detail' row.server.id %}">{{ row.server.hostname }}</a>
+                  <small>{{ row.fqdn_label }}</small>
+                  <span class="state {% if row.online %}ok{% else %}critical{% endif %}">{% if row.online %}En linea{% else %}Fuera de linea{% endif %}</span>
+                </td>
+                <td>
+                  <span>{{ row.server.group.name|default:"Sin grupo" }}</span>
+                  <small>{{ row.server.environment|default:"Sin ambiente" }}</small>
+                  <small>{{ row.server.owner|default:"Sin responsable" }}</small>
+                </td>
+                <td>
+                  <span>{{ row.manufacturer_label }}</span>
+                  <small>{{ row.model_label }}</small>
+                  <small>Serie: {{ row.serial_label }}</small>
+                </td>
+                <td>
+                  <span>{{ row.ip_label }}</span>
+                  <small>{{ row.interface_count }} interfaces</small>
+                  {% for interface in row.interface_summary|slice:":2" %}
+                    <small>{{ interface.name }} - {{ interface.ips }}</small>
+                  {% endfor %}
+                </td>
+                <td>
+                  <span>{{ row.service_count }} servicios</span>
+                  <small>{{ row.process_count }} procesos</small>
+                  <small>{{ row.port_count }} puertos</small>
+                </td>
+                <td>
+                  <span>CPU {{ row.cpu_label }} / RAM {{ row.memory_label }}</span>
+                  <small>Disco {{ row.disk_label }} - {{ row.disk_count }} volumenes</small>
+                  <small>Agente {{ row.agent_version }}</small>
+                </td>
+                <td>
+                  <span>{{ row.application_label }}</span>
+                  <small>{{ row.alerts|length }} alertas activas</small>
+                  <small>Seguridad {{ row.security.score }}/100</small>
+                </td>
+                <td>
+                  <strong>{{ row.coverage_score }}%</strong>
+                  <div class="progress cmdb-coverage"><i style="width: {{ row.coverage_score }}%;"></i></div>
+                  {% if row.missing_inventory %}
+                    <small>Falta: {{ row.missing_inventory|join:", " }}</small>
+                  {% else %}
+                    <small>Completo</small>
+                  {% endif %}
+                </td>
               </tr>
+            {% empty %}
+              <tr><td colspan="8">No hay activos registrados.</td></tr>
             {% endfor %}
           </tbody>
         </table>

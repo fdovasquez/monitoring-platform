@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Count, OuterRef, Q, Subquery
+from django.db.models import Count, OuterRef, Subquery
 from django.utils import timezone
 from django.views.generic import TemplateView
 
@@ -40,6 +40,10 @@ class PortalDataMixin:
             security = security_assessment(sample)
             inventory = getattr(server, "inventory", None)
             runtime = getattr(server, "runtime_snapshot", None)
+            runtime_counts = self.runtime_counts(runtime)
+            disk_info = self.disk_info(sample)
+            interface_summary = self.interface_summary(inventory)
+            applications = self.application_names(runtime)
             rows.append(
                 {
                     "server": server,
@@ -54,9 +58,140 @@ class PortalDataMixin:
                     "os_label": inventory.os_name if inventory and inventory.os_name else server.get_os_type_display(),
                     "ip_label": server.ip_address or (inventory.primary_ip if inventory and inventory.primary_ip else "-"),
                     "serial_label": inventory.serial_number if inventory and inventory.serial_number else "-",
+                    "fqdn_label": inventory.fqdn if inventory and inventory.fqdn else server.hostname,
+                    "kernel_label": inventory.kernel if inventory and inventory.kernel else "-",
+                    "model_label": inventory.model if inventory and inventory.model else "-",
+                    "manufacturer_label": inventory.manufacturer if inventory and inventory.manufacturer else "-",
+                    "agent_version": sample.agent_version if sample and sample.agent_version else "-",
+                    "cpu_label": self.percent_label(sample.cpu_percent if sample else None),
+                    "memory_label": self.percent_label(sample.memory_percent if sample else None),
+                    "disk_label": self.percent_label(sample.disk_percent if sample else None),
+                    "disk_count": disk_info["count"],
+                    "disk_peak": disk_info["peak"],
+                    "disk_peak_label": self.percent_label(disk_info["peak"]),
+                    "interface_summary": interface_summary,
+                    "interface_count": len(interface_summary),
+                    "service_count": runtime_counts["services"],
+                    "process_count": runtime_counts["processes"],
+                    "port_count": runtime_counts["ports"],
+                    "applications": applications,
+                    "application_label": ", ".join(applications[:3]) if applications else "-",
+                    "coverage_score": self.coverage_score(inventory, runtime, sample),
+                    "missing_inventory": self.missing_inventory(inventory, runtime, sample),
                 }
             )
         return rows
+
+    @staticmethod
+    def percent_label(value):
+        if value is None:
+            return "-"
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return "-"
+        if numeric.is_integer():
+            return f"{int(numeric)}%"
+        return f"{numeric:.1f}%"
+
+    @staticmethod
+    def runtime_counts(runtime):
+        if not runtime:
+            return {"services": 0, "processes": 0, "ports": 0}
+        return {
+            "services": len(runtime.services or []),
+            "processes": len(runtime.processes or []),
+            "ports": len(runtime.ports or []),
+        }
+
+    @staticmethod
+    def disk_info(sample):
+        if not sample or not isinstance(sample.payload, dict):
+            return {"count": 0, "peak": sample.disk_percent if sample else None}
+        metrics = sample.payload.get("metrics", {})
+        disks = metrics.get("disks") if isinstance(metrics, dict) else []
+        if not isinstance(disks, list):
+            disks = []
+        peak = sample.disk_percent
+        disk_percents = []
+        for disk in disks:
+            if not isinstance(disk, dict):
+                continue
+            try:
+                disk_percents.append(float(disk.get("percent")))
+            except (TypeError, ValueError):
+                continue
+        if disk_percents:
+            peak = max(disk_percents)
+        return {"count": len(disks), "peak": peak}
+
+    @staticmethod
+    def interface_summary(inventory):
+        if not inventory or not isinstance(inventory.interfaces, list):
+            return []
+        interfaces = []
+        for interface in inventory.interfaces[:4]:
+            if not isinstance(interface, dict):
+                continue
+            ips = interface.get("ips") if isinstance(interface.get("ips"), list) else []
+            interfaces.append(
+                {
+                    "name": interface.get("name") or interface.get("interface") or "interfaz",
+                    "mac": interface.get("mac") or "-",
+                    "ips": ", ".join(str(ip) for ip in ips[:3]) if ips else "-",
+                }
+            )
+        return interfaces
+
+    @staticmethod
+    def application_names(runtime):
+        if not runtime or not isinstance(runtime.raw_data, dict):
+            return []
+        applications = runtime.raw_data.get("applications")
+        if not isinstance(applications, dict):
+            return []
+        return sorted(name.title() for name in applications.keys())
+
+    @staticmethod
+    def coverage_score(inventory, runtime, sample):
+        checks = [
+            bool(inventory),
+            bool(inventory and inventory.serial_number),
+            bool(inventory and inventory.model),
+            bool(inventory and inventory.interfaces),
+            bool(runtime),
+            bool(runtime and runtime.services),
+            bool(runtime and runtime.processes),
+            bool(runtime and runtime.ports),
+            bool(sample),
+            bool(sample and sample.agent_version),
+        ]
+        return int(sum(1 for check in checks if check) / len(checks) * 100)
+
+    @staticmethod
+    def missing_inventory(inventory, runtime, sample):
+        missing = []
+        if not inventory:
+            return ["Inventario tecnico", "Red", "Fabricante/modelo", "Serie", "Dominio"]
+        if not inventory.serial_number:
+            missing.append("Serie")
+        if not inventory.model:
+            missing.append("Modelo")
+        if not inventory.manufacturer:
+            missing.append("Fabricante")
+        if not inventory.interfaces:
+            missing.append("Interfaces")
+        if not inventory.gateway:
+            missing.append("Gateway")
+        if not runtime:
+            missing.append("Runtime")
+        elif not runtime.services:
+            missing.append("Servicios")
+        if not sample:
+            missing.append("Metricas")
+        elif not sample.agent_version:
+            missing.append("Version agente")
+        return missing[:5]
 
     @staticmethod
     def alerts_by_server(server_ids):
@@ -147,8 +282,11 @@ class CMDBView(PortalAccessMixin, PortalDataMixin, TemplateView):
         context.update(
             {
                 "rows": rows,
+                "summary": self.cmdb_summary(rows),
                 "groups": self.cmdb_groups(rows),
+                "os_groups": self.os_groups(rows),
                 "relationships": self.relationships(rows),
+                "inventory_gaps": self.inventory_gaps(rows),
                 "active_menu": "cmdb",
             }
         )
@@ -165,6 +303,40 @@ class CMDBView(PortalAccessMixin, PortalDataMixin, TemplateView):
         return sorted(groups.items())
 
     @staticmethod
+    def os_groups(rows):
+        groups = {}
+        for row in rows:
+            os_name = row["os_label"] or "Sin sistema"
+            groups.setdefault(os_name, 0)
+            groups[os_name] += 1
+        return sorted(groups.items(), key=lambda item: item[1], reverse=True)[:8]
+
+    @staticmethod
+    def cmdb_summary(rows):
+        total = len(rows)
+        with_inventory = sum(1 for row in rows if row["inventory"])
+        with_runtime = sum(1 for row in rows if row["runtime"])
+        with_serial = sum(1 for row in rows if row["serial_label"] != "-")
+        with_apps = sum(1 for row in rows if row["applications"])
+        avg_coverage = int(sum(row["coverage_score"] for row in rows) / total) if total else 0
+        return {
+            "total": total,
+            "with_inventory": with_inventory,
+            "with_runtime": with_runtime,
+            "with_serial": with_serial,
+            "with_apps": with_apps,
+            "avg_coverage": avg_coverage,
+        }
+
+    @staticmethod
+    def inventory_gaps(rows):
+        gaps = []
+        for row in rows:
+            if row["missing_inventory"]:
+                gaps.append(row)
+        return sorted(gaps, key=lambda item: item["coverage_score"])[:8]
+
+    @staticmethod
     def relationships(rows):
         relationships = []
         for row in rows:
@@ -178,6 +350,10 @@ class CMDBView(PortalAccessMixin, PortalDataMixin, TemplateView):
                 relationships.append((server.hostname, "ejecuta aplicacion", name.title()))
                 for port in app.get("ports", [])[:4] if isinstance(app, dict) else []:
                     relationships.append((name.title(), "publica puerto", str(port.get("local_port", "-"))))
+            if row["ip_label"] != "-":
+                relationships.append((server.hostname, "tiene direccion IP", row["ip_label"]))
+            for interface in row["interface_summary"][:2]:
+                relationships.append((server.hostname, "usa interfaz", interface["name"]))
         return relationships[:40]
 
 

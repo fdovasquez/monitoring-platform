@@ -29,6 +29,13 @@
   padding: 24px 26px;
 }
 
+.cmdb-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
 .portal-eyebrow {
   display: block;
   margin-bottom: 7px;
@@ -261,6 +268,122 @@
   white-space: normal;
 }
 
+.cmdb-kpis article {
+  min-height: 118px;
+}
+
+.cmdb-overview .portal-card {
+  min-height: 214px;
+}
+
+.cmdb-chips span {
+  justify-content: space-between;
+  min-width: 136px;
+}
+
+.cmdb-stack {
+  display: grid;
+  gap: 9px;
+}
+
+.cmdb-mini-row,
+.cmdb-gap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  color: #111827;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.cmdb-gap small {
+  grid-column: 1 / -1;
+  color: #5b6472;
+}
+
+.cmdb-gap strong {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  color: #2563eb;
+}
+
+.cmdb-relationship-list {
+  max-height: 300px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.cmdb-capability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cmdb-capability-grid span {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  color: #374151;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+}
+
+.cmdb-assets-card {
+  padding: 0;
+}
+
+.cmdb-assets-card .portal-card-head {
+  margin: 0;
+  padding: 20px;
+  border-bottom: 1px solid #e8edf5;
+}
+
+.cmdb-table {
+  min-width: 1320px;
+}
+
+.cmdb-table th,
+.cmdb-table td {
+  vertical-align: top;
+}
+
+.cmdb-table td {
+  white-space: normal;
+}
+
+.cmdb-table td > span,
+.cmdb-table td > small,
+.cmdb-asset-link {
+  display: block;
+}
+
+.cmdb-asset-link {
+  margin-bottom: 4px;
+  color: #111827;
+  text-decoration: none;
+}
+
+.cmdb-table small {
+  margin-top: 3px;
+  color: #5b6472;
+}
+
+.cmdb-table .state {
+  width: max-content;
+  margin-top: 8px;
+}
+
+.cmdb-coverage {
+  width: 120px;
+  margin: 8px 0;
+}
+
 .compliance-card strong {
   display: block;
   margin: 10px 0;
@@ -305,12 +428,21 @@
 
 @media (max-width: 720px) {
   .portal-hero,
+  .cmdb-title,
   .kpi-grid,
   .two-columns,
   .three-columns,
   .four-columns,
   .control-row,
   .relationship-list div {
+    grid-template-columns: 1fr;
+  }
+
+  .cmdb-title {
+    align-items: stretch;
+  }
+
+  .cmdb-capability-grid {
     grid-template-columns: 1fr;
   }
 
