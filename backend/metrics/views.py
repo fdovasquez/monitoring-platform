@@ -202,15 +202,26 @@ def update_runtime_snapshot(server, services, processes, ports, collected_at):
     ports = clean_list(ports)
     if not services and not processes and not ports:
         return
+    existing_raw_data = {}
+    try:
+        existing_runtime = server.runtime_snapshot
+        if isinstance(existing_runtime.raw_data, dict):
+            existing_raw_data = dict(existing_runtime.raw_data)
+    except ServerRuntimeSnapshot.DoesNotExist:
+        pass
+
+    existing_raw_data.update(
+        {
+            "services": services,
+            "processes": processes,
+            "ports": ports,
+        }
+    )
     defaults = {
         "services": services[:250],
         "processes": processes[:100],
         "ports": ports[:250],
-        "raw_data": {
-            "services": services,
-            "processes": processes,
-            "ports": ports,
-        },
+        "raw_data": existing_raw_data,
         "collected_at": collected_at,
     }
     ServerRuntimeSnapshot.objects.update_or_create(server=server, defaults=defaults)
