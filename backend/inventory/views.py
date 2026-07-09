@@ -922,6 +922,7 @@ Read-Host "Presiona Enter para cerrar"
 
     @staticmethod
     def rhapsody_bootstrap_script(api_url, download_base_url):
+        metrics_api_url = api_url.replace("/api/v1/metrics/rhapsody/ingest/", "/api/v1/metrics/ingest/")
         return f"""#!/bin/bash
 set -e
 
@@ -937,17 +938,27 @@ trap 'status=$?; echo "ERROR: La instalacion fallo (codigo $status). Revisa $INS
 
 echo "Instalando monitor Rhapsody. El registro quedara en $INSTALL_LOG"
 mkdir -p /opt/rhapsody-monitoring-agent
+mkdir -p /opt/monitoring-agent
 systemctl stop rhapsody-agent 2>/dev/null || true
+systemctl stop monitoring-agent 2>/dev/null || true
 
 AGENT_BASE_URL="{download_base_url}rhapsody"
+LINUX_AGENT_BASE_URL="{download_base_url}linux"
 AGENT_SCRIPT="/opt/rhapsody-monitoring-agent/rhapsody-agent.py"
+LINUX_AGENT_BINARY="/opt/monitoring-agent/monitoring-agent"
+LINUX_AGENT_TEMP="/opt/monitoring-agent/monitoring-agent.new"
 SERVICE_FILE="/etc/systemd/system/rhapsody-agent.service"
+LINUX_SERVICE_FILE="/etc/systemd/system/monitoring-agent.service"
 CA_CERT="/opt/rhapsody-monitoring-agent/monitor-ca-chain.pem"
+MONITORING_CA_CERT="/opt/monitoring-agent/monitor-ca-chain.pem"
 
 if command -v openssl >/dev/null 2>&1; then
   MONITOR_HOST="$(printf '%s' "{api_url}" | sed -E 's#https?://([^/:]+).*#\\1#')"
   echo | openssl s_client -showcerts -connect "${{MONITOR_HOST}}:443" -servername "${{MONITOR_HOST}}" 2>/dev/null \
     | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > "$CA_CERT" || true
+  if [ -s "$CA_CERT" ]; then
+    cp "$CA_CERT" "$MONITORING_CA_CERT"
+  fi
 fi
 
 download_file() {{
@@ -976,8 +987,24 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
+if [ "$(uname -m)" != "x86_64" ]; then
+  echo "ERROR: El paquete actual es compatible con Linux x86_64. Arquitectura detectada: $(uname -m)"
+  exit 1
+fi
+
+download_file "$LINUX_AGENT_BASE_URL/monitoring-agent-linux-x86_64" "$LINUX_AGENT_TEMP"
+download_file "$LINUX_AGENT_BASE_URL/monitoring-agent.service" "$LINUX_SERVICE_FILE"
 download_file "$AGENT_BASE_URL/rhapsody-agent.py" "$AGENT_SCRIPT"
 download_file "$AGENT_BASE_URL/rhapsody-agent.service" "$SERVICE_FILE"
+
+cat >/etc/monitoring-agent.env <<EOF
+MONITORING_API_URL={metrics_api_url}
+MONITORING_AGENT_TOKEN=$TOKEN
+MONITORING_INTERVAL=60
+MONITORING_PACKAGE_QUERY_ONLINE=false
+MONITORING_VERIFY_TLS=false
+MONITORING_CA_FILE=/opt/monitoring-agent/monitor-ca-chain.pem
+EOF
 
 cat >/etc/rhapsody-monitoring-agent.env <<EOF
 RHAPSODY_API_URL={api_url}
@@ -990,10 +1017,22 @@ RHAPSODY_KEYWORDS=fatal,error,route stopped,channel stopped,message failed,queue
 RHAPSODY_EXPECTED_PORTS=8081,8449,8444,2324,2325,3041,3333,3334,3335
 EOF
 
+chmod 600 /etc/monitoring-agent.env
 chmod 600 /etc/rhapsody-monitoring-agent.env
+chmod 755 "$LINUX_AGENT_TEMP"
 chmod 755 "$AGENT_SCRIPT"
+mv -f "$LINUX_AGENT_TEMP" "$LINUX_AGENT_BINARY"
 systemctl daemon-reload
+systemctl enable --now monitoring-agent
 systemctl enable --now rhapsody-agent
+
+if systemctl is-active --quiet monitoring-agent; then
+  echo "INSTALACION COMPLETADA: monitoring-agent esta activo para Oracle Linux."
+else
+  echo "ERROR: El servicio monitoring-agent no pudo iniciar."
+  systemctl status monitoring-agent --no-pager || true
+  exit 1
+fi
 
 if systemctl is-active --quiet rhapsody-agent; then
   echo "INSTALACION COMPLETADA: rhapsody-agent esta activo."
@@ -1003,6 +1042,7 @@ else
   exit 1
 fi
 
+echo "Para revisar Oracle Linux: journalctl -u monitoring-agent -n 50 --no-pager"
 echo "Para revisar el resultado: journalctl -u rhapsody-agent -n 50 --no-pager"
 """
 
