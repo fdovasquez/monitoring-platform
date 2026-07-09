@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
@@ -133,14 +134,22 @@ def resolve_server_for_token(agent_token, data):
 def resolve_server_for_rhapsody_token(agent_token, data):
     server = agent_token.server
     hostname = clean_text(data.get("hostname"))
+    fqdn = clean_text(data.get("fqdn"))
+    identifiers = {item for item in [hostname, fqdn, hostname.split(".")[0], fqdn.split(".")[0]] if item}
     is_pending = server.hostname.startswith("pendiente-")
-    existing = Server.objects.filter(hostname=hostname).exclude(pk=server.pk).first() if hostname else None
+    existing = (
+        Server.objects.filter(Q(hostname__in=identifiers) | Q(inventory__fqdn__in=identifiers))
+        .exclude(pk=server.pk)
+        .first()
+        if identifiers
+        else None
+    )
     if existing:
         server = existing
     elif is_pending:
-        server.hostname = hostname
+        server.hostname = fqdn or hostname
         if server.name == "Agente pendiente de registro":
-            server.name = hostname
+            server.name = fqdn or hostname
         server.os_type = Server.OS_LINUX
         server.is_active = True
         server.last_seen = timezone.now()

@@ -14,6 +14,7 @@ class MetricIngestSerializer(serializers.Serializer):
 
 class RhapsodyIngestSerializer(serializers.Serializer):
     hostname = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    fqdn = serializers.CharField(max_length=255, required=False, allow_blank=True)
     agent_version = serializers.CharField(max_length=50, required=False, allow_blank=True)
     timestamp = serializers.DateTimeField()
     status = serializers.CharField(max_length=40)

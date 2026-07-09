@@ -12,7 +12,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/rhapsody-monitoring-agent.env"
-AGENT_VERSION = "1.0.1-rhapsody"
+AGENT_VERSION = "1.0.2-rhapsody"
 
 
 def load_env_file(path):
@@ -204,8 +204,11 @@ def build_payload():
     else:
         status = "healthy"
         summary = "Rhapsody activo sin hallazgos recientes en logs."
+    hostname = socket.gethostname()
+    fqdn = socket.getfqdn()
     return {
-        "hostname": socket.gethostname(),
+        "hostname": hostname,
+        "fqdn": fqdn,
         "agent_version": AGENT_VERSION,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "status": status,
