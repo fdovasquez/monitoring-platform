@@ -133,11 +133,8 @@ def resolve_server_for_token(agent_token, data):
 def resolve_server_for_rhapsody_token(agent_token, data):
     server = agent_token.server
     hostname = clean_text(data.get("hostname"))
-    if not hostname:
-        return server
-
     is_pending = server.hostname.startswith("pendiente-")
-    existing = Server.objects.filter(hostname=hostname).exclude(pk=server.pk).first()
+    existing = Server.objects.filter(hostname=hostname).exclude(pk=server.pk).first() if hostname else None
     if is_pending and existing:
         AgentToken.objects.filter(server=existing).exclude(pk=agent_token.pk).delete()
         previous_server = server
@@ -151,7 +148,13 @@ def resolve_server_for_rhapsody_token(agent_token, data):
             server.name = hostname
         server.os_type = Server.OS_LINUX
         server.is_active = True
-        server.save(update_fields=["hostname", "name", "os_type", "is_active", "updated_at"])
+        server.last_seen = timezone.now()
+        server.save(update_fields=["hostname", "name", "os_type", "is_active", "last_seen", "updated_at"])
+        return server
+
+    server.last_seen = timezone.now()
+    server.is_active = True
+    server.save(update_fields=["last_seen", "is_active", "updated_at"])
     return server
 
 
