@@ -1,0 +1,93 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard ejecutivo</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/portal.css' %}">
+</head>
+<body>
+  {% include "inventory/partials/app_header.html" with active_menu="executive" %}
+  <main class="content portal-shell">
+    <section class="portal-hero">
+      <div>
+        <span class="portal-eyebrow">Gestion ejecutiva</span>
+        <h1>Riesgo, continuidad y cumplimiento</h1>
+        <p>Vista consolidada para direccion, operaciones, ciberseguridad y cumplimiento normativo.</p>
+      </div>
+      <div class="risk-ring risk-{{ summary.risk|default:0 }}">
+        <strong>{{ summary.risk }}</strong>
+        <span>riesgo</span>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      <article><span>Activos</span><strong>{{ summary.total }}</strong><small>{{ summary.ok }} sin alertas activas</small></article>
+      <article><span>Continuidad</span><strong>{{ summary.continuity }}%</strong><small>{{ summary.offline }} fuera de linea</small></article>
+      <article><span>Ciberseguridad</span><strong>{{ summary.avg_security }}/100</strong><small>Puntaje promedio</small></article>
+      <article><span>Cumplimiento</span><strong>{{ summary.compliance }}%</strong><small>Activos sobre umbral</small></article>
+    </section>
+
+    <section class="portal-grid two-columns">
+      <article class="portal-card">
+        <div class="portal-card-head">
+          <h2>Activos con mayor riesgo</h2>
+          <a href="{% url 'cmdb' %}">Ver CMDB</a>
+        </div>
+        <div class="risk-list">
+          {% for row in rows %}
+            <a href="{% url 'device-detail' row.server.id %}" class="risk-row {{ row.alert_level }}">
+              <span>{{ row.server.hostname }}</span>
+              <small>{{ row.alerts|length }} alertas · seguridad {{ row.security.score }}/100</small>
+              <strong>{{ row.risk_score }}</strong>
+            </a>
+          {% empty %}
+            <p class="empty-state">No hay activos registrados.</p>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="portal-card">
+        <div class="portal-card-head">
+          <h2>Incidentes activos</h2>
+          <a href="{% url 'incidents' %}">Gestionar</a>
+        </div>
+        <div class="incident-list">
+          {% for incident in active_incidents %}
+            <div class="incident-row {{ incident.rule.priority }}">
+              <span>{{ incident.rule.name }}</span>
+              <small>{{ incident.server.hostname }} · {{ incident.created_at|date:"d/m/Y H:i" }}</small>
+            </div>
+          {% empty %}
+            <p class="empty-state">Sin incidentes activos.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="portal-grid three-columns">
+      <article class="portal-card compact">
+        <h2>Semaforo operativo</h2>
+        <div class="traffic-grid">
+          <span class="traffic critical">{{ summary.critical }} Criticos</span>
+          <span class="traffic warning">{{ summary.warning }} Advertencias</span>
+          <span class="traffic ok">{{ summary.ok }} Normales</span>
+        </div>
+      </article>
+      <article class="portal-card compact">
+        <h2>Reportabilidad</h2>
+        <p>Reportes ejecutivo, tecnico y CSIRT construidos desde eventos, evidencias y activos.</p>
+        <a class="portal-button" href="{% url 'reports' %}">Abrir reportes</a>
+      </article>
+      <article class="portal-card compact">
+        <h2>Normativas</h2>
+        <p>Ley 21.663, ISO 27001, CIS Controls y preparacion de evidencia para CSIRT.</p>
+        <a class="portal-button" href="{% url 'compliance' %}">Ver cumplimiento</a>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

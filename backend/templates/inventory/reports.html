@@ -1,0 +1,55 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reportes</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/portal.css' %}">
+</head>
+<body>
+  {% include "inventory/partials/app_header.html" with active_menu="reports" %}
+  <main class="content portal-shell">
+    <section class="portal-title">
+      <span class="portal-eyebrow">Reportabilidad</span>
+      <h1>Ejecutiva, tecnica y CSIRT</h1>
+      <p>Vistas listas para comites, equipos tecnicos y preparacion de antecedentes ante incidentes relevantes.</p>
+    </section>
+    <section class="portal-grid three-columns">
+      <article class="portal-card report-card">
+        <h2>Reporte ejecutivo</h2>
+        <p>Riesgo {{ summary.risk }}/100, continuidad {{ summary.continuity }}%, cumplimiento {{ summary.compliance }}%.</p>
+      </article>
+      <article class="portal-card report-card">
+        <h2>Reporte tecnico</h2>
+        <p>{{ technical_rows|length }} activos con metricas, inventario, runtime, seguridad y alertas.</p>
+      </article>
+      <article class="portal-card report-card">
+        <h2>Reporte CSIRT</h2>
+        <p>{{ csirt_items|length }} eventos criticos disponibles para analisis y evidencia.</p>
+      </article>
+    </section>
+    <article class="portal-card">
+      <h2>Prioridades ejecutivas</h2>
+      <div class="portal-table-wrap">
+        <table class="portal-table">
+          <thead><tr><th>Activo</th><th>Riesgo</th><th>Continuidad</th><th>Seguridad</th><th>Alertas</th></tr></thead>
+          <tbody>
+            {% for row in executive_items %}
+              <tr>
+                <td><a href="{% url 'device-detail' row.server.id %}">{{ row.server.hostname }}</a></td>
+                <td>{{ row.risk_score }}/100</td>
+                <td>{% if row.online %}Disponible{% else %}No disponible{% endif %}</td>
+                <td>{{ row.security.score }}/100</td>
+                <td>{{ row.alerts|length }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

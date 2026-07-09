@@ -6,7 +6,7 @@ from django.views.generic import RedirectView
 
 
 urlpatterns = [
-    path("", RedirectView.as_view(pattern_name="device-list", permanent=False)),
+    path("", RedirectView.as_view(pattern_name="executive-dashboard", permanent=False)),
     path("admin/", admin.site.urls),
     path("app/", include("inventory.urls")),
     path("app/alerts/", include("alerts.urls")),

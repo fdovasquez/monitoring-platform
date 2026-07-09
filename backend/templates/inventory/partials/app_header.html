@@ -1,7 +1,7 @@
 {% load static %}
 <header class="app-header">
   <div class="app-header-inner">
-    <a class="app-brand" href="{% url 'device-list' %}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">
+    <a class="app-brand" href="{% url 'executive-dashboard' %}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">
       {% if site_settings.logo %}
         <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
       {% else %}
@@ -10,9 +10,18 @@
       <span>{{ site_settings.subtitle }}</span>
     </a>
     <nav class="app-nav" aria-label="Menu principal">
+      {% if can_manage_devices %}
+        <a class="{% if active_menu == 'executive' %}active{% endif %}" href="{% url 'executive-dashboard' %}">Dashboard</a>
+      {% endif %}
       <a class="{% if active_menu == 'devices' %}active{% endif %}" href="{% url 'device-list' %}">
         Dispositivos{% if total_devices %} <span class="nav-count">{{ total_devices }}</span>{% endif %}
       </a>
+      {% if can_manage_devices %}
+        <a class="{% if active_menu == 'cmdb' %}active{% endif %}" href="{% url 'cmdb' %}">CMDB</a>
+        <a class="{% if active_menu == 'incidents' %}active{% endif %}" href="{% url 'incidents' %}">Incidentes</a>
+        <a class="{% if active_menu == 'compliance' %}active{% endif %}" href="{% url 'compliance' %}">Cumplimiento</a>
+        <a class="{% if active_menu == 'reports' %}active{% endif %}" href="{% url 'reports' %}">Reportes</a>
+      {% endif %}
       {% if can_manage_devices %}
         <a class="{% if active_menu == 'agents' %}active{% endif %}" href="{% url 'agent-install' %}">Instalar agente</a>
       {% endif %}

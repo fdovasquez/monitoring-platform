@@ -1,0 +1,44 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cumplimiento</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/portal.css' %}">
+</head>
+<body>
+  {% include "inventory/partials/app_header.html" with active_menu="compliance" %}
+  <main class="content portal-shell">
+    <section class="portal-title">
+      <span class="portal-eyebrow">Cumplimiento normativo</span>
+      <h1>Ley 21.663, ISO 27001, CIS y CSIRT</h1>
+      <p>Medicion de controles usando inventario, monitoreo, seguridad, eventos y evidencias disponibles.</p>
+    </section>
+    <section class="portal-grid four-columns">
+      {% for framework in frameworks %}
+        <article class="portal-card compliance-card">
+          <span>{{ framework.name }}</span>
+          <strong>{{ framework.score }}%</strong>
+          <p>{{ framework.description }}</p>
+          <div class="progress"><i style="width: {{ framework.score }}%;"></i></div>
+        </article>
+      {% endfor %}
+    </section>
+    <article class="portal-card">
+      <h2>Controles operativos</h2>
+      <div class="control-list">
+        {% for control in controls %}
+          <div class="control-row">
+            <div><span>{{ control.name }}</span><small>{{ control.detail }}</small></div>
+            <strong>{{ control.score }}%</strong>
+            <div class="progress"><i style="width: {{ control.score }}%;"></i></div>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </main>
+</body>
+</html>

@@ -22,6 +22,7 @@ from .views import (
     rhapsody_install_script,
 )
 from .monitor_assignment_views import DeviceDetailWithMonitorsView
+from .portal_views import CMDBView, ComplianceView, ExecutiveDashboardView, IncidentCenterView, ReportsView
 from .runtime_views import DeviceRuntimeView
 from .site_views import SiteSettingsView
 
@@ -44,6 +45,11 @@ def device_manager_required(view_func):
 urlpatterns = [
     path("login/", CorporateLoginView.as_view(), name="login"),
     path("login/verify/", LoginCodeVerifyView.as_view(), name="login-verify"),
+    path("dashboard/", ExecutiveDashboardView.as_view(), name="executive-dashboard"),
+    path("cmdb/", CMDBView.as_view(), name="cmdb"),
+    path("incidents/", IncidentCenterView.as_view(), name="incidents"),
+    path("compliance/", ComplianceView.as_view(), name="compliance"),
+    path("reports/", ReportsView.as_view(), name="reports"),
     path("devices/", DeviceListView.as_view(), name="device-list"),
     path("devices/<int:pk>/", DeviceDetailWithMonitorsView.as_view(), name="device-detail"),
     path("devices/<int:pk>/edit/", DeviceEditView.as_view(), name="device-edit"),

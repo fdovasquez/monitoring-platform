@@ -1,0 +1,65 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CMDB</title>
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/portal.css' %}">
+</head>
+<body>
+  {% include "inventory/partials/app_header.html" with active_menu="cmdb" %}
+  <main class="content portal-shell">
+    <section class="portal-title">
+      <span class="portal-eyebrow">Inventario y CMDB</span>
+      <h1>Activos y relaciones autogestionadas</h1>
+      <p>Informacion tecnica detectada por el agente, relaciones por grupo, runtime y aplicaciones reportadas.</p>
+    </section>
+
+    <section class="portal-grid two-columns">
+      <article class="portal-card">
+        <h2>Activos por grupo</h2>
+        <div class="chip-list">
+          {% for name, count in groups %}
+            <span>{{ name }} <strong>{{ count }}</strong></span>
+          {% endfor %}
+        </div>
+      </article>
+      <article class="portal-card">
+        <h2>Relaciones detectadas</h2>
+        <div class="relationship-list">
+          {% for source, relation, target in relationships %}
+            <div><span>{{ source }}</span><small>{{ relation }}</small><strong>{{ target }}</strong></div>
+          {% empty %}
+            <p class="empty-state">Aun no hay relaciones detectadas.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <article class="portal-card">
+      <h2>Activos</h2>
+      <div class="portal-table-wrap">
+        <table class="portal-table">
+          <thead><tr><th>Activo</th><th>Grupo</th><th>Sistema</th><th>IP</th><th>Serie</th><th>Estado</th><th>Seguridad</th></tr></thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td><a href="{% url 'device-detail' row.server.id %}">{{ row.server.hostname }}</a></td>
+                <td>{{ row.server.group.name|default:"Sin grupo" }}</td>
+                <td>{{ row.inventory.os_name|default:row.server.get_os_type_display }}</td>
+                <td>{{ row.server.ip_address|default:row.inventory.primary_ip|default:"-" }}</td>
+                <td>{{ row.inventory.serial_number|default:"-" }}</td>
+                <td>{% if row.online %}<span class="state ok">En linea</span>{% else %}<span class="state critical">Fuera de linea</span>{% endif %}</td>
+                <td>{{ row.security.score }}/100</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
