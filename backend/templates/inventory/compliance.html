@@ -12,31 +12,145 @@
 <body>
   {% include "inventory/partials/app_header.html" with active_menu="compliance" %}
   <main class="content portal-shell">
-    <section class="portal-title">
-      <span class="portal-eyebrow">Cumplimiento normativo</span>
-      <h1>Ley 21.663, ISO 27001, CIS y CSIRT</h1>
-      <p>Medicion de controles usando inventario, monitoreo, seguridad, eventos y evidencias disponibles.</p>
+    <section class="portal-title cmdb-title">
+      <div>
+        <span class="portal-eyebrow">Cumplimiento normativo</span>
+        <h1>Matriz de cumplimiento y evidencia de auditoria</h1>
+        <p>Consolidado para Ley 21.663, ISO 27001, CIS Controls y preparacion de antecedentes CSIRT usando datos del agente, alertas y bitacoras.</p>
+      </div>
+      <a class="portal-button primary" href="{% url 'compliance-download' %}">Descargar reporte CSV</a>
     </section>
-    <section class="portal-grid four-columns">
+
+    <section class="kpi-grid compliance-evidence-kpis">
+      <article>
+        <span>Activos evaluados</span>
+        <strong>{{ evidence_summary.assets }}</strong>
+        <small>{{ evidence_summary.inventory }} con inventario tecnico</small>
+      </article>
+      <article>
+        <span>Evidencia runtime</span>
+        <strong>{{ evidence_summary.runtime }}</strong>
+        <small>Servicios, procesos y puertos</small>
+      </article>
+      <article>
+        <span>Eventos trazables</span>
+        <strong>{{ evidence_summary.alerts }}</strong>
+        <small>{{ evidence_summary.notifications }} notificaciones registradas</small>
+      </article>
+      <article>
+        <span>Monitores vigentes</span>
+        <strong>{{ evidence_summary.assignments }}</strong>
+        <small>Reglas y umbrales asignados</small>
+      </article>
+    </section>
+
+    <section class="portal-grid four-columns compliance-framework-grid">
       {% for framework in frameworks %}
         <article class="portal-card compliance-card">
           <span>{{ framework.name }}</span>
           <strong>{{ framework.score }}%</strong>
           <p>{{ framework.description }}</p>
           <div class="progress"><i style="width: {{ framework.score }}%;"></i></div>
+          <small>
+            {% for control in framework.controls %}
+              {{ control.name }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </small>
         </article>
       {% endfor %}
     </section>
-    <article class="portal-card">
-      <h2>Controles operativos</h2>
-      <div class="control-list">
-        {% for control in controls %}
-          <div class="control-row">
-            <div><span>{{ control.name }}</span><small>{{ control.detail }}</small></div>
-            <strong>{{ control.score }}%</strong>
-            <div class="progress"><i style="width: {{ control.score }}%;"></i></div>
-          </div>
-        {% endfor %}
+
+    <section class="portal-grid two-columns">
+      <article class="portal-card compliance-control-card">
+        <div class="portal-card-head">
+          <h2>Controles y evidencias</h2>
+          <small>Matriz operacional para auditoria</small>
+        </div>
+        <div class="control-list compliance-control-list">
+          {% for control in controls %}
+            <div class="control-row compliance-control-row">
+              <div>
+                <span>{{ control.name }}</span>
+                <small>{{ control.domain }} - {{ control.detail }}</small>
+                <em>{{ control.evidence }}</em>
+              </div>
+              <strong>{{ control.score }}%</strong>
+              <div class="progress"><i style="width: {{ control.score }}%;"></i></div>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="portal-card">
+        <div class="portal-card-head">
+          <h2>Brechas para regularizacion</h2>
+          <small>Ordenadas por prioridad</small>
+        </div>
+        <div class="cmdb-stack">
+          {% for gap in gaps %}
+            <a class="compliance-gap" href="{% url 'device-detail' gap.server.id %}">
+              <span>{{ gap.server.hostname }}</span>
+              <small>Cobertura {{ gap.coverage }}% - Seguridad {{ gap.security }}/100 - Alertas {{ gap.alerts }}</small>
+              <small>{% if gap.missing %}Falta: {{ gap.missing|join:", " }}{% else %}Sin brechas de inventario{% endif %}</small>
+            </a>
+          {% empty %}
+            <p class="empty-state">No hay brechas relevantes para los datos disponibles.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <article class="portal-card compliance-assets-card">
+      <div class="portal-card-head">
+        <h2>Detalle para auditoria</h2>
+        <small>Resumen por activo con evidencias y brechas</small>
+      </div>
+      <div class="portal-table-wrap">
+        <table class="portal-table compliance-table">
+          <thead>
+            <tr>
+              <th>Activo</th>
+              <th>Estado</th>
+              <th>Clasificacion</th>
+              <th>Cobertura</th>
+              <th>Seguridad</th>
+              <th>Runtime</th>
+              <th>Evidencia</th>
+              <th>Brechas</th>
+              <th>Ultimo monitoreo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in audit_rows %}
+              <tr>
+                <td>
+                  <span>{{ row.hostname }}</span>
+                  <small>{{ row.ip }}</small>
+                </td>
+                <td><span class="state {% if row.status == 'En linea' %}ok{% else %}critical{% endif %}">{{ row.status }}</span></td>
+                <td>
+                  <span>{{ row.group }}</span>
+                  <small>{{ row.environment }}</small>
+                  <small>{{ row.owner }}</small>
+                </td>
+                <td>
+                  <strong>{{ row.coverage_score }}%</strong>
+                  <div class="progress cmdb-coverage"><i style="width: {{ row.coverage_score }}%;"></i></div>
+                </td>
+                <td>{{ row.security_score }}/100</td>
+                <td>
+                  <span>{{ row.service_count }} servicios</span>
+                  <small>{{ row.process_count }} procesos / {{ row.port_count }} puertos</small>
+                </td>
+                <td>{{ row.evidence }}</td>
+                <td>{{ row.gaps }}</td>
+                <td>{{ row.last_seen }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="9">No hay activos para evaluar.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </article>
   </main>

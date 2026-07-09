@@ -1,7 +1,9 @@
+import csv
 from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, OuterRef, Subquery
+from django.http import HttpResponse
 from django.utils import timezone
 from django.views.generic import TemplateView
 
@@ -379,21 +381,18 @@ class IncidentCenterView(PortalAccessMixin, PortalDataMixin, TemplateView):
 class ComplianceView(PortalAccessMixin, PortalDataMixin, TemplateView):
     template_name = "inventory/compliance.html"
 
-    frameworks = [
-        ("Ley 21.663", "Continuidad, gestion de incidentes, evidencia y reporte cuando corresponda."),
-        ("ISO 27001", "Controles de seguridad, activos, eventos, trazabilidad y mejora continua."),
-        ("CIS Controls", "Inventario, configuracion segura, vulnerabilidades, logs y monitoreo continuo."),
-        ("CSIRT", "Preparacion de evidencia tecnica para comunicaciones de incidentes relevantes."),
-    ]
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         rows = self.server_rows()
         summary = self.summarize(rows)
+        controls = ComplianceEvidence.controls(rows, summary)
         context.update(
             {
-                "frameworks": self.framework_status(summary, rows),
-                "controls": self.control_status(rows),
+                "frameworks": ComplianceEvidence.frameworks(controls),
+                "controls": controls,
+                "evidence_summary": ComplianceEvidence.evidence_summary(rows),
+                "audit_rows": ComplianceEvidence.audit_rows(rows),
+                "gaps": ComplianceEvidence.gaps(rows),
                 "summary": summary,
                 "active_menu": "compliance",
             }
@@ -401,29 +400,230 @@ class ComplianceView(PortalAccessMixin, PortalDataMixin, TemplateView):
         context.update(sidebar_context())
         return context
 
-    def framework_status(self, summary, rows):
-        controls = self.control_status(rows)
-        control_score = int(sum(item["score"] for item in controls) / len(controls)) if controls else 0
+
+class ComplianceReportDownloadView(PortalAccessMixin, PortalDataMixin, TemplateView):
+    def get(self, request, *args, **kwargs):
+        rows = self.server_rows()
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        timestamp = timezone.localtime().strftime("%Y%m%d-%H%M")
+        response["Content-Disposition"] = f'attachment; filename="reporte-cumplimiento-{timestamp}.csv"'
+        response.write("\ufeff")
+        writer = csv.writer(response, delimiter=";")
+        writer.writerow(
+            [
+                "Activo",
+                "IP",
+                "Grupo",
+                "Ambiente",
+                "Responsable",
+                "Estado",
+                "Sistema operativo",
+                "Version agente",
+                "Cobertura CMDB",
+                "Puntaje seguridad",
+                "Alertas activas",
+                "Servicios",
+                "Procesos",
+                "Puertos",
+                "Evidencia disponible",
+                "Brechas",
+                "Ultimo monitoreo",
+            ]
+        )
+        for row in ComplianceEvidence.audit_rows(rows):
+            writer.writerow(
+                [
+                    row["hostname"],
+                    row["ip"],
+                    row["group"],
+                    row["environment"],
+                    row["owner"],
+                    row["status"],
+                    row["os"],
+                    row["agent_version"],
+                    row["coverage_score"],
+                    row["security_score"],
+                    row["alert_count"],
+                    row["service_count"],
+                    row["process_count"],
+                    row["port_count"],
+                    row["evidence"],
+                    row["gaps"],
+                    row["last_seen"],
+                ]
+            )
+        return response
+
+
+class ComplianceEvidence:
+    frameworks_catalog = [
+        {
+            "name": "Ley 21.663",
+            "description": "Continuidad operacional, trazabilidad de incidentes, evidencia y reportabilidad.",
+            "control_keys": ["asset_inventory", "continuous_monitoring", "incident_traceability", "reporting"],
+        },
+        {
+            "name": "ISO 27001",
+            "description": "Gestion de activos, controles operacionales, eventos, mejora continua y evidencias.",
+            "control_keys": ["asset_inventory", "security_baseline", "incident_traceability", "evidence"],
+        },
+        {
+            "name": "CIS Controls",
+            "description": "Inventario, configuracion segura, vulnerabilidades, logs, puertos y monitoreo continuo.",
+            "control_keys": ["asset_inventory", "security_baseline", "runtime_visibility", "continuous_monitoring"],
+        },
+        {
+            "name": "CSIRT",
+            "description": "Antecedentes tecnicos para comunicar incidentes relevantes cuando corresponda.",
+            "control_keys": ["incident_traceability", "evidence", "reporting"],
+        },
+    ]
+
+    @classmethod
+    def frameworks(cls, controls):
+        control_map = {control["key"]: control for control in controls}
+        frameworks = []
+        for framework in cls.frameworks_catalog:
+            related = [control_map[key] for key in framework["control_keys"] if key in control_map]
+            score = int(sum(item["score"] for item in related) / len(related)) if related else 0
+            frameworks.append({**framework, "score": score, "controls": related})
+        return frameworks
+
+    @staticmethod
+    def controls(rows, summary):
+        total = len(rows) or 1
+        with_inventory = sum(1 for row in rows if row["inventory"])
+        with_runtime = sum(1 for row in rows if row["runtime"])
+        good_security = sum(1 for row in rows if row["security"]["score"] >= 75)
+        with_alerts = AlertEvent.objects.count()
+        email_logs = AlertEmailLog.objects.count()
+        monitor_count = ServerMonitorAssignment.objects.filter(is_enabled=True).count()
+        active_critical = AlertEvent.objects.filter(is_resolved=False, rule__priority=AlertRule.PRIORITY_CRITICAL).count()
         return [
-            {"name": name, "description": description, "score": min(100, (control_score + summary["compliance"]) // 2)}
-            for name, description in self.frameworks
+            {
+                "key": "asset_inventory",
+                "name": "Inventario y CMDB",
+                "domain": "Activos",
+                "score": int(with_inventory / total * 100),
+                "detail": f"{with_inventory}/{len(rows)} activos con inventario tecnico",
+                "evidence": "Inventario del agente, grupo, IP, sistema operativo, hardware y relaciones.",
+            },
+            {
+                "key": "continuous_monitoring",
+                "name": "Monitoreo continuo",
+                "domain": "Continuidad",
+                "score": int(with_runtime / total * 100),
+                "detail": f"{with_runtime}/{len(rows)} activos con runtime",
+                "evidence": "Metricas, disponibilidad, servicios, procesos, puertos y ultimos reportes.",
+            },
+            {
+                "key": "security_baseline",
+                "name": "Linea base de ciberseguridad",
+                "domain": "Ciberseguridad",
+                "score": int(good_security / total * 100),
+                "detail": f"{good_security}/{len(rows)} activos con puntaje de seguridad >= 75",
+                "evidence": "Firewall, hardening del sistema, actualizaciones, trazabilidad e inventario.",
+            },
+            {
+                "key": "runtime_visibility",
+                "name": "Visibilidad de exposicion",
+                "domain": "Superficie",
+                "score": min(100, int((sum(row["port_count"] > 0 for row in rows) + sum(row["service_count"] > 0 for row in rows)) / (total * 2) * 100)),
+                "detail": "Servicios y puertos detectados por agente",
+                "evidence": "Puertos abiertos, servicios activos y procesos principales.",
+            },
+            {
+                "key": "incident_traceability",
+                "name": "Incidentes y trazabilidad",
+                "domain": "Operacion",
+                "score": max(40, 100 - min(60, active_critical * 20)),
+                "detail": f"{with_alerts} eventos registrados, {active_critical} criticos activos",
+                "evidence": "Eventos de alerta, fecha de inicio, servidor afectado, severidad y estado.",
+            },
+            {
+                "key": "evidence",
+                "name": "Evidencias de notificacion",
+                "domain": "Auditoria",
+                "score": 100 if email_logs else 35,
+                "detail": f"{email_logs} registros de correo y evidencia operacional",
+                "evidence": "Historial de notificaciones, destinatarios, asunto, estado y errores.",
+            },
+            {
+                "key": "reporting",
+                "name": "Reportabilidad y umbrales",
+                "domain": "Gobierno",
+                "score": min(100, monitor_count * 10),
+                "detail": f"{monitor_count} monitores asignados",
+                "evidence": "Reglas, umbrales, destinatarios, frecuencia e historial de alertas.",
+            },
         ]
 
     @staticmethod
-    def control_status(rows):
-        total = len(rows) or 1
-        with_inventory = sum(1 for row in rows if row["inventory"])
-        with_alerts = AlertEvent.objects.count()
-        with_monitors = ServerMonitorAssignment.objects.filter(is_enabled=True).count()
-        with_runtime = sum(1 for row in rows if row["runtime"])
-        good_security = sum(1 for row in rows if row["security"]["score"] >= 75)
-        return [
-            {"name": "Inventario y CMDB", "score": int(with_inventory / total * 100), "detail": f"{with_inventory}/{len(rows)} activos con inventario"},
-            {"name": "Monitoreo continuo", "score": int(with_runtime / total * 100), "detail": f"{with_runtime}/{len(rows)} activos con runtime"},
-            {"name": "Ciberseguridad", "score": int(good_security / total * 100), "detail": f"{good_security}/{len(rows)} activos con puntaje >= 75"},
-            {"name": "Incidentes y evidencia", "score": 100 if with_alerts else 40, "detail": f"{with_alerts} eventos registrados"},
-            {"name": "Umbrales y responsables", "score": min(100, with_monitors * 10), "detail": f"{with_monitors} monitores asignados"},
-        ]
+    def evidence_summary(rows):
+        return {
+            "assets": len(rows),
+            "inventory": sum(1 for row in rows if row["inventory"]),
+            "runtime": sum(1 for row in rows if row["runtime"]),
+            "alerts": AlertEvent.objects.count(),
+            "notifications": AlertEmailLog.objects.count(),
+            "assignments": ServerMonitorAssignment.objects.filter(is_enabled=True).count(),
+        }
+
+    @staticmethod
+    def audit_rows(rows):
+        audit_rows = []
+        for row in rows:
+            server = row["server"]
+            last_seen = timezone.localtime(server.last_seen).strftime("%Y-%m-%d %H:%M:%S") if server.last_seen else "-"
+            evidence = []
+            if row["inventory"]:
+                evidence.append("Inventario")
+            if row["runtime"]:
+                evidence.append("Runtime")
+            if row["sample"]:
+                evidence.append("Metricas")
+            if row["alerts"]:
+                evidence.append("Alertas")
+            if row["interface_count"]:
+                evidence.append("Red")
+            audit_rows.append(
+                {
+                    "hostname": server.hostname,
+                    "ip": row["ip_label"],
+                    "group": server.group.name if server.group else "Sin grupo",
+                    "environment": server.environment or "Sin ambiente",
+                    "owner": server.owner or "Sin responsable",
+                    "status": "En linea" if row["online"] else "Fuera de linea",
+                    "os": row["os_label"],
+                    "agent_version": row["agent_version"],
+                    "coverage_score": row["coverage_score"],
+                    "security_score": row["security"]["score"],
+                    "alert_count": len(row["alerts"]),
+                    "service_count": row["service_count"],
+                    "process_count": row["process_count"],
+                    "port_count": row["port_count"],
+                    "evidence": ", ".join(evidence) if evidence else "Sin evidencia",
+                    "gaps": ", ".join(row["missing_inventory"]) if row["missing_inventory"] else "Sin brechas",
+                    "last_seen": last_seen,
+                }
+            )
+        return sorted(audit_rows, key=lambda item: (item["coverage_score"], item["hostname"]))[:50]
+
+    @staticmethod
+    def gaps(rows):
+        gaps = []
+        for row in rows:
+            if row["missing_inventory"] or row["security"]["score"] < 75 or row["alerts"]:
+                gaps.append(
+                    {
+                        "server": row["server"],
+                        "coverage": row["coverage_score"],
+                        "security": row["security"]["score"],
+                        "alerts": len(row["alerts"]),
+                        "missing": row["missing_inventory"],
+                    }
+                )
+        return sorted(gaps, key=lambda item: (item["coverage"], item["security"]))[:10]
 
 
 class ReportsView(PortalAccessMixin, PortalDataMixin, TemplateView):

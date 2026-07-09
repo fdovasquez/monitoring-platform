@@ -149,6 +149,12 @@
   text-decoration: none;
 }
 
+.portal-button.primary {
+  color: #ffffff;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
 .risk-list,
 .incident-list,
 .relationship-list,
@@ -408,6 +414,79 @@
   grid-template-columns: minmax(0, 1fr) 74px minmax(120px, 220px);
 }
 
+.compliance-evidence-kpis article {
+  min-height: 116px;
+}
+
+.compliance-framework-grid .compliance-card {
+  min-height: 238px;
+}
+
+.compliance-card small {
+  display: block;
+  margin-top: 12px;
+}
+
+.compliance-control-card {
+  min-height: 520px;
+}
+
+.compliance-control-list {
+  gap: 12px;
+}
+
+.compliance-control-row {
+  grid-template-columns: minmax(0, 1fr) 76px minmax(160px, 240px);
+  align-items: center;
+}
+
+.compliance-control-row em {
+  display: block;
+  margin-top: 6px;
+  color: #5b6472;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.compliance-gap {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  color: #111827;
+  background: #fff7f7;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.compliance-gap small {
+  color: #5b6472;
+}
+
+.compliance-assets-card {
+  padding: 0;
+}
+
+.compliance-assets-card .portal-card-head {
+  margin: 0;
+  padding: 20px;
+  border-bottom: 1px solid #e8edf5;
+}
+
+.compliance-table {
+  min-width: 1280px;
+}
+
+.compliance-table td {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.compliance-table td > span,
+.compliance-table td > small {
+  display: block;
+}
+
 .empty-state {
   margin: 0;
   padding: 18px;
@@ -434,6 +513,7 @@
   .three-columns,
   .four-columns,
   .control-row,
+  .compliance-control-row,
   .relationship-list div {
     grid-template-columns: 1fr;
   }

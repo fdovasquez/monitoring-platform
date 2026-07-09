@@ -22,7 +22,14 @@ from .views import (
     rhapsody_install_script,
 )
 from .monitor_assignment_views import DeviceDetailWithMonitorsView
-from .portal_views import CMDBView, ComplianceView, ExecutiveDashboardView, IncidentCenterView, ReportsView
+from .portal_views import (
+    CMDBView,
+    ComplianceReportDownloadView,
+    ComplianceView,
+    ExecutiveDashboardView,
+    IncidentCenterView,
+    ReportsView,
+)
 from .runtime_views import DeviceRuntimeView
 from .site_views import SiteSettingsView
 
@@ -49,6 +56,7 @@ urlpatterns = [
     path("cmdb/", CMDBView.as_view(), name="cmdb"),
     path("incidents/", IncidentCenterView.as_view(), name="incidents"),
     path("compliance/", ComplianceView.as_view(), name="compliance"),
+    path("compliance/download/", ComplianceReportDownloadView.as_view(), name="compliance-download"),
     path("reports/", ReportsView.as_view(), name="reports"),
     path("devices/", DeviceListView.as_view(), name="device-list"),
     path("devices/<int:pk>/", DeviceDetailWithMonitorsView.as_view(), name="device-detail"),
