@@ -755,6 +755,7 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
                         "agent_token": token,
                         "linux_script": self.linux_script(token.token, self.linux_installer_url()),
                         "ubuntu_script": self.linux_script(token.token, self.linux_installer_url()),
+                        "rhapsody_script": self.rhapsody_script(token.token, self.rhapsody_installer_url()),
                         "windows_script": self.windows_script(token.token, api_url, download_base_url),
                     }
                 )
@@ -793,8 +794,15 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
     def linux_installer_url(self):
         return self.request.build_absolute_uri("/app/agents/install/linux.sh")
 
+    def rhapsody_installer_url(self):
+        return self.request.build_absolute_uri("/app/agents/install/rhapsody-linux.sh")
+
     @staticmethod
     def linux_script(token, installer_url):
+        return f"curl -kfsSL {shlex.quote(installer_url)} | bash -s -- {shlex.quote(token)}"
+
+    @staticmethod
+    def rhapsody_script(token, installer_url):
         return f"curl -kfsSL {shlex.quote(installer_url)} | bash -s -- {shlex.quote(token)}"
 
     @staticmethod
@@ -912,11 +920,103 @@ schtasks.exe /Query /TN "MonitoringAgent" /V /FO LIST
 Read-Host "Presiona Enter para cerrar"
 """
 
+    @staticmethod
+    def rhapsody_bootstrap_script(api_url, download_base_url):
+        return f"""#!/bin/bash
+set -e
+
+TOKEN="${{1:-}}"
+if [ -z "$TOKEN" ]; then
+  echo "ERROR: Falta el token de instalacion."
+  exit 1
+fi
+
+INSTALL_LOG="/var/log/rhapsody-monitoring-agent-install.log"
+exec > >(tee -a "$INSTALL_LOG") 2>&1
+trap 'status=$?; echo "ERROR: La instalacion fallo (codigo $status). Revisa $INSTALL_LOG"; exit $status' ERR
+
+echo "Instalando monitor Rhapsody. El registro quedara en $INSTALL_LOG"
+mkdir -p /opt/rhapsody-monitoring-agent
+systemctl stop rhapsody-agent 2>/dev/null || true
+
+AGENT_BASE_URL="{download_base_url}rhapsody"
+AGENT_SCRIPT="/opt/rhapsody-monitoring-agent/rhapsody-agent.py"
+SERVICE_FILE="/etc/systemd/system/rhapsody-agent.service"
+CA_CERT="/opt/rhapsody-monitoring-agent/monitor-ca-chain.pem"
+
+if command -v openssl >/dev/null 2>&1; then
+  MONITOR_HOST="$(printf '%s' "{api_url}" | sed -E 's#https?://([^/:]+).*#\\1#')"
+  echo | openssl s_client -showcerts -connect "${{MONITOR_HOST}}:443" -servername "${{MONITOR_HOST}}" 2>/dev/null \
+    | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > "$CA_CERT" || true
+fi
+
+download_file() {{
+  local url="$1"
+  local destination="$2"
+  if command -v curl >/dev/null 2>&1; then
+    if [ -s "$CA_CERT" ]; then
+      curl -fsSL --cacert "$CA_CERT" "$url" -o "$destination"
+    else
+      curl -kfsSL "$url" -o "$destination"
+    fi
+  elif command -v wget >/dev/null 2>&1; then
+    if [ -s "$CA_CERT" ]; then
+      wget -q --ca-certificate="$CA_CERT" "$url" -O "$destination"
+    else
+      wget --no-check-certificate -q "$url" -O "$destination"
+    fi
+  else
+    echo "ERROR: Se requiere curl o wget para descargar el monitor Rhapsody."
+    exit 1
+  fi
+}}
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: Se requiere python3 en el servidor Rhapsody."
+  exit 1
+fi
+
+download_file "$AGENT_BASE_URL/rhapsody-agent.py" "$AGENT_SCRIPT"
+download_file "$AGENT_BASE_URL/rhapsody-agent.service" "$SERVICE_FILE"
+
+cat >/etc/rhapsody-monitoring-agent.env <<EOF
+RHAPSODY_API_URL={api_url}
+RHAPSODY_AGENT_TOKEN=$TOKEN
+RHAPSODY_INTERVAL=60
+RHAPSODY_VERIFY_TLS=false
+RHAPSODY_CA_FILE=/opt/rhapsody-monitoring-agent/monitor-ca-chain.pem
+RHAPSODY_LOG_PATHS=/opt/rhapsody/logs/*.log,/opt/rhapsody*/logs/*.log,/var/log/rhapsody/*.log,/var/opt/rhapsody/logs/*.log
+RHAPSODY_KEYWORDS=fatal,error,route stopped,channel stopped,message failed,queue full,outofmemory,license expired
+EOF
+
+chmod 600 /etc/rhapsody-monitoring-agent.env
+chmod 755 "$AGENT_SCRIPT"
+systemctl daemon-reload
+systemctl enable --now rhapsody-agent
+
+if systemctl is-active --quiet rhapsody-agent; then
+  echo "INSTALACION COMPLETADA: rhapsody-agent esta activo."
+else
+  echo "ERROR: El servicio no pudo iniciar."
+  systemctl status rhapsody-agent --no-pager || true
+  exit 1
+fi
+
+echo "Para revisar el resultado: journalctl -u rhapsody-agent -n 50 --no-pager"
+"""
+
 
 def linux_install_script(request):
     api_url = request.build_absolute_uri("/api/v1/metrics/ingest/")
     download_base_url = request.build_absolute_uri("/app/agents/download/")
     script = AgentInstallWizardView.linux_bootstrap_script(api_url, download_base_url)
+    return HttpResponse(script, content_type="text/x-shellscript; charset=utf-8")
+
+
+def rhapsody_install_script(request):
+    api_url = request.build_absolute_uri("/api/v1/metrics/rhapsody/ingest/")
+    download_base_url = request.build_absolute_uri("/app/agents/download/")
+    script = AgentInstallWizardView.rhapsody_bootstrap_script(api_url, download_base_url)
     return HttpResponse(script, content_type="text/x-shellscript; charset=utf-8")
 
 

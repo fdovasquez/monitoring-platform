@@ -19,6 +19,7 @@ from .views import (
     UserListView,
     agent_download,
     linux_install_script,
+    rhapsody_install_script,
 )
 from .monitor_assignment_views import DeviceDetailWithMonitorsView
 from .runtime_views import DeviceRuntimeView
@@ -57,6 +58,7 @@ urlpatterns = [
     ),
     path("agents/new/", device_manager_required(AgentInstallWizardView.as_view()), name="agent-install"),
     path("agents/install/linux.sh", linux_install_script, name="linux-agent-install-script"),
+    path("agents/install/rhapsody-linux.sh", rhapsody_install_script, name="rhapsody-agent-install-script"),
     path("agents/download/<str:platform>/<str:filename>", agent_download, name="agent-download"),
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/new/", UserCreateView.as_view(), name="user-create"),

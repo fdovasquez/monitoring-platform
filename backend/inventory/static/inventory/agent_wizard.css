@@ -704,15 +704,32 @@ body.agent-modal-body {
   font-size: 15px;
 }
 
+.script-card-head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .agent-install-panel .script-card {
   padding: 0;
   background: transparent;
   border: 0;
 }
 
+.agent-install-panel .addon-script-card {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
 .agent-install-panel .script-card textarea {
   min-height: 430px;
   margin: 0;
+}
+
+.agent-install-panel .addon-script-card textarea {
+  min-height: 96px;
 }
 
 @media (max-width: 980px) {
