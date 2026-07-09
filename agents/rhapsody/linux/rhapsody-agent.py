@@ -38,7 +38,7 @@ CA_FILE = os.environ.get("RHAPSODY_CA_FILE", "")
 
 def command_output(args):
     try:
-        return subprocess.check_output(args, text=True, stderr=subprocess.DEVNULL, timeout=10).strip()
+        return subprocess.check_output(args, universal_newlines=True, stderr=subprocess.DEVNULL, timeout=10).strip()
     except (subprocess.SubprocessError, FileNotFoundError):
         return ""
 
