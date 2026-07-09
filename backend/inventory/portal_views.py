@@ -79,6 +79,7 @@ class PortalDataMixin:
                     "applications": applications,
                     "application_label": ", ".join(applications[:3]) if applications else "-",
                     "coverage_score": self.coverage_score(inventory, runtime, sample),
+                    "coverage_tone": self.coverage_tone(self.coverage_score(inventory, runtime, sample)),
                     "missing_inventory": self.missing_inventory(inventory, runtime, sample),
                 }
             )
@@ -194,6 +195,14 @@ class PortalDataMixin:
         elif not sample.agent_version:
             missing.append("Version agente")
         return missing[:5]
+
+    @staticmethod
+    def coverage_tone(score):
+        if score >= 80:
+            return "ok"
+        if score >= 55:
+            return "warning"
+        return "critical"
 
     @staticmethod
     def alerts_by_server(server_ids):
@@ -320,6 +329,9 @@ class CMDBView(PortalAccessMixin, PortalDataMixin, TemplateView):
         with_runtime = sum(1 for row in rows if row["runtime"])
         with_serial = sum(1 for row in rows if row["serial_label"] != "-")
         with_apps = sum(1 for row in rows if row["applications"])
+        online = sum(1 for row in rows if row["online"])
+        critical = sum(1 for row in rows if row["alert_level"] == "critical")
+        warning = sum(1 for row in rows if row["alert_level"] == "warning")
         avg_coverage = int(sum(row["coverage_score"] for row in rows) / total) if total else 0
         return {
             "total": total,
@@ -327,6 +339,10 @@ class CMDBView(PortalAccessMixin, PortalDataMixin, TemplateView):
             "with_runtime": with_runtime,
             "with_serial": with_serial,
             "with_apps": with_apps,
+            "online": online,
+            "offline": total - online,
+            "critical": critical,
+            "warning": warning,
             "avg_coverage": avg_coverage,
         }
 

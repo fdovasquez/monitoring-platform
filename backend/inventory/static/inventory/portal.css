@@ -36,6 +36,223 @@
   gap: 18px;
 }
 
+.cmdb-console {
+  gap: 18px;
+}
+
+.cmdb-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #d9e1ec;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .06);
+}
+
+.cmdb-hero-copy {
+  padding: 28px;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, .08), rgba(20, 184, 166, .08)),
+    #ffffff;
+}
+
+.cmdb-hero-copy h1 {
+  max-width: 780px;
+  margin: 0;
+  font-size: 30px;
+}
+
+.cmdb-hero-copy p {
+  max-width: 820px;
+  margin: 10px 0 0;
+  color: #5b6472;
+}
+
+.cmdb-health-panel {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: #ffffff;
+  background: #0f172a;
+}
+
+.cmdb-health-panel span,
+.cmdb-health-panel small {
+  color: #cbd5e1 !important;
+}
+
+.cmdb-health-panel strong {
+  color: #ffffff;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.cmdb-health-panel .progress {
+  background: rgba(255, 255, 255, .18);
+}
+
+.cmdb-signal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cmdb-signal {
+  position: relative;
+  min-height: 112px;
+  padding: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #d9e1ec;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+
+.cmdb-signal::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  content: "";
+  background: linear-gradient(180deg, #2563eb, #14b8a6);
+}
+
+.cmdb-signal-label {
+  color: #5b6472 !important;
+  font-size: 12px;
+}
+
+.cmdb-signal strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 32px;
+}
+
+.cmdb-signal small {
+  color: #5b6472;
+}
+
+.cmdb-command-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
+  gap: 16px;
+}
+
+.cmdb-classification-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cmdb-classification-grid h3 {
+  margin: 0 0 10px;
+  color: #5b6472 !important;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.cmdb-pill-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.cmdb-pill-stack span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 0 12px;
+  color: #111827;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+}
+
+.cmdb-pill-stack i {
+  overflow: hidden;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdb-gap-list {
+  display: grid;
+  gap: 10px;
+  max-height: 278px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.cmdb-gap-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  padding: 12px;
+  color: #111827;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.cmdb-gap-item small {
+  grid-column: 1 / -1;
+  color: #5b6472;
+}
+
+.cmdb-gap-item.critical {
+  background: #fff7f7;
+  border-color: #fecaca;
+}
+
+.cmdb-gap-item.warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.cmdb-gap-item.ok {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.cmdb-relation-timeline {
+  display: grid;
+  gap: 10px;
+  max-height: 340px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.cmdb-relation-timeline div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+}
+
+.cmdb-relation-timeline small {
+  color: #2563eb;
+  text-align: center;
+}
+
+.cmdb-relation-timeline strong,
+.cmdb-relation-timeline span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .portal-eyebrow {
   display: block;
   margin-bottom: 7px;
@@ -351,7 +568,7 @@
 }
 
 .cmdb-table {
-  min-width: 1320px;
+  min-width: 1420px;
 }
 
 .cmdb-table th,
@@ -385,9 +602,75 @@
   margin-top: 8px;
 }
 
+.cmdb-status,
+.cmdb-risk {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  min-height: 24px;
+  margin-top: 8px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.cmdb-status.ok,
+.cmdb-risk.ok {
+  color: #047857;
+  background: #dcfce7;
+}
+
+.cmdb-status.critical,
+.cmdb-risk.critical {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.cmdb-risk.warning {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.cmdb-runtime-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cmdb-runtime-strip span {
+  padding: 8px;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+}
+
+.cmdb-runtime-strip strong,
+.cmdb-runtime-strip small {
+  display: block;
+  text-align: center;
+}
+
+.cmdb-resource-bar {
+  width: 128px;
+  margin-top: 8px;
+}
+
 .cmdb-coverage {
   width: 120px;
   margin: 8px 0;
+}
+
+.cmdb-coverage.critical i {
+  background: #ef4444;
+}
+
+.cmdb-coverage.warning i {
+  background: #f59e0b;
+}
+
+.cmdb-coverage.ok i {
+  background: #22c55e;
 }
 
 .compliance-card strong {
@@ -497,6 +780,10 @@
 }
 
 @media (max-width: 1100px) {
+  .cmdb-hero,
+  .cmdb-command-grid,
+  .cmdb-classification-grid,
+  .cmdb-signal-grid,
   .kpi-grid,
   .two-columns,
   .three-columns,
@@ -507,6 +794,10 @@
 
 @media (max-width: 720px) {
   .portal-hero,
+  .cmdb-hero,
+  .cmdb-command-grid,
+  .cmdb-classification-grid,
+  .cmdb-signal-grid,
   .cmdb-title,
   .kpi-grid,
   .two-columns,
@@ -524,6 +815,10 @@
 
   .cmdb-capability-grid {
     grid-template-columns: 1fr;
+  }
+
+  .cmdb-health-panel {
+    min-height: 160px;
   }
 
   .risk-ring {
