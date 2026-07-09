@@ -65,6 +65,13 @@
                 <small>Ubuntu Server o Debian</small>
               </span>
             </button>
+            <button class="os-option {% if selected_platform == 'rhapsody' %}active{% endif %}" type="button" data-platform-choice="rhapsody">
+              <span class="os-symbol rhapsody">R</span>
+              <span>
+                <strong>Monitor Rhapsody</strong>
+                <small>Complemento para servidores Linux con Rhapsody</small>
+              </span>
+            </button>
           </div>
 
           <div class="group-selector">
@@ -110,11 +117,12 @@
                   </div>
                   <textarea id="ubuntu-script-text" readonly>{{ ubuntu_script }}</textarea>
                 </div>
-                <div class="script-card addon-script-card">
+              {% elif selected_platform == 'rhapsody' %}
+                <div class="script-card active compact-script-card">
                   <div class="script-card-head">
                     <div>
                       <h2>Monitor Rhapsody</h2>
-                      <p>Instalador complementario para servidores Linux que ejecutan Rhapsody.</p>
+                      <p>Instalador independiente para supervisar servicio, procesos, puertos y logs de Rhapsody.</p>
                     </div>
                     <button class="copy-icon-button" type="button" data-copy-target="rhapsody-script-text" title="Copiar comando">Copiar</button>
                   </div>

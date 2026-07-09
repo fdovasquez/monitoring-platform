@@ -558,6 +558,10 @@ body.agent-modal-body {
   background: linear-gradient(135deg, #0f766e, #2dd4bf);
 }
 
+.os-symbol.rhapsody {
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+}
+
 .agent-form-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -730,6 +734,10 @@ body.agent-modal-body {
 
 .agent-install-panel .addon-script-card textarea {
   min-height: 96px;
+}
+
+.agent-install-panel .compact-script-card textarea {
+  min-height: 118px;
 }
 
 @media (max-width: 980px) {
