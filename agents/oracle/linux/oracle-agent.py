@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/oracle-monitoring-agent.env"
-AGENT_VERSION = "1.0.0-oracle"
+AGENT_VERSION = "1.0.1-oracle"
 
 
 def load_env_file(path):
@@ -111,7 +111,9 @@ def write_temp_script(content, suffix):
 
 def safe_unlink(path):
     try:
-        Path(path).unlink(missing_ok=True)
+        temp_path = Path(path)
+        if temp_path.exists():
+            temp_path.unlink()
     except OSError:
         pass
 
