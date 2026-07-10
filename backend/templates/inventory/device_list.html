@@ -177,11 +177,20 @@
               </td>
               <td>
                 {% if device.alert_level == "critical" %}
-                  <span class="alert-state critical" title="{{ device.alert_title }}: {{ device.alert_message }}">Critico</span>
+                  <span class="condition-semaphore critical" title="{{ device.alert_title }}: {{ device.alert_message }}">
+                    <span class="semaphore-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <span>Critico</span>
+                  </span>
                 {% elif device.alert_level == "warning" %}
-                  <span class="alert-state warning" title="{{ device.alert_title }}: {{ device.alert_message }}">Advertencia</span>
+                  <span class="condition-semaphore warning" title="{{ device.alert_title }}: {{ device.alert_message }}">
+                    <span class="semaphore-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <span>Advertencia</span>
+                  </span>
                 {% else %}
-                  <span class="alert-state ok">Normal</span>
+                  <span class="condition-semaphore ok">
+                    <span class="semaphore-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <span>Normal</span>
+                  </span>
                 {% endif %}
               </td>
               <td>
