@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from inventory.models import AgentToken, Server, ServerInventory, ServerRuntimeSnapshot
-from alerts.services import evaluate_metric_sample
+from alerts.services import evaluate_metric_sample, evaluate_oracle_report
 
 from .models import MetricSample
 from .serializers import MetricIngestSerializer, OracleIngestSerializer, RhapsodyIngestSerializer
@@ -126,6 +126,7 @@ class OracleIngestView(APIView):
             agent_token.save(update_fields=["last_used_at"])
             update_application_snapshot(server, "oracle", application_payload, data["timestamp"])
 
+        evaluate_oracle_report(server, application_payload, data["timestamp"])
         return Response({"status": "ok", "application": "oracle"}, status=status.HTTP_201_CREATED)
 
 

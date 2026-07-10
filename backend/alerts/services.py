@@ -314,6 +314,126 @@ def resolve_metric_event(rule, server):
     )
 
 
+def upsert_application_event(rule, server, value, message):
+    event, created = AlertEvent.objects.get_or_create(
+        rule=rule,
+        server=server,
+        is_resolved=False,
+        defaults={
+            "value": value,
+            "message": message,
+        },
+    )
+    if not created and (event.value != value or event.message != message):
+        event.value = value
+        event.message = message
+        event.save(update_fields=["value", "message"])
+    return event
+
+
+def resolve_application_event(rule, server):
+    resolved_at = timezone.now()
+    AlertEvent.objects.filter(rule=rule, server=server, is_resolved=False).update(
+        is_resolved=True,
+        resolved_at=resolved_at,
+    )
+
+
+def oracle_database_problem(report):
+    database = report.get("database") if isinstance(report.get("database"), dict) else {}
+    listener = report.get("listener") if isinstance(report.get("listener"), dict) else {}
+    problems = []
+    instance_status = str(database.get("instance_status") or "").upper()
+    if instance_status != "OPEN":
+        problems.append(f"Instancia no OPEN ({instance_status or 'sin estado'})")
+    if database.get("error"):
+        problems.append(f"SQLPlus: {str(database.get('error'))[:180]}")
+    if not listener.get("ok"):
+        problems.append("Listener no disponible")
+    if listener.get("error"):
+        problems.append(f"Listener: {str(listener.get('error'))[:180]}")
+    return problems
+
+
+def oracle_backup_problem(report):
+    backups = report.get("backups") if isinstance(report.get("backups"), dict) else {}
+    problems = []
+    if not backups.get("ok"):
+        problems.append("No se detectaron respaldos RMAN")
+    if backups.get("error"):
+        problems.append(f"RMAN: {str(backups.get('error'))[:180]}")
+    latest = backups.get("latest") if isinstance(backups.get("latest"), dict) else {}
+    age_hours = latest.get("age_hours")
+    try:
+        age_value = float(age_hours)
+    except (TypeError, ValueError):
+        age_value = None
+    if age_value is not None:
+        thresholds = report.get("thresholds") if isinstance(report.get("thresholds"), dict) else {}
+        warning_hours = thresholds.get("backup_warning_hours")
+        try:
+            warning_hours = float(warning_hours)
+        except (TypeError, ValueError):
+            warning_hours = None
+        if warning_hours is not None and age_value > warning_hours:
+            problems.append(f"Ultimo respaldo RMAN hace {age_value:.1f} horas")
+    return problems
+
+
+def evaluate_oracle_report(server, report, timestamp):
+    settings = SmtpSettings.load()
+    checks = [
+        (AlertRule.EVENT_DATABASE, oracle_database_problem(report), "Estado de base de datos Oracle"),
+        (AlertRule.EVENT_BACKUP, oracle_backup_problem(report), "Respaldos RMAN Oracle"),
+    ]
+    for event_type, problems, label in checks:
+        assignments = ServerMonitorAssignment.objects.select_related("rule").filter(
+            server=server,
+            is_enabled=True,
+            rule__is_active=True,
+            rule__event_type=event_type,
+        )
+        for assignment in assignments:
+            rule = assignment.rule
+            if not problems:
+                resolve_application_event(rule, server)
+                continue
+
+            message = f"{label}: {'; '.join(problems[:3])}"
+            upsert_application_event(rule, server, 1, message)
+            recipients = rule.recipient_list()
+            if not recipients or not can_notify_rule(rule, server, rule.service_name or event_type):
+                continue
+
+            try:
+                send_email(
+                    settings,
+                    recipients,
+                    f"[{rule.get_priority_display()}] {rule.name} - {server.hostname}",
+                    (
+                        f"Servidor: {server.hostname}\n"
+                        f"Evento: {rule.get_event_type_display()}\n"
+                        f"Detalle: {message}\n"
+                        f"Fecha: {timezone.localtime(timestamp).strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    ),
+                    rule.event_type,
+                    rule.priority,
+                    server,
+                    rule.service_name or event_type,
+                    title=rule.name,
+                    details=[
+                        ("Servidor", server.hostname),
+                        ("Evento", rule.get_event_type_display()),
+                        ("Detalle", message),
+                        ("Fecha", timezone.localtime(timestamp).strftime("%Y-%m-%d %H:%M:%S")),
+                    ],
+                )
+                rule.last_notified_at = timezone.now()
+                rule.save(update_fields=["last_notified_at", "updated_at"])
+            except Exception:
+                pass
+
+
 def evaluate_metric_sample(sample):
     settings = SmtpSettings.load()
     metric_events = [
