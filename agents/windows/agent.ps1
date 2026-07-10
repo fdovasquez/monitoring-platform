@@ -65,19 +65,38 @@ $Services = @(Get-CimInstance Win32_Service | Select-Object -First 120 | ForEach
         start_type = $_.StartMode
     }
 })
-$Processes = @(Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 40 | ForEach-Object {
+$ProcessCpuSample = @{}
+Get-Process | ForEach-Object {
+    $ProcessCpuSample[$_.Id] = if ($_.CPU) { $_.CPU } else { 0 }
+}
+Start-Sleep -Milliseconds 500
+$ProcessorCount = [Environment]::ProcessorCount
+$Processes = @(Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 120 | ForEach-Object {
     $ProcessPath = ""
     try {
         $ProcessPath = $_.Path
     } catch {
         $ProcessPath = ""
     }
+    $WindowTitle = ""
+    try {
+        $WindowTitle = $_.MainWindowTitle
+    } catch {
+        $WindowTitle = ""
+    }
+    $PreviousCpu = if ($ProcessCpuSample.ContainsKey($_.Id)) { $ProcessCpuSample[$_.Id] } else { $_.CPU }
+    $CpuDelta = if ($_.CPU -and $PreviousCpu -ne $null) { $_.CPU - $PreviousCpu } else { 0 }
+    $CpuPercent = if ($ProcessorCount -gt 0) { [math]::Round(($CpuDelta / 0.5 / $ProcessorCount) * 100, 2) } else { 0 }
     @{
         pid = $_.Id
         name = $_.ProcessName
         user = ""
-        cpu_percent = if ($_.CPU) { [math]::Round($_.CPU, 2) } else { 0 }
+        cpu_percent = $CpuPercent
+        cpu_seconds = if ($_.CPU) { [math]::Round($_.CPU, 2) } else { 0 }
+        memory_mb = if ($_.WorkingSet64) { [math]::Round($_.WorkingSet64 / 1MB, 1) } else { 0 }
         memory_percent = if ($Computer.TotalPhysicalMemory -gt 0) { [math]::Round(($_.WorkingSet64 / $Computer.TotalPhysicalMemory) * 100, 2) } else { 0 }
+        window_title = $WindowTitle
+        category = if ($WindowTitle) { "app" } else { "background" }
         path = $ProcessPath
     }
 })

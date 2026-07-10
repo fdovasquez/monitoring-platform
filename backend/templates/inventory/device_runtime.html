@@ -118,32 +118,64 @@
           {% endif %}
         {% elif active_section == "processes" %}
           {% if runtime.processes %}
-            <div class="runtime-table-wrap">
-              <table class="runtime-table">
-                <thead>
-                  <tr>
-                    <th>PID</th>
-                    <th>Proceso</th>
-                    <th>CPU</th>
-                    <th>RAM MB</th>
-                    <th>Usuario</th>
-                    <th>Ruta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for process in runtime.processes %}
+            {% if server.os_type == "windows" and runtime.process_groups %}
+              <div class="windows-process-board">
+                <div class="windows-process-head">
+                  <span>Nombre</span>
+                  <span>PID</span>
+                  <span>CPU</span>
+                  <span>Memoria</span>
+                </div>
+                {% for group in runtime.process_groups %}
+                  <section class="windows-process-group">
+                    <h3>{{ group.title }} <span>({{ group.count }})</span></h3>
+                    {% for process in group.items %}
+                      <article class="windows-process-row">
+                        <div class="windows-process-name">
+                          <span class="process-dot">{{ process.name|slice:":1"|upper }}</span>
+                          <div>
+                            <strong>{{ process.display_name|default:process.name }}</strong>
+                            <small>{{ process.name }}{% if process.identity and process.identity != process.name %} - {{ process.identity }}{% endif %}</small>
+                          </div>
+                        </div>
+                        <span>{{ process.pid|default:"-" }}</span>
+                        <span class="metric-cell cpu">{{ process.cpu_percent|default:"0" }}%</span>
+                        <span class="metric-cell memory">{{ process.memory_mb|default:"0" }} MB</span>
+                      </article>
+                    {% empty %}
+                      <div class="runtime-empty compact">Sin procesos en esta categoria.</div>
+                    {% endfor %}
+                  </section>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="runtime-table-wrap">
+                <table class="runtime-table">
+                  <thead>
                     <tr>
-                      <td>{{ process.pid|default:"-" }}</td>
-                      <td><strong>{{ process.name|default:"-" }}</strong></td>
-                      <td>{{ process.cpu_percent|default:"0" }}%</td>
-                      <td>{{ process.memory_mb|default:"0" }}</td>
-                      <td>{{ process.username|default:"-" }}</td>
-                      <td class="runtime-muted runtime-path">{{ process.path|default:"-" }}</td>
+                      <th>PID</th>
+                      <th>Proceso</th>
+                      <th>CPU</th>
+                      <th>RAM MB</th>
+                      <th>Usuario</th>
+                      <th>Ruta</th>
                     </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {% for process in runtime.processes %}
+                      <tr>
+                        <td>{{ process.pid|default:"-" }}</td>
+                        <td><strong>{{ process.name|default:"-" }}</strong></td>
+                        <td>{{ process.cpu_percent|default:"0" }}%</td>
+                        <td>{{ process.memory_mb|default:"0" }}</td>
+                        <td>{{ process.username|default:"-" }}</td>
+                        <td class="runtime-muted runtime-path">{{ process.path|default:"-" }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
           {% else %}
             <div class="runtime-empty">{{ section_meta.empty }}</div>
           {% endif %}

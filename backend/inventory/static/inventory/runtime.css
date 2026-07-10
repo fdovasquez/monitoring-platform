@@ -248,6 +248,120 @@
   text-align: center;
 }
 
+.runtime-empty.compact {
+  margin: 8px 16px 16px;
+  padding: 16px;
+}
+
+.windows-process-board {
+  padding: 0 0 12px;
+  background: #ffffff;
+}
+
+.windows-process-head,
+.windows-process-row {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 96px 110px 150px;
+  align-items: center;
+  gap: 0;
+}
+
+.windows-process-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 44px;
+  padding: 0 16px;
+  color: #475569;
+  background: #f8fafc;
+  border-bottom: 1px solid #e8edf5;
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+
+.windows-process-group h3 {
+  margin: 0;
+  padding: 18px 16px 10px;
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.windows-process-group h3 span {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.windows-process-row {
+  min-height: 52px;
+  margin: 0 16px;
+  border-bottom: 1px solid #edf2f7;
+  color: #111827;
+  font-size: 13px;
+}
+
+.windows-process-row:hover {
+  background: #f8fbff;
+}
+
+.windows-process-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.windows-process-name strong,
+.windows-process-name small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.windows-process-name strong {
+  color: #111827;
+  font-weight: 500;
+}
+
+.windows-process-name small {
+  max-width: 520px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.process-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  font-size: 11px;
+}
+
+.metric-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 36px;
+  padding: 0 10px;
+  border-left: 1px solid #f1f5f9;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-cell.cpu {
+  background: #fff8dc;
+}
+
+.metric-cell.memory {
+  background: #fff2b8;
+}
+
 @media (max-width: 960px) {
   .runtime-hero,
   .runtime-panel-head {
@@ -261,6 +375,11 @@
 
   .runtime-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .windows-process-head,
+  .windows-process-row {
+    grid-template-columns: minmax(220px, 1fr) 76px 86px 110px;
   }
 }
 

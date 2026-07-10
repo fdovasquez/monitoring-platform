@@ -68,12 +68,16 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
                 "name": process.get("name") or process.get("command") or "-",
                 "cpu_percent": process.get("cpu_percent") or 0,
                 "memory_mb": process.get("memory_mb") or 0,
+                "memory_percent": process.get("memory_percent") or 0,
                 "username": process.get("username") or process.get("user") or "-",
                 "path": process.get("path") or process.get("exe") or "-",
+                "window_title": process.get("window_title") or "",
+                "category": process.get("category") or "",
             }
             for process in runtime.processes or []
             if isinstance(process, dict)
         ]
+        process_groups = DeviceRuntimeView.process_groups(server, processes)
         ports = [
             {
                 "protocol": port.get("protocol") or "-",
@@ -95,10 +99,39 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
             "record": runtime,
             "services": services[:80],
             "stopped_services": stopped_services[:30],
-            "processes": processes[:40],
+            "processes": processes[:80],
+            "process_groups": process_groups,
             "ports": ports[:120],
             "service_count": len(services),
             "process_count": len(processes),
             "port_count": len(ports),
             "stopped_count": len(stopped_services),
         }
+
+    @staticmethod
+    def process_groups(server, processes):
+        if server.os_type != Server.OS_WINDOWS:
+            return []
+
+        apps = []
+        background = []
+        for process in processes:
+            name = str(process.get("name") or "")
+            title = str(process.get("window_title") or "").strip()
+            path = str(process.get("path") or "")
+            is_app = process.get("category") == "app" or bool(title)
+            item = {
+                **process,
+                "display_name": title or name,
+                "kind": "Aplicacion" if is_app else "Segundo plano",
+                "identity": path if path and path != "-" else name,
+            }
+            if is_app:
+                apps.append(item)
+            else:
+                background.append(item)
+
+        return [
+            {"title": "Aplicaciones", "items": apps[:40], "count": len(apps)},
+            {"title": "Procesos en segundo plano", "items": background[:80], "count": len(background)},
+        ]
