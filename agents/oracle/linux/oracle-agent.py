@@ -5,6 +5,7 @@ import re
 import socket
 import ssl
 import subprocess
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +40,7 @@ ORACLE_HOME = os.environ.get("ORACLE_HOME", "/opt/oracle/190000")
 ORACLE_SID = os.environ.get("ORACLE_SID", "")
 SQLPLUS = os.environ.get("ORACLE_SQLPLUS", f"{ORACLE_HOME}/bin/sqlplus")
 LSNRCTL = os.environ.get("ORACLE_LSNRCTL", f"{ORACLE_HOME}/bin/lsnrctl")
+RMAN = os.environ.get("ORACLE_RMAN", f"{ORACLE_HOME}/bin/rman")
 ALERT_LOG_PATH = os.environ.get("ORACLE_ALERT_LOG_PATH", "")
 BACKUP_WARNING_HOURS = int(os.environ.get("ORACLE_BACKUP_WARNING_HOURS", "24"))
 BACKUP_CRITICAL_HOURS = int(os.environ.get("ORACLE_BACKUP_CRITICAL_HOURS", "48"))
@@ -71,6 +73,7 @@ def shell_quote(value):
 
 def sql_query(sql, timeout=30):
     script = f"""
+whenever sqlerror exit sql.sqlcode
 set heading off
 set feedback off
 set pagesize 0
@@ -81,11 +84,36 @@ set linesize 32767
 {sql}
 exit
 """
-    command = f"{shell_quote(SQLPLUS)} -s / as sysdba <<'SQL'\n{script}\nSQL"
-    stdout, stderr, code = run_command(command, timeout=timeout)
-    if code != 0:
-        return "", stderr or stdout
-    return stdout.strip(), ""
+    script_path = write_temp_script(script, suffix=".sql")
+    try:
+        command = f"{shell_quote(SQLPLUS)} -s / as sysdba @{shell_quote(script_path)}"
+        stdout, stderr, code = run_command(command, timeout=timeout)
+        if code != 0:
+            return "", (stderr or stdout)[-1000:]
+        return stdout.strip(), ""
+    finally:
+        safe_unlink(script_path)
+
+
+def write_temp_script(content, suffix):
+    handle = tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        prefix="oracle-agent-",
+        suffix=suffix,
+        delete=False,
+    )
+    with handle:
+        handle.write(content)
+    os.chmod(handle.name, 0o644)
+    return handle.name
+
+
+def safe_unlink(path):
+    try:
+        Path(path).unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 def clean_lines(output):
@@ -98,25 +126,32 @@ def first_line(output):
 
 
 def collect_database():
-    database_name, _ = sql_query("select name from v$database;")
-    database_role, _ = sql_query("select database_role from v$database;")
-    instance_name, _ = sql_query("select instance_name from v$instance;")
-    instance_status, _ = sql_query("select status from v$instance;")
-    version, _ = sql_query("select version from v$instance;")
-    startup_time, _ = sql_query("select to_char(startup_time,'YYYY-MM-DD HH24:MI:SS') from v$instance;")
-    diag_trace, _ = sql_query("select value from v$diag_info where name = 'Diag Trace';")
-    alert_log, _ = sql_query(
-        "select value || '/alert_' || instance_name || '.log' from v$diag_info cross join v$instance where name = 'Diag Trace';"
+    output, error = sql_query(
+        """
+select
+  (select name from v$database) || '|' ||
+  (select database_role from v$database) || '|' ||
+  (select instance_name from v$instance) || '|' ||
+  (select status from v$instance) || '|' ||
+  (select version from v$instance) || '|' ||
+  (select to_char(startup_time,'YYYY-MM-DD HH24:MI:SS') from v$instance) || '|' ||
+  (select value from v$diag_info where name = 'Diag Trace') || '|' ||
+  (select value || '/alert_' || instance_name || '.log'
+   from v$diag_info cross join v$instance where name = 'Diag Trace')
+from dual;
+"""
     )
+    values = first_line(output).split("|") if output else []
     return {
-        "database_name": first_line(database_name),
-        "database_role": first_line(database_role),
-        "instance_name": first_line(instance_name),
-        "instance_status": first_line(instance_status),
-        "version": first_line(version),
-        "startup_time": first_line(startup_time),
-        "diag_trace": first_line(diag_trace),
-        "alert_log": ALERT_LOG_PATH or first_line(alert_log),
+        "database_name": values[0].strip() if len(values) > 0 else "",
+        "database_role": values[1].strip() if len(values) > 1 else "",
+        "instance_name": values[2].strip() if len(values) > 2 else "",
+        "instance_status": values[3].strip() if len(values) > 3 else "",
+        "version": values[4].strip() if len(values) > 4 else "",
+        "startup_time": values[5].strip() if len(values) > 5 else "",
+        "diag_trace": values[6].strip() if len(values) > 6 else "",
+        "alert_log": ALERT_LOG_PATH or (values[7].strip() if len(values) > 7 else ""),
+        "error": error,
     }
 
 
@@ -130,6 +165,7 @@ def collect_listener():
         "port": port_match.group(1) if port_match else "",
         "services": sorted(set(services))[:30],
         "summary": "Activo" if code == 0 else "No disponible",
+        "error": "" if code == 0 else (stderr or stdout)[-1000:],
     }
 
 
@@ -193,7 +229,11 @@ def collect_blocking_sessions():
 
 
 def collect_rman_backups():
-    stdout, stderr, code = run_command(f"{shell_quote(ORACLE_HOME + '/bin/rman')} target / <<'RMAN'\nLIST BACKUP SUMMARY;\nEXIT;\nRMAN", timeout=60)
+    script_path = write_temp_script("LIST BACKUP SUMMARY;\nEXIT;\n", suffix=".rman")
+    try:
+        stdout, stderr, code = run_command(f"{shell_quote(RMAN)} target / cmdfile {shell_quote(script_path)}", timeout=60)
+    finally:
+        safe_unlink(script_path)
     output = stdout or stderr
     entries = []
     for line in output.splitlines():

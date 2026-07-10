@@ -1224,11 +1224,13 @@ ORACLE_HOME_VALUE="$(su - oracle -c 'printf %s "$ORACLE_HOME"' 2>/dev/null || tr
 ORACLE_SID_VALUE="$(su - oracle -c 'printf %s "$ORACLE_SID"' 2>/dev/null || true)"
 SQLPLUS_VALUE="$(su - oracle -c 'command -v sqlplus' 2>/dev/null || true)"
 LSNRCTL_VALUE="$(su - oracle -c 'command -v lsnrctl' 2>/dev/null || true)"
+RMAN_VALUE="$(su - oracle -c 'command -v rman' 2>/dev/null || true)"
 
 if [ -z "$ORACLE_HOME_VALUE" ]; then ORACLE_HOME_VALUE="/opt/oracle/190000"; fi
 if [ -z "$ORACLE_SID_VALUE" ]; then ORACLE_SID_VALUE="CDBROOT"; fi
 if [ -z "$SQLPLUS_VALUE" ]; then SQLPLUS_VALUE="$ORACLE_HOME_VALUE/bin/sqlplus"; fi
 if [ -z "$LSNRCTL_VALUE" ]; then LSNRCTL_VALUE="$ORACLE_HOME_VALUE/bin/lsnrctl"; fi
+if [ -z "$RMAN_VALUE" ]; then RMAN_VALUE="$ORACLE_HOME_VALUE/bin/rman"; fi
 
 download_file "$AGENT_BASE_URL/oracle-agent.py" "$AGENT_SCRIPT"
 download_file "$AGENT_BASE_URL/oracle-agent.service" "$SERVICE_FILE"
@@ -1244,6 +1246,7 @@ ORACLE_HOME=$ORACLE_HOME_VALUE
 ORACLE_SID=$ORACLE_SID_VALUE
 ORACLE_SQLPLUS=$SQLPLUS_VALUE
 ORACLE_LSNRCTL=$LSNRCTL_VALUE
+ORACLE_RMAN=$RMAN_VALUE
 ORACLE_TABLESPACE_WARNING_PERCENT=85
 ORACLE_TABLESPACE_CRITICAL_PERCENT=95
 ORACLE_FRA_WARNING_PERCENT=80
