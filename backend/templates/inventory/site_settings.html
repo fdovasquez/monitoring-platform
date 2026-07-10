@@ -183,8 +183,31 @@
     {% endif %}
 
     {% if active_settings_tab == 'central' %}
-      <section class="settings-layout smtp-layout">
-        <form class="profile-card settings-card" method="post" data-loading-form>
+      <section class="settings-layout enterprise-settings-layout">
+        <aside class="settings-status-panel central-panel">
+          <span class="panel-label">Reporte saliente</span>
+          <h2>Monitor central</h2>
+          <p>Conecta este satelite con una consola central publica mediante HTTPS, sin abrir puertos entrantes en el sitio remoto.</p>
+          <div class="settings-status-stack">
+            {% if central_settings.reporting_enabled and central_settings.is_configured %}
+              <span class="status-line ok">Reporte central activo</span>
+            {% elif central_settings.is_configured %}
+              <span class="status-line warn">Configurado, pero desactivado</span>
+            {% else %}
+              <span class="status-line warn">Configuracion incompleta</span>
+            {% endif %}
+            <span>Destino: {{ central_settings.central_api_url|default:"Sin URL configurada" }}</span>
+            <span>Intervalo: {{ central_settings.report_interval_seconds|default:"-" }} segundos</span>
+          </div>
+          <div class="settings-flow">
+            <span>01 Configurar endpoint</span>
+            <span>02 Guardar credenciales</span>
+            <span>03 Probar envio</span>
+          </div>
+        </aside>
+
+        <div class="settings-workspace">
+        <form class="profile-card settings-card visual-settings-card enterprise-form-card" method="post" data-loading-form>
           {% csrf_token %}
           <input type="hidden" name="action" value="save_central">
           <div class="profile-card-head">
@@ -263,7 +286,7 @@
           </div>
         </form>
 
-        <section class="profile-card settings-card">
+        <section class="profile-card settings-card settings-side-card">
           <div class="profile-card-head">
             <div>
               <h2>Prueba funcional</h2>
@@ -280,12 +303,34 @@
           </form>
           <p class="tls-note">La prueba usa POST HTTPS con autenticacion Bearer Token. Si falla, el monitoreo local sigue funcionando.</p>
         </section>
+        </div>
       </section>
     {% endif %}
 
     {% if active_settings_tab == 'smtp' %}
-      <section class="settings-layout smtp-layout">
-        <form class="profile-card settings-card" method="post" data-loading-form>
+      <section class="settings-layout enterprise-settings-layout">
+        <aside class="settings-status-panel smtp-panel">
+          <span class="panel-label">Notificaciones</span>
+          <h2>Correo SMTP</h2>
+          <p>Servidor usado para alertas, recuperaciones y pruebas operativas de la plataforma.</p>
+          <div class="settings-status-stack">
+            {% if smtp_settings.is_configured %}
+              <span class="status-line ok">SMTP configurado</span>
+            {% else %}
+              <span class="status-line warn">SMTP incompleto</span>
+            {% endif %}
+            <span>Remitente: {{ smtp_settings.from_email|default:"Sin remitente" }}</span>
+            <span>Servidor: {{ smtp_settings.host|default:"Sin servidor" }}</span>
+          </div>
+          <div class="settings-flow">
+            <span>01 Datos del servidor</span>
+            <span>02 Seguridad y autenticacion</span>
+            <span>03 Prueba de envio</span>
+          </div>
+        </aside>
+
+        <div class="settings-workspace">
+        <form class="profile-card settings-card visual-settings-card enterprise-form-card" method="post" data-loading-form>
           {% csrf_token %}
           <input type="hidden" name="action" value="save_smtp">
           <div class="profile-card-head">
@@ -317,7 +362,7 @@
           </div>
         </form>
 
-        <section class="profile-card settings-card">
+        <section class="profile-card settings-card settings-side-card">
           <div class="profile-card-head">
             <div>
               <h2>Pruebas de correo</h2>
@@ -339,12 +384,34 @@
             <button class="submit-button" type="submit">Enviar correo de prueba</button>
           </form>
         </section>
+        </div>
       </section>
     {% endif %}
 
     {% if active_settings_tab == 'https' %}
-      <section class="settings-layout tls-layout">
-        <form class="profile-card settings-card" method="post" enctype="multipart/form-data" data-loading-form>
+      <section class="settings-layout enterprise-settings-layout">
+        <aside class="settings-status-panel tls-panel">
+          <span class="panel-label">Seguridad web</span>
+          <h2>HTTPS y certificados</h2>
+          <p>Carga certificados corporativos para publicar el portal de monitoreo mediante TLS.</p>
+          <div class="settings-status-stack">
+            {% if tls_certificate.is_configured %}
+              <span class="status-line ok">Certificado cargado</span>
+            {% else %}
+              <span class="status-line warn">Sin certificado configurado</span>
+            {% endif %}
+            <span>Dominio: {{ tls_certificate.domain|default:"Sin dominio" }}</span>
+            <span>Destino: Nginx reverse proxy</span>
+          </div>
+          <div class="settings-flow">
+            <span>01 Cargar certificado</span>
+            <span>02 Exportar a disco seguro</span>
+            <span>03 Recargar Nginx</span>
+          </div>
+        </aside>
+
+        <div class="settings-workspace">
+        <form class="profile-card settings-card visual-settings-card enterprise-form-card" method="post" enctype="multipart/form-data" data-loading-form>
           {% csrf_token %}
           <input type="hidden" name="action" value="save_tls">
           <div class="profile-card-head">
@@ -370,7 +437,7 @@
             <div class="field">
               <label for="{{ tls_form.private_key_file.id_for_label }}">Llave privada</label>
               {{ tls_form.private_key_file }}
-              <small>Archivo PEM sin contraseña. Nunca se muestra nuevamente en pantalla.</small>
+              <small>Archivo PEM sin contrasena. Nunca se muestra nuevamente en pantalla.</small>
               {% for error in tls_form.private_key_file.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             </div>
           </div>
@@ -383,7 +450,7 @@
             <button class="submit-button" type="submit" data-loading-label="Guardando...">Guardar certificado</button>
           </div>
         </form>
-        <section class="profile-card settings-card tls-guide">
+        <section class="profile-card settings-card tls-guide settings-side-card">
           <div class="profile-card-head"><div><h2>Activar HTTPS</h2><p>Cuando guardes el certificado, ejecuta estos pasos como <code>root</code> en el servidor de monitoreo.</p></div></div>
           <ol><li>Exporta el certificado cifrado hacia la carpeta segura del sistema.</li><li>Instala la configuracion Nginx incluida con la plataforma.</li><li>Habilita el sitio y recarga Nginx.</li></ol>
           <pre>cd /opt/monitoring-platform/backend
@@ -394,6 +461,7 @@ sudo ln -sfn /etc/nginx/sites-available/monitoring-platform /etc/nginx/sites-ena
 sudo nginx -t && sudo systemctl reload nginx</pre>
           <p class="tls-note">Antes de usarlo, reemplaza <code>MONITOR.DOMINIO.O.IP</code> en el archivo Nginx por el dominio o IP informado arriba. El nombre debe coincidir con el certificado.</p>
         </section>
+        </div>
       </section>
     {% endif %}
   </main>
