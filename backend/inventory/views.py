@@ -747,8 +747,6 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
                 server = None
             if server:
                 token, _ = AgentToken.objects.get_or_create(server=server)
-                api_url = self.api_url()
-                download_base_url = self.download_base_url()
                 context.update(
                     {
                         "created_server": server,
@@ -756,7 +754,7 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
                         "linux_script": self.linux_script(token.token, self.linux_installer_url()),
                         "ubuntu_script": self.linux_script(token.token, self.linux_installer_url()),
                         "rhapsody_script": self.rhapsody_script(token.token, self.rhapsody_installer_url()),
-                        "windows_script": self.windows_script(token.token, api_url, download_base_url),
+                        "windows_script": self.windows_script(token.token, self.windows_installer_url()),
                     }
                 )
         return context
@@ -796,6 +794,9 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
 
     def rhapsody_installer_url(self):
         return self.request.build_absolute_uri("/app/agents/install/rhapsody-linux.sh")
+
+    def windows_installer_url(self):
+        return self.request.build_absolute_uri("/app/agents/install/windows.ps1")
 
     @staticmethod
     def linux_script(token, installer_url):
@@ -891,33 +892,95 @@ echo "Para revisar el resultado: journalctl -u monitoring-agent -n 50 --no-pager
 """
 
     @staticmethod
-    def windows_script(token, api_url, download_base_url):
-        return f"""$ErrorActionPreference = "Stop"
-$AgentDirectory = "C:\\ProgramData\\MonitoringAgent"
-$AgentScript = Join-Path $AgentDirectory "agent.ps1"
-$ConfigFile = Join-Path $AgentDirectory "agent.env.ps1"
+    def windows_script(token, installer_url):
+        escaped_token = token.replace("'", "''")
+        escaped_url = installer_url.replace("'", "''")
+        return (
+            "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+            f"\"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; "
+            f"[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {{ $true }}; "
+            f"iex (New-Object Net.WebClient).DownloadString('{escaped_url}'); "
+            f"Install-MonitoringAgent -Token '{escaped_token}'\""
+        )
 
-New-Item -ItemType Directory -Path $AgentDirectory -Force | Out-Null
-Invoke-WebRequest -Uri "{download_base_url}windows/agent.ps1" -OutFile $AgentScript
+    @staticmethod
+    def windows_bootstrap_script(api_url, download_base_url):
+        agent_url = f"{download_base_url}windows/agent.ps1"
+        return f"""function Install-MonitoringAgent {{
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Token
+  )
 
-@(
-  '$env:MONITORING_API_URL = "{api_url}"'
-  '$env:MONITORING_AGENT_TOKEN = "{token}"'
-  '$env:MONITORING_SKIP_TLS_VERIFY = "true"'
-) | Set-Content -Path $ConfigFile -Encoding UTF8
+  $ErrorActionPreference = "Stop"
+  $AgentDirectory = "C:\\ProgramData\\MonitoringAgent"
+  $AgentScript = Join-Path $AgentDirectory "agent.ps1"
+  $ConfigFile = Join-Path $AgentDirectory "agent.env.ps1"
+  $TaskName = "MonitoringAgent"
+  $InstallLog = Join-Path $AgentDirectory "install.log"
 
-$TaskCommand = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$AgentScript`""
-schtasks.exe /Delete /TN "MonitoringAgent" /F 2>$null | Out-Null
-schtasks.exe /Create /TN "MonitoringAgent" /TR $TaskCommand /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /F | Out-Null
-schtasks.exe /Run /TN "MonitoringAgent" | Out-Null
-Write-Host "Instalacion completada. Ejecutando una prueba de envio..." -ForegroundColor Cyan
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $AgentScript
-if ($LASTEXITCODE -eq 0) {{
-  Write-Host "Prueba enviada correctamente al servidor de monitoreo." -ForegroundColor Green
+  function Write-InstallLog {{
+    param([string]$Message)
+    $Line = "$(Get-Date -Format s) $Message"
+    Write-Host $Message
+    Add-Content -Path $InstallLog -Value $Line -Encoding UTF8
+  }}
+
+  try {{
+    $Identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $PrincipalCheck = New-Object Security.Principal.WindowsPrincipal($Identity)
+    if (-not $PrincipalCheck.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {{
+      throw "Ejecuta PowerShell como Administrador para registrar la tarea programada como SYSTEM."
+    }}
+
+    New-Item -ItemType Directory -Path $AgentDirectory -Force | Out-Null
+    Write-InstallLog "Instalando agente de monitoreo Windows. Log: $InstallLog"
+
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {{ $true }}
+
+    Write-InstallLog "Descargando agente desde el monitor..."
+    Invoke-WebRequest -UseBasicParsing -Uri "{agent_url}" -OutFile $AgentScript
+
+    @(
+      '$env:MONITORING_API_URL = "{api_url}"'
+      '$env:MONITORING_AGENT_TOKEN = "' + $Token + '"'
+      '$env:MONITORING_SKIP_TLS_VERIFY = "true"'
+    ) | Set-Content -Path $ConfigFile -Encoding UTF8
+
+    Write-InstallLog "Registrando tarea programada $TaskName..."
+    $ExistingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    if ($null -ne $ExistingTask) {{
+      Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
+      Write-InstallLog "Tarea anterior eliminada correctamente."
+    }}
+
+    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$AgentScript`""
+    $Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1)
+    $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest
+    $Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+
+    Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Force | Out-Null
+    Start-ScheduledTask -TaskName $TaskName
+
+    Write-InstallLog "Instalacion completada. Ejecutando una prueba de envio..."
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $AgentScript
+
+    $Task = Get-ScheduledTask -TaskName $TaskName -ErrorAction Stop
+    Write-InstallLog "Tarea activa: $($Task.TaskName) / Estado: $($Task.State)"
+    Write-Host ""
+    Get-ScheduledTaskInfo -TaskName $TaskName | Format-List
+    Write-Host "Para revisar el log: Get-Content $InstallLog -Tail 80"
+  }}
+  catch {{
+    Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    if (Test-Path $InstallLog) {{
+      Write-Host "Ultimas lineas del log:" -ForegroundColor Yellow
+      Get-Content $InstallLog -Tail 40
+    }}
+    exit 1
+  }}
 }}
-Write-Host ""
-schtasks.exe /Query /TN "MonitoringAgent" /V /FO LIST
-Read-Host "Presiona Enter para cerrar"
 """
 
     @staticmethod
@@ -1059,6 +1122,13 @@ def rhapsody_install_script(request):
     download_base_url = request.build_absolute_uri("/app/agents/download/")
     script = AgentInstallWizardView.rhapsody_bootstrap_script(api_url, download_base_url)
     return HttpResponse(script, content_type="text/x-shellscript; charset=utf-8")
+
+
+def windows_install_script(request):
+    api_url = request.build_absolute_uri("/api/v1/metrics/ingest/")
+    download_base_url = request.build_absolute_uri("/app/agents/download/")
+    script = AgentInstallWizardView.windows_bootstrap_script(api_url, download_base_url)
+    return HttpResponse(script, content_type="text/plain; charset=utf-8")
 
 
 class UserListView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):

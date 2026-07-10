@@ -104,9 +104,10 @@
               {% if selected_platform == 'windows' %}
                 <div class="script-card active">
                   <div class="script-card-head">
-                    <h2>Windows PowerShell</h2>
+                    <h2>Windows PowerShell - comando unico</h2>
                     <button class="copy-icon-button" type="button" data-copy-target="windows-script-text" title="Copiar comando">Copiar</button>
                   </div>
+                  <p>Ejecuta PowerShell como Administrador. El instalador descarga el agente, registra la tarea programada y valida el primer envio.</p>
                   <textarea id="windows-script-text" readonly>{{ windows_script }}</textarea>
                 </div>
               {% elif selected_platform == 'ubuntu' %}
