@@ -139,8 +139,8 @@
                             <small>{{ process.name }}{% if process.identity and process.identity != process.name %} - {{ process.identity }}{% endif %}</small>
                           </div>
                         </div>
-                        <span>{{ process.pid|default:"-" }}</span>
-                        <span>{{ process.runtime_label|default:"Sin dato" }}</span>
+                        <span class="process-pid">{{ process.pid|default:"-" }}</span>
+                        <span class="process-runtime">{{ process.runtime_label|default:"Sin dato" }}</span>
                         <span class="metric-cell cpu">{{ process.cpu_label|default:"-" }}</span>
                         <span class="metric-cell memory">{{ process.memory_label|default:"Sin dato" }}</span>
                       </article>
