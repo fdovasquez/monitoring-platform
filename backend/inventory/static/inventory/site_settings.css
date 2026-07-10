@@ -176,6 +176,75 @@
   border-top: 1px solid var(--line);
 }
 
+.tls-form-card .form-grid {
+  align-items: start;
+}
+
+.tls-current-state {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 24px 0;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 10px;
+}
+
+.tls-current-state div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.tls-current-state span {
+  color: #64748b;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.tls-current-state strong {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.file-input-shell {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.file-input-shell input[type="file"] {
+  width: 100%;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.file-input-shell input[type="file"]::file-selector-button {
+  min-height: 30px;
+  margin-right: 10px;
+  padding: 0 12px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  cursor: pointer;
+  font: inherit;
+  transition: background .18s ease, border-color .18s ease;
+}
+
+.file-input-shell input[type="file"]::file-selector-button:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
 .settings-side-card {
   padding: 0;
   overflow: hidden;
@@ -541,19 +610,47 @@
 .tls-guide ol {
   display: grid;
   gap: 7px;
-  margin: 0 0 16px;
-  padding-left: 20px;
+  margin-bottom: 16px;
+  padding-left: 0;
   color: var(--ink-600);
   font-size: 14px;
+  list-style: none;
+  counter-reset: tls-step;
+}
+
+.tls-guide ol li {
+  position: relative;
+  min-height: 38px;
+  padding: 10px 12px 10px 44px;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+  counter-increment: tls-step;
+}
+
+.tls-guide ol li::before {
+  position: absolute;
+  top: 9px;
+  left: 12px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-radius: 999px;
+  content: counter(tls-step);
+  font-size: 11px;
 }
 
 .tls-guide pre {
   overflow-x: auto;
   margin: 0;
-  padding: 14px;
-  border-radius: 6px;
-  background: #0f172a;
-  color: #e2e8f0;
+  padding: 16px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
   font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
   white-space: pre-wrap;
 }
@@ -593,6 +690,7 @@
   .visual-brand-console,
   .compact-form-grid,
   .logo-control-grid,
+  .tls-current-state,
   .enterprise-settings-layout {
     grid-template-columns: 1fr;
   }

@@ -393,33 +393,50 @@
         <aside class="settings-status-panel tls-panel">
           <span class="panel-label">Seguridad web</span>
           <h2>HTTPS y certificados</h2>
-          <p>Carga certificados corporativos para publicar el portal de monitoreo mediante TLS.</p>
+          <p>Administra certificados corporativos para publicar el portal mediante TLS.</p>
           <div class="settings-status-stack">
             {% if tls_certificate.is_configured %}
-              <span class="status-line ok">Certificado cargado</span>
+              <span class="status-line ok">Certificado almacenado</span>
+            {% elif https_active %}
+              <span class="status-line ok">HTTPS activo en Nginx</span>
             {% else %}
-              <span class="status-line warn">Sin certificado configurado</span>
+              <span class="status-line warn">Sin certificado almacenado</span>
             {% endif %}
+            <span>Conexion actual: {% if https_active %}HTTPS activo{% else %}HTTP o proxy sin cabecera HTTPS{% endif %}</span>
             <span>Dominio: {{ tls_certificate.domain|default:"Sin dominio" }}</span>
             <span>Destino: Nginx reverse proxy</span>
           </div>
           <div class="settings-flow">
-            <span>01 Cargar certificado</span>
-            <span>02 Exportar a disco seguro</span>
-            <span>03 Recargar Nginx</span>
+            <span>01 Guardar certificado en la plataforma</span>
+            <span>02 Exportar certificado a disco seguro</span>
+            <span>03 Validar y recargar Nginx</span>
           </div>
         </aside>
 
         <div class="settings-workspace">
-        <form class="profile-card settings-card visual-settings-card enterprise-form-card" method="post" enctype="multipart/form-data" data-loading-form>
+        <form class="profile-card settings-card visual-settings-card enterprise-form-card tls-form-card" method="post" enctype="multipart/form-data" data-loading-form>
           {% csrf_token %}
           <input type="hidden" name="action" value="save_tls">
           <div class="profile-card-head">
             <div>
               <h2>Certificado HTTPS</h2>
-              <p>Carga un certificado PEM y su llave privada. La llave se cifra antes de guardarse.</p>
+              <p>Carga un certificado PEM y su llave privada para administrarlo desde la plataforma.</p>
             </div>
-            {% if tls_certificate.is_configured %}<span class="health-ok">Certificado cargado</span>{% else %}<span class="health-warn">Sin certificado</span>{% endif %}
+            {% if tls_certificate.is_configured %}<span class="health-ok">Almacenado</span>{% elif https_active %}<span class="health-ok">HTTPS activo</span>{% else %}<span class="health-warn">Pendiente</span>{% endif %}
+          </div>
+          <div class="tls-current-state">
+            <div>
+              <span>Estado visible del portal</span>
+              <strong>{% if https_active %}HTTPS activo{% else %}HTTPS no detectado por la aplicacion{% endif %}</strong>
+            </div>
+            <div>
+              <span>Certificado en plataforma</span>
+              <strong>{% if tls_certificate.is_configured %}Cargado{% else %}No almacenado{% endif %}</strong>
+            </div>
+            <div>
+              <span>Archivo registrado</span>
+              <strong>{{ tls_certificate.certificate_filename|default:"Sin archivo" }}</strong>
+            </div>
           </div>
           <div class="form-grid">
             <div class="field field-wide">
@@ -430,13 +447,13 @@
             </div>
             <div class="field">
               <label for="{{ tls_form.certificate_file.id_for_label }}">Certificado publico</label>
-              {{ tls_form.certificate_file }}
+              <div class="file-input-shell">{{ tls_form.certificate_file }}</div>
               <small>Archivo PEM, CRT o CER. Incluye la cadena intermedia si corresponde.</small>
               {% for error in tls_form.certificate_file.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             </div>
             <div class="field">
               <label for="{{ tls_form.private_key_file.id_for_label }}">Llave privada</label>
-              {{ tls_form.private_key_file }}
+              <div class="file-input-shell">{{ tls_form.private_key_file }}</div>
               <small>Archivo PEM sin contrasena. Nunca se muestra nuevamente en pantalla.</small>
               {% for error in tls_form.private_key_file.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             </div>
@@ -451,15 +468,15 @@
           </div>
         </form>
         <section class="profile-card settings-card tls-guide settings-side-card">
-          <div class="profile-card-head"><div><h2>Activar HTTPS</h2><p>Cuando guardes el certificado, ejecuta estos pasos como <code>root</code> en el servidor de monitoreo.</p></div></div>
-          <ol><li>Exporta el certificado cifrado hacia la carpeta segura del sistema.</li><li>Instala la configuracion Nginx incluida con la plataforma.</li><li>Habilita el sitio y recarga Nginx.</li></ol>
+          <div class="profile-card-head"><div><h2>Activar HTTPS en Nginx</h2><p>Si el certificado ya fue instalado manualmente en Nginx, el portal puede funcionar con HTTPS aunque esta seccion indique que no hay certificado almacenado.</p></div></div>
+          <ol><li>Exporta el certificado guardado en la plataforma hacia la carpeta segura del sistema.</li><li>Instala la configuracion Nginx incluida con la plataforma.</li><li>Valida la configuracion y recarga Nginx.</li></ol>
           <pre>cd /opt/monitoring-platform/backend
 set -a; source /etc/monitoring-platform.env; set +a
 .venv/bin/python manage.py export_tls_certificate
 sudo cp /opt/monitoring-platform/deploy/nginx-https.conf /etc/nginx/sites-available/monitoring-platform
 sudo ln -sfn /etc/nginx/sites-available/monitoring-platform /etc/nginx/sites-enabled/monitoring-platform
 sudo nginx -t && sudo systemctl reload nginx</pre>
-          <p class="tls-note">Antes de usarlo, reemplaza <code>MONITOR.DOMINIO.O.IP</code> en el archivo Nginx por el dominio o IP informado arriba. El nombre debe coincidir con el certificado.</p>
+          <p class="tls-note">Para que la aplicacion detecte HTTPS correctamente detras de Nginx, la configuracion debe enviar la cabecera <code>X-Forwarded-Proto https</code>.</p>
         </section>
         </div>
       </section>

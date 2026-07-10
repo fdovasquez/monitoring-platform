@@ -37,6 +37,8 @@ class SiteSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context["test_email_form"] = kwargs.get("test_email_form") or TestEmailForm()
         context["tls_certificate"] = tls_certificate
         context["tls_form"] = kwargs.get("tls_form") or TlsCertificateForm(instance=tls_certificate)
+        forwarded_proto = self.request.headers.get("X-Forwarded-Proto", "")
+        context["https_active"] = self.request.is_secure() or forwarded_proto.lower() == "https"
         context["active_settings_tab"] = kwargs.get("active_settings_tab") or self.request.GET.get("tab", "site")
         return context
 
