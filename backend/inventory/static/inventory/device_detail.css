@@ -1517,6 +1517,55 @@
   padding: 18px;
 }
 
+.oracle-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.oracle-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.oracle-kicker {
+  color: #2563eb;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.oracle-heading h2 {
+  margin: 0;
+  color: var(--detail-text);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.oracle-heading p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--detail-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.oracle-header-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.oracle-header-meta small {
+  color: var(--detail-muted);
+  font-size: 12px;
+}
+
 .oracle-status {
   display: inline-flex;
   align-items: center;
@@ -1558,15 +1607,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 12px 0;
+  margin: 14px 0;
   padding: 12px 14px;
-  border: 1px solid var(--detail-border);
+  border: 1px solid #cbd5e1;
   border-radius: 10px;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 }
 
 .oracle-summary span {
   color: var(--detail-text);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .oracle-summary small {
@@ -1624,26 +1675,82 @@
 
 .oracle-panel {
   min-width: 0;
-  padding: 14px;
+  padding: 15px;
   border: 1px solid var(--detail-border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--detail-card);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.oracle-panel:hover {
+  border-color: #bfdbfe;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, .07);
 }
 
 .oracle-wide-panel {
   grid-column: span 2;
 }
 
+.oracle-panel-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.oracle-panel-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 9px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.oracle-panel-icon.net {
+  color: #047857;
+  background: #ecfdf5;
+}
+
+.oracle-panel-icon.backup {
+  color: #7c3aed;
+  background: #f5f3ff;
+}
+
+.oracle-panel-icon.fra,
+.oracle-panel-icon.space {
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.oracle-panel-icon.log {
+  color: #475569;
+  background: #f1f5f9;
+}
+
 .oracle-panel h3 {
-  margin: 0 0 12px;
+  margin: 0;
   color: var(--detail-text);
   font-size: 14px;
   font-weight: 500;
 }
 
+.oracle-panel-title p {
+  margin: 3px 0 0;
+  color: var(--detail-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .oracle-panel dl {
   display: grid;
-  gap: 8px;
+  gap: 9px;
   margin: 0;
 }
 
@@ -1674,8 +1781,25 @@
 
 .oracle-progress-row {
   display: grid;
-  gap: 7px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.oracle-progress-row:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.oracle-progress-row .storage-progress {
+  height: 7px;
+  background: #e2e8f0;
+}
+
+.oracle-progress-row .storage-progress span {
+  background: #2563eb;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1796,6 +1920,10 @@
   .rhapsody-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .oracle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -1844,6 +1972,28 @@
 
   .rhapsody-grid {
     grid-template-columns: 1fr;
+  }
+
+  .oracle-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .oracle-header-meta {
+    align-items: flex-start;
+  }
+
+  .oracle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .oracle-wide-panel {
+    grid-column: auto;
+  }
+
+  .oracle-diagnostics li {
+    grid-template-columns: 1fr;
+    gap: 3px;
   }
 }
 

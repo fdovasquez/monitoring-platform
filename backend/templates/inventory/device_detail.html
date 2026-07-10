@@ -201,18 +201,21 @@
 
         {% if oracle %}
           <article class="card oracle-card oracle-priority-card">
-            <div class="section-title">
-              <div>
+            <div class="oracle-header">
+              <div class="oracle-heading">
+                <span class="oracle-kicker">Monitor especializado</span>
                 <h2>Oracle Database</h2>
-                <p>Estado de la base de datos, respaldos RMAN, listener, tablespaces, FRA y alert log.</p>
+                <p>Salud operacional de la instancia, listener, respaldos RMAN, almacenamiento FRA, tablespaces y alert log.</p>
               </div>
-              <span class="oracle-status {{ oracle.tone }}">{{ oracle.label }}</span>
+              <div class="oracle-header-meta">
+                <span class="oracle-status {{ oracle.tone }}">{{ oracle.label }}</span>
+                {% if oracle.agent_version %}
+                  <small>Agente {{ oracle.agent_version }}</small>
+                {% endif %}
+              </div>
             </div>
             <div class="oracle-summary">
               <span>{{ oracle.summary }}</span>
-              {% if oracle.agent_version %}
-                <small>Agente {{ oracle.agent_version }}</small>
-              {% endif %}
             </div>
             {% if oracle.diagnostics %}
               <div class="oracle-diagnostics">
@@ -226,7 +229,13 @@
             {% endif %}
             <div class="oracle-grid">
               <section class="oracle-panel">
-                <h3>Base de datos</h3>
+                <div class="oracle-panel-title">
+                  <span class="oracle-panel-icon db">DB</span>
+                  <div>
+                    <h3>Base de datos</h3>
+                    <p>Identidad y estado de la instancia.</p>
+                  </div>
+                </div>
                 <dl>
                   <div><dt>Nombre</dt><dd>{{ oracle.database.database_name|default:"-" }}</dd></div>
                   <div><dt>Instancia</dt><dd>{{ oracle.database.instance_name|default:"-" }}</dd></div>
@@ -235,7 +244,13 @@
                 </dl>
               </section>
               <section class="oracle-panel">
-                <h3>Listener</h3>
+                <div class="oracle-panel-title">
+                  <span class="oracle-panel-icon net">LSN</span>
+                  <div>
+                    <h3>Listener</h3>
+                    <p>Entrada de conexiones cliente.</p>
+                  </div>
+                </div>
                 <dl>
                   <div><dt>Estado</dt><dd>{% if oracle.listener.ok %}Activo{% else %}No disponible{% endif %}</dd></div>
                   <div><dt>Puerto</dt><dd>{{ oracle.listener.port|default:"-" }}</dd></div>
@@ -243,7 +258,13 @@
                 </dl>
               </section>
               <section class="oracle-panel">
-                <h3>Respaldos RMAN</h3>
+                <div class="oracle-panel-title">
+                  <span class="oracle-panel-icon backup">BKP</span>
+                  <div>
+                    <h3>Respaldos RMAN</h3>
+                    <p>Ultima evidencia de respaldo.</p>
+                  </div>
+                </div>
                 {% with latest_backup=oracle.backups.latest %}
                   <dl>
                     <div><dt>Ultimo respaldo</dt><dd>{{ latest_backup.completion_time|default:"Sin registro" }}</dd></div>
@@ -254,7 +275,13 @@
                 {% endwith %}
               </section>
               <section class="oracle-panel">
-                <h3>FRA</h3>
+                <div class="oracle-panel-title">
+                  <span class="oracle-panel-icon fra">FRA</span>
+                  <div>
+                    <h3>FRA</h3>
+                    <p>Area de recuperacion rapida.</p>
+                  </div>
+                </div>
                 {% if oracle.fra %}
                   {% for fra in oracle.fra|slice:":2" %}
                     <div class="oracle-progress-row">
@@ -267,7 +294,13 @@
                 {% endif %}
               </section>
               <section class="oracle-panel oracle-wide-panel">
-                <h3>Tablespaces con mayor uso</h3>
+                <div class="oracle-panel-title">
+                  <span class="oracle-panel-icon space">TBS</span>
+                  <div>
+                    <h3>Tablespaces con mayor uso</h3>
+                    <p>Un tablespace es el contenedor logico donde Oracle guarda datos e indices. Esta vista prioriza los que mas consumen espacio para anticipar crecimiento, riesgo de llenado y acciones de capacidad.</p>
+                  </div>
+                </div>
                 {% if oracle.tablespaces %}
                   {% for tablespace in oracle.tablespaces|slice:":5" %}
                     <div class="oracle-progress-row">
@@ -280,7 +313,13 @@
                 {% endif %}
               </section>
               <section class="oracle-panel oracle-wide-panel">
-                <h3>Alert log y bloqueos</h3>
+                <div class="oracle-panel-title">
+                  <span class="oracle-panel-icon log">LOG</span>
+                  <div>
+                    <h3>Alert log y bloqueos</h3>
+                    <p>Eventos recientes del motor y sesiones bloqueadas.</p>
+                  </div>
+                </div>
                 <dl>
                   <div><dt>Sesiones bloqueadas</dt><dd>{{ oracle.blocking_sessions.count|default:"0" }}</dd></div>
                   <div><dt>Hallazgos alert log</dt><dd>{{ oracle.alert_log.findings|length }}</dd></div>
