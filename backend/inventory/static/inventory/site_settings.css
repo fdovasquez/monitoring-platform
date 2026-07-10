@@ -31,6 +31,7 @@
 }
 
 .settings-status-panel {
+  --settings-accent: #2563eb;
   position: sticky;
   top: 82px;
   display: grid;
@@ -39,13 +40,22 @@
   min-height: 430px;
   padding: 24px;
   overflow: hidden;
-  color: #ffffff;
+  color: #111827;
   background:
-    radial-gradient(circle at 20% 10%, rgba(37, 99, 235, .45), transparent 28%),
-    linear-gradient(160deg, #0f172a, #111827);
-  border: 1px solid #1e293b;
+    linear-gradient(180deg, rgba(248, 250, 252, .98), #ffffff);
+  border: 1px solid #d9e1ec;
   border-radius: 10px;
-  box-shadow: 0 18px 36px rgba(15, 23, 42, .16);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, .08);
+}
+
+.settings-status-panel::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  content: "";
+  background: var(--settings-accent);
 }
 
 .settings-status-panel::after {
@@ -55,20 +65,25 @@
   width: 160px;
   height: 160px;
   content: "";
-  background: rgba(20, 184, 166, .18);
+  background: rgba(37, 99, 235, .06);
   border-radius: 999px;
+}
+
+.settings-status-panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .settings-status-panel h2 {
   margin: 0;
-  color: #ffffff;
+  color: #111827;
   font-size: 24px;
 }
 
 .settings-status-panel p {
   max-width: 300px;
   margin: 0;
-  color: #cbd5e1;
+  color: #475569;
   font-size: 14px;
   line-height: 1.55;
 }
@@ -77,13 +92,13 @@
   display: grid;
   gap: 8px;
   padding: 14px;
-  background: rgba(255, 255, 255, .08);
-  border: 1px solid rgba(255, 255, 255, .12);
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
   border-radius: 8px;
 }
 
 .settings-status-stack span {
-  color: #cbd5e1;
+  color: #475569;
   font-size: 12px;
   overflow-wrap: anywhere;
 }
@@ -99,13 +114,15 @@
 }
 
 .settings-status-stack .status-line.ok {
-  color: #bbf7d0;
-  background: rgba(34, 197, 94, .16);
+  color: #047857;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
 }
 
 .settings-status-stack .status-line.warn {
-  color: #fde68a;
-  background: rgba(245, 158, 11, .16);
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
 }
 
 .settings-flow {
@@ -118,29 +135,27 @@
   align-items: center;
   min-height: 38px;
   padding: 0 12px;
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, .08);
-  border: 1px solid rgba(255, 255, 255, .12);
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #e8edf5;
   border-radius: 8px;
   font-size: 13px;
 }
 
 .smtp-panel {
-  background:
-    radial-gradient(circle at 18% 12%, rgba(20, 184, 166, .42), transparent 30%),
-    linear-gradient(160deg, #0f172a, #172554);
+  --settings-accent: #14b8a6;
 }
 
 .tls-panel {
-  background:
-    radial-gradient(circle at 18% 12%, rgba(37, 99, 235, .45), transparent 30%),
-    linear-gradient(160deg, #0f172a, #0c4a6e);
+  --settings-accent: #2563eb;
 }
 
 .central-panel {
-  background:
-    radial-gradient(circle at 18% 12%, rgba(99, 102, 241, .46), transparent 30%),
-    linear-gradient(160deg, #0f172a, #312e81);
+  --settings-accent: #6366f1;
+}
+
+.settings-status-panel .panel-label {
+  color: var(--settings-accent);
 }
 
 .enterprise-form-card .form-grid,
