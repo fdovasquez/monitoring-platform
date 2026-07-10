@@ -69,6 +69,12 @@ $ProcessCpuSample = @{}
 Get-Process | ForEach-Object {
     $ProcessCpuSample[$_.Id] = if ($_.CPU) { $_.CPU } else { 0 }
 }
+$ProcessCreationMap = @{}
+Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object {
+    if ($_.ProcessId -and $_.CreationDate) {
+        $ProcessCreationMap[[int]$_.ProcessId] = [System.Management.ManagementDateTimeConverter]::ToDateTime($_.CreationDate)
+    }
+}
 Start-Sleep -Milliseconds 500
 $ProcessorCount = [Environment]::ProcessorCount
 $Processes = @(Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 120 | ForEach-Object {
@@ -95,6 +101,11 @@ $Processes = @(Get-Process | Sort-Object WorkingSet64 -Descending | Select-Objec
     } catch {
         $StartTimeText = ""
         $RunningSeconds = $null
+    }
+    if (-not $RunningSeconds -and $ProcessCreationMap.ContainsKey($_.Id)) {
+        $StartTime = $ProcessCreationMap[$_.Id]
+        $StartTimeText = $StartTime.ToString("o")
+        $RunningSeconds = [int]((Get-Date) - $StartTime).TotalSeconds
     }
     $PreviousCpu = if ($ProcessCpuSample.ContainsKey($_.Id)) { $ProcessCpuSample[$_.Id] } else { $_.CPU }
     $CpuDelta = if ($_.CPU -and $PreviousCpu -ne $null) { $_.CPU - $PreviousCpu } else { 0 }
