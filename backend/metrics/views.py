@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
@@ -164,15 +163,9 @@ def resolve_server_for_rhapsody_token(agent_token, data):
     server = agent_token.server
     hostname = clean_text(data.get("hostname"))
     fqdn = clean_text(data.get("fqdn"))
-    identifiers = {item for item in [hostname, fqdn, hostname.split(".")[0], fqdn.split(".")[0]] if item}
+    identifiers = build_host_identifiers(hostname, fqdn)
     is_pending = server.hostname.startswith("pendiente-")
-    existing = (
-        Server.objects.filter(Q(hostname__in=identifiers) | Q(inventory__fqdn__in=identifiers))
-        .exclude(pk=server.pk)
-        .first()
-        if identifiers
-        else None
-    )
+    existing = find_existing_server_by_host(server, identifiers)
     if existing:
         if agent_token.server_id != existing.id:
             previous_server = server if is_pending else None
@@ -196,6 +189,44 @@ def resolve_server_for_rhapsody_token(agent_token, data):
     server.is_active = True
     server.save(update_fields=["last_seen", "is_active", "updated_at"])
     return server
+
+
+def build_host_identifiers(*values):
+    identifiers = set()
+    for value in values:
+        text = clean_text(value).lower()
+        if not text:
+            continue
+        identifiers.add(text)
+        short_name = text.split(".", 1)[0]
+        if short_name:
+            identifiers.add(short_name)
+    return identifiers
+
+
+def find_existing_server_by_host(current_server, identifiers):
+    if not identifiers:
+        return None
+
+    candidates = Server.objects.select_related("inventory").exclude(pk=current_server.pk)
+    for candidate in candidates:
+        try:
+            inventory_fqdn = candidate.inventory.fqdn
+        except ServerInventory.DoesNotExist:
+            inventory_fqdn = ""
+        host_values = [
+            candidate.hostname,
+            candidate.name,
+            inventory_fqdn,
+        ]
+        for value in host_values:
+            text = clean_text(value).lower()
+            if not text:
+                continue
+            short_name = text.split(".", 1)[0]
+            if text in identifiers or short_name in identifiers:
+                return candidate
+    return None
 
 
 def clean_text(value, max_length=255):
