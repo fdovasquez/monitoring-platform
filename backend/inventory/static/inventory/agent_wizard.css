@@ -562,6 +562,11 @@ body.agent-modal-body {
   background: linear-gradient(135deg, #7c3aed, #2563eb);
 }
 
+.os-symbol.oracle {
+  background: linear-gradient(135deg, #dc2626, #f97316);
+  font-size: 12px;
+}
+
 .agent-form-grid {
   display: grid;
   grid-template-columns: 1fr;

@@ -24,3 +24,20 @@ class RhapsodyIngestSerializer(serializers.Serializer):
     ports = serializers.ListField(required=False)
     log_findings = serializers.ListField(required=False)
     details = serializers.DictField(required=False)
+
+
+class OracleIngestSerializer(serializers.Serializer):
+    hostname = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    fqdn = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    agent_version = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    timestamp = serializers.DateTimeField()
+    status = serializers.CharField(max_length=40)
+    summary = serializers.CharField(required=False, allow_blank=True)
+    database = serializers.DictField(required=False)
+    listener = serializers.DictField(required=False)
+    tablespaces = serializers.DictField(required=False)
+    fra = serializers.DictField(required=False)
+    backups = serializers.DictField(required=False)
+    blocking_sessions = serializers.DictField(required=False)
+    alert_log = serializers.DictField(required=False)
+    thresholds = serializers.DictField(required=False)

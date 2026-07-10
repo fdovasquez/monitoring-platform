@@ -1512,6 +1512,129 @@
   margin: 0;
 }
 
+.oracle-card {
+  grid-column: 1 / -1;
+  padding: 18px;
+}
+
+.oracle-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  line-height: 1;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.oracle-status.success {
+  border-color: #bbf7d0;
+  color: #047857;
+  background: #ecfdf5;
+}
+
+.oracle-status.warning {
+  border-color: #fde68a;
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.oracle-status.danger {
+  border-color: #fecaca;
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.oracle-status.muted {
+  border-color: #e2e8f0;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.oracle-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--detail-border);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.oracle-summary span {
+  color: var(--detail-text);
+}
+
+.oracle-summary small {
+  color: var(--detail-muted);
+}
+
+.oracle-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.oracle-panel {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--detail-border);
+  border-radius: 10px;
+  background: var(--detail-card);
+}
+
+.oracle-wide-panel {
+  grid-column: span 2;
+}
+
+.oracle-panel h3 {
+  margin: 0 0 12px;
+  color: var(--detail-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.oracle-panel dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.oracle-panel dl div,
+.oracle-progress-row > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.oracle-panel dt,
+.oracle-panel small,
+.oracle-panel p {
+  margin: 0;
+  color: var(--detail-muted);
+  font-size: 12px;
+}
+
+.oracle-panel dd,
+.oracle-progress-row span {
+  margin: 0;
+  color: var(--detail-text);
+  font-size: 12px;
+  text-align: right;
+  word-break: break-word;
+}
+
+.oracle-progress-row {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --detail-bg: #020617;

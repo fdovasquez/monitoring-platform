@@ -58,6 +58,13 @@
                 <small>Oracle Linux, RHEL, Rocky o CentOS</small>
               </span>
             </button>
+            <button class="os-option {% if selected_platform == 'oracle-db' %}active{% endif %}" type="button" data-platform-choice="oracle-db">
+              <span class="os-symbol oracle">DB</span>
+              <span>
+                <strong>Oracle Database</strong>
+                <small>Monitorea BD Oracle, RMAN, listener, FRA y tablespaces</small>
+              </span>
+            </button>
             <button class="os-option {% if selected_platform == 'ubuntu' %}active{% endif %}" type="button" data-platform-choice="ubuntu">
               <span class="os-symbol linux">L</span>
               <span>
@@ -128,6 +135,17 @@
                     <button class="copy-icon-button" type="button" data-copy-target="rhapsody-script-text" title="Copiar comando">Copiar</button>
                   </div>
                   <textarea id="rhapsody-script-text" readonly>{{ rhapsody_script }}</textarea>
+                </div>
+              {% elif selected_platform == 'oracle-db' %}
+                <div class="script-card active compact-script-card">
+                  <div class="script-card-head">
+                    <div>
+                      <h2>Oracle Database</h2>
+                      <p>Instala el monitor de base de datos para estado, listener, respaldos RMAN, tablespaces, FRA, bloqueos y alert log.</p>
+                    </div>
+                    <button class="copy-icon-button" type="button" data-copy-target="oracle-db-script-text" title="Copiar comando">Copiar</button>
+                  </div>
+                  <textarea id="oracle-db-script-text" readonly>{{ oracle_db_script }}</textarea>
                 </div>
               {% else %}
                 <div class="script-card active">

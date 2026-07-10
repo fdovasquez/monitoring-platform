@@ -19,6 +19,7 @@ from .views import (
     UserListView,
     agent_download,
     linux_install_script,
+    oracle_db_install_script,
     rhapsody_install_script,
     windows_install_script,
 )
@@ -75,6 +76,7 @@ urlpatterns = [
     path("agents/new/", device_manager_required(AgentInstallWizardView.as_view()), name="agent-install"),
     path("agents/install/linux.sh", linux_install_script, name="linux-agent-install-script"),
     path("agents/install/rhapsody-linux.sh", rhapsody_install_script, name="rhapsody-agent-install-script"),
+    path("agents/install/oracle-db-linux.sh", oracle_db_install_script, name="oracle-db-agent-install-script"),
     path("agents/install/windows.ps1", windows_install_script, name="windows-agent-install-script"),
     path("agents/download/<str:platform>/<str:filename>", agent_download, name="agent-download"),
     path("users/", UserListView.as_view(), name="user-list"),

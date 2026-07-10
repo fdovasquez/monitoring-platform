@@ -199,6 +199,88 @@
           </article>
         {% endif %}
 
+        {% if oracle %}
+          <article class="card oracle-card oracle-priority-card">
+            <div class="section-title">
+              <div>
+                <h2>Oracle Database</h2>
+                <p>Estado de la base de datos, respaldos RMAN, listener, tablespaces, FRA y alert log.</p>
+              </div>
+              <span class="oracle-status {{ oracle.tone }}">{{ oracle.label }}</span>
+            </div>
+            <div class="oracle-summary">
+              <span>{{ oracle.summary }}</span>
+              {% if oracle.agent_version %}
+                <small>Agente {{ oracle.agent_version }}</small>
+              {% endif %}
+            </div>
+            <div class="oracle-grid">
+              <section class="oracle-panel">
+                <h3>Base de datos</h3>
+                <dl>
+                  <div><dt>Nombre</dt><dd>{{ oracle.database.database_name|default:"-" }}</dd></div>
+                  <div><dt>Instancia</dt><dd>{{ oracle.database.instance_name|default:"-" }}</dd></div>
+                  <div><dt>Estado</dt><dd>{{ oracle.database.instance_status|default:"-" }}</dd></div>
+                  <div><dt>Version</dt><dd>{{ oracle.database.version|default:"-" }}</dd></div>
+                </dl>
+              </section>
+              <section class="oracle-panel">
+                <h3>Listener</h3>
+                <dl>
+                  <div><dt>Estado</dt><dd>{% if oracle.listener.ok %}Activo{% else %}No disponible{% endif %}</dd></div>
+                  <div><dt>Puerto</dt><dd>{{ oracle.listener.port|default:"-" }}</dd></div>
+                  <div><dt>Servicios</dt><dd>{{ oracle.listener.services|length }}</dd></div>
+                </dl>
+              </section>
+              <section class="oracle-panel">
+                <h3>Respaldos RMAN</h3>
+                {% with latest_backup=oracle.backups.latest %}
+                  <dl>
+                    <div><dt>Ultimo respaldo</dt><dd>{{ latest_backup.completion_time|default:"Sin registro" }}</dd></div>
+                    <div><dt>Tipo</dt><dd>{{ latest_backup.tag|default:"-" }}</dd></div>
+                    <div><dt>Antiguedad</dt><dd>{% if latest_backup.age_hours != None %}{{ latest_backup.age_hours }} h{% else %}-{% endif %}</dd></div>
+                    <div><dt>Registrados</dt><dd>{{ oracle.backups.count|default:"0" }}</dd></div>
+                  </dl>
+                {% endwith %}
+              </section>
+              <section class="oracle-panel">
+                <h3>FRA</h3>
+                {% if oracle.fra %}
+                  {% for fra in oracle.fra|slice:":2" %}
+                    <div class="oracle-progress-row">
+                      <div><span>{{ fra.name|default:"FRA" }}</span><small>{{ fra.used_gb }} GB de {{ fra.limit_gb }} GB</small></div>
+                      <div class="storage-progress" style="--value: {{ fra.used_percent|default:'0' }}%;"><span></span></div>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <p>Sin FRA reportada.</p>
+                {% endif %}
+              </section>
+              <section class="oracle-panel oracle-wide-panel">
+                <h3>Tablespaces con mayor uso</h3>
+                {% if oracle.tablespaces %}
+                  {% for tablespace in oracle.tablespaces|slice:":5" %}
+                    <div class="oracle-progress-row">
+                      <div><span>{{ tablespace.name }}</span><small>{{ tablespace.used_percent }}% utilizado</small></div>
+                      <div class="storage-progress" style="--value: {{ tablespace.used_percent|default:'0' }}%;"><span></span></div>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <p>Sin tablespaces reportados.</p>
+                {% endif %}
+              </section>
+              <section class="oracle-panel oracle-wide-panel">
+                <h3>Alert log y bloqueos</h3>
+                <dl>
+                  <div><dt>Sesiones bloqueadas</dt><dd>{{ oracle.blocking_sessions.count|default:"0" }}</dd></div>
+                  <div><dt>Hallazgos alert log</dt><dd>{{ oracle.alert_log.findings|length }}</dd></div>
+                  <div><dt>Ruta</dt><dd>{{ oracle.alert_log.path|default:"-" }}</dd></div>
+                </dl>
+              </section>
+            </div>
+          </article>
+        {% endif %}
+
         <div class="metric-panel-grid">
           {% for serie in chart_series %}
             {% if serie.label == "CPU" or serie.label == "Memoria" %}

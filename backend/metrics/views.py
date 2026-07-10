@@ -9,7 +9,7 @@ from inventory.models import AgentToken, Server, ServerInventory, ServerRuntimeS
 from alerts.services import evaluate_metric_sample
 
 from .models import MetricSample
-from .serializers import MetricIngestSerializer, RhapsodyIngestSerializer
+from .serializers import MetricIngestSerializer, OracleIngestSerializer, RhapsodyIngestSerializer
 
 
 def bearer_token(request):
@@ -99,6 +99,35 @@ class RhapsodyIngestView(APIView):
             update_application_snapshot(server, "rhapsody", application_payload, data["timestamp"])
 
         return Response({"status": "ok", "application": "rhapsody"}, status=status.HTTP_201_CREATED)
+
+
+class OracleIngestView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        token_value = bearer_token(request)
+        if not token_value:
+            return Response({"detail": "Missing bearer token."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            agent_token = AgentToken.objects.select_related("server").get(token=token_value, is_active=True)
+        except AgentToken.DoesNotExist:
+            return Response({"detail": "Invalid token."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = OracleIngestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        application_payload = dict(request.data)
+
+        with transaction.atomic():
+            server = resolve_server_for_rhapsody_token(agent_token, data)
+
+            agent_token.last_used_at = timezone.now()
+            agent_token.save(update_fields=["last_used_at"])
+            update_application_snapshot(server, "oracle", application_payload, data["timestamp"])
+
+        return Response({"status": "ok", "application": "oracle"}, status=status.HTTP_201_CREATED)
 
 
 def resolve_server_for_token(agent_token, data):

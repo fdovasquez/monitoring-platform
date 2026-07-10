@@ -1,0 +1,14 @@
+[Unit]
+Description=Oracle Database Monitoring Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/oracle-monitoring-agent.env
+ExecStart=/usr/bin/python3 /opt/oracle-monitoring-agent/oracle-agent.py
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy=multi-user.target

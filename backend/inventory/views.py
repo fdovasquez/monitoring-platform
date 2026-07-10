@@ -66,6 +66,8 @@ def agent_download(request, platform, filename):
         / "linux"
         / "monitoring-agent-linux-x86_64",
         ("windows", "agent.ps1"): settings.BASE_DIR.parent / "agents" / "windows" / "agent.ps1",
+        ("oracle", "oracle-agent.py"): settings.BASE_DIR.parent / "agents" / "oracle" / "linux" / "oracle-agent.py",
+        ("oracle", "oracle-agent.service"): settings.BASE_DIR.parent / "agents" / "oracle" / "linux" / "oracle-agent.service",
         ("rhapsody", "rhapsody-agent.py"): settings.BASE_DIR.parent / "agents" / "rhapsody" / "linux" / "rhapsody-agent.py",
         ("rhapsody", "rhapsody-agent.service"): settings.BASE_DIR.parent / "agents" / "rhapsody" / "linux" / "rhapsody-agent.service",
     }
@@ -240,6 +242,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         inventory = self.inventory_snapshot(server)
         runtime = self.runtime_snapshot(server)
         rhapsody = self.rhapsody_snapshot(runtime)
+        oracle = self.oracle_snapshot(runtime)
         security = DeviceListView.security_assessment(latest)
         active_alerts = server.alert_events.select_related("rule").filter(is_resolved=False).order_by("-created_at")[:8]
         context.update(
@@ -262,6 +265,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                 "inventory": inventory,
                 "runtime": runtime,
                 "rhapsody": rhapsody,
+                "oracle": oracle,
                 "chart_series": self.chart_series(samples),
                 "recent_events": self.recent_events(server, samples, latest, online),
                 "active_alerts": active_alerts,
@@ -365,6 +369,44 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             "log_findings": rhapsody.get("log_findings") if isinstance(rhapsody.get("log_findings"), list) else [],
             "checked_at": rhapsody.get("timestamp") or rhapsody.get("checked_at"),
             "agent_version": rhapsody.get("agent_version", ""),
+        }
+
+    @staticmethod
+    def oracle_snapshot(runtime):
+        if not runtime:
+            return None
+        raw_data = runtime["record"].raw_data if isinstance(runtime["record"].raw_data, dict) else {}
+        applications = raw_data.get("applications") if isinstance(raw_data.get("applications"), dict) else {}
+        oracle = applications.get("oracle") if isinstance(applications.get("oracle"), dict) else {}
+        if not oracle:
+            return None
+
+        status_value = str(oracle.get("status", "unknown")).lower()
+        tone_map = {
+            "healthy": "success",
+            "warning": "warning",
+            "critical": "danger",
+            "unknown": "muted",
+        }
+        label_map = {
+            "healthy": "Normal",
+            "warning": "Advertencia",
+            "critical": "Critico",
+            "unknown": "Sin datos",
+        }
+        return {
+            "tone": tone_map.get(status_value, "muted"),
+            "label": label_map.get(status_value, status_value.title() or "Sin datos"),
+            "summary": oracle.get("summary", "Sin resumen reportado."),
+            "database": oracle.get("database") if isinstance(oracle.get("database"), dict) else {},
+            "listener": oracle.get("listener") if isinstance(oracle.get("listener"), dict) else {},
+            "tablespaces": oracle.get("tablespaces", {}).get("items", []) if isinstance(oracle.get("tablespaces"), dict) else [],
+            "fra": oracle.get("fra", {}).get("items", []) if isinstance(oracle.get("fra"), dict) else [],
+            "backups": oracle.get("backups") if isinstance(oracle.get("backups"), dict) else {},
+            "blocking_sessions": oracle.get("blocking_sessions") if isinstance(oracle.get("blocking_sessions"), dict) else {},
+            "alert_log": oracle.get("alert_log") if isinstance(oracle.get("alert_log"), dict) else {},
+            "checked_at": oracle.get("timestamp"),
+            "agent_version": oracle.get("agent_version", ""),
         }
 
     @staticmethod
@@ -753,6 +795,7 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
                         "agent_token": token,
                         "linux_script": self.linux_script(token.token, self.linux_installer_url()),
                         "ubuntu_script": self.linux_script(token.token, self.linux_installer_url()),
+                        "oracle_db_script": self.oracle_db_script(token.token, self.oracle_db_installer_url()),
                         "rhapsody_script": self.rhapsody_script(token.token, self.rhapsody_installer_url()),
                         "windows_script": self.windows_script(token.token, self.windows_installer_url()),
                     }
@@ -795,6 +838,9 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
     def rhapsody_installer_url(self):
         return self.request.build_absolute_uri("/app/agents/install/rhapsody-linux.sh")
 
+    def oracle_db_installer_url(self):
+        return self.request.build_absolute_uri("/app/agents/install/oracle-db-linux.sh")
+
     def windows_installer_url(self):
         return self.request.build_absolute_uri("/app/agents/install/windows.ps1")
 
@@ -804,6 +850,10 @@ class AgentInstallWizardView(LoginRequiredMixin, DeviceManagerRoleRequiredMixin,
 
     @staticmethod
     def rhapsody_script(token, installer_url):
+        return f"curl -kfsSL {shlex.quote(installer_url)} | bash -s -- {shlex.quote(token)}"
+
+    @staticmethod
+    def oracle_db_script(token, installer_url):
         return f"curl -kfsSL {shlex.quote(installer_url)} | bash -s -- {shlex.quote(token)}"
 
     @staticmethod
@@ -1109,6 +1159,115 @@ echo "Para revisar Oracle Linux: journalctl -u monitoring-agent -n 50 --no-pager
 echo "Para revisar el resultado: journalctl -u rhapsody-agent -n 50 --no-pager"
 """
 
+    @staticmethod
+    def oracle_db_bootstrap_script(api_url, download_base_url):
+        return f"""#!/bin/bash
+set -e
+
+TOKEN="${{1:-}}"
+if [ -z "$TOKEN" ]; then
+  echo "ERROR: Falta el token de instalacion."
+  exit 1
+fi
+
+INSTALL_LOG="/var/log/oracle-monitoring-agent-install.log"
+exec > >(tee -a "$INSTALL_LOG") 2>&1
+trap 'status=$?; echo "ERROR: La instalacion fallo (codigo $status). Revisa $INSTALL_LOG"; exit $status' ERR
+
+echo "Instalando monitor Oracle Database. El registro quedara en $INSTALL_LOG"
+mkdir -p /opt/oracle-monitoring-agent
+systemctl stop oracle-agent 2>/dev/null || true
+
+AGENT_BASE_URL="{download_base_url}oracle"
+AGENT_SCRIPT="/opt/oracle-monitoring-agent/oracle-agent.py"
+SERVICE_FILE="/etc/systemd/system/oracle-agent.service"
+CA_CERT="/opt/oracle-monitoring-agent/monitor-ca-chain.pem"
+
+if ! id oracle >/dev/null 2>&1; then
+  echo "ERROR: No existe el usuario oracle. Crea el usuario o ajusta ORACLE_RUN_AS_USER despues de instalar."
+  exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: Se requiere python3 en el servidor Oracle."
+  exit 1
+fi
+
+if command -v openssl >/dev/null 2>&1; then
+  MONITOR_HOST="$(printf '%s' "{api_url}" | sed -E 's#https?://([^/:]+).*#\\1#')"
+  echo | openssl s_client -showcerts -connect "${{MONITOR_HOST}}:443" -servername "${{MONITOR_HOST}}" 2>/dev/null \\
+    | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > "$CA_CERT" || true
+fi
+
+download_file() {{
+  local url="$1"
+  local destination="$2"
+  if command -v curl >/dev/null 2>&1; then
+    if [ -s "$CA_CERT" ]; then
+      curl -fsSL --cacert "$CA_CERT" "$url" -o "$destination"
+    else
+      curl -kfsSL "$url" -o "$destination"
+    fi
+  elif command -v wget >/dev/null 2>&1; then
+    if [ -s "$CA_CERT" ]; then
+      wget -q --ca-certificate="$CA_CERT" "$url" -O "$destination"
+    else
+      wget --no-check-certificate -q "$url" -O "$destination"
+    fi
+  else
+    echo "ERROR: Se requiere curl o wget para descargar el monitor Oracle."
+    exit 1
+  fi
+}}
+
+ORACLE_HOME_VALUE="$(su - oracle -c 'printf %s "$ORACLE_HOME"' 2>/dev/null || true)"
+ORACLE_SID_VALUE="$(su - oracle -c 'printf %s "$ORACLE_SID"' 2>/dev/null || true)"
+SQLPLUS_VALUE="$(su - oracle -c 'command -v sqlplus' 2>/dev/null || true)"
+LSNRCTL_VALUE="$(su - oracle -c 'command -v lsnrctl' 2>/dev/null || true)"
+
+if [ -z "$ORACLE_HOME_VALUE" ]; then ORACLE_HOME_VALUE="/opt/oracle/190000"; fi
+if [ -z "$ORACLE_SID_VALUE" ]; then ORACLE_SID_VALUE="CDBROOT"; fi
+if [ -z "$SQLPLUS_VALUE" ]; then SQLPLUS_VALUE="$ORACLE_HOME_VALUE/bin/sqlplus"; fi
+if [ -z "$LSNRCTL_VALUE" ]; then LSNRCTL_VALUE="$ORACLE_HOME_VALUE/bin/lsnrctl"; fi
+
+download_file "$AGENT_BASE_URL/oracle-agent.py" "$AGENT_SCRIPT"
+download_file "$AGENT_BASE_URL/oracle-agent.service" "$SERVICE_FILE"
+
+cat >/etc/oracle-monitoring-agent.env <<EOF
+ORACLE_API_URL={api_url}
+ORACLE_AGENT_TOKEN=$TOKEN
+ORACLE_INTERVAL=60
+ORACLE_VERIFY_TLS=false
+ORACLE_CA_FILE=/opt/oracle-monitoring-agent/monitor-ca-chain.pem
+ORACLE_RUN_AS_USER=oracle
+ORACLE_HOME=$ORACLE_HOME_VALUE
+ORACLE_SID=$ORACLE_SID_VALUE
+ORACLE_SQLPLUS=$SQLPLUS_VALUE
+ORACLE_LSNRCTL=$LSNRCTL_VALUE
+ORACLE_TABLESPACE_WARNING_PERCENT=85
+ORACLE_TABLESPACE_CRITICAL_PERCENT=95
+ORACLE_FRA_WARNING_PERCENT=80
+ORACLE_FRA_CRITICAL_PERCENT=90
+ORACLE_BACKUP_WARNING_HOURS=24
+ORACLE_BACKUP_CRITICAL_HOURS=48
+EOF
+
+chmod 600 /etc/oracle-monitoring-agent.env
+chmod 755 "$AGENT_SCRIPT"
+systemctl daemon-reload
+systemctl enable --now oracle-agent
+
+if systemctl is-active --quiet oracle-agent; then
+  echo "INSTALACION COMPLETADA: oracle-agent esta activo."
+else
+  echo "ERROR: El servicio oracle-agent no pudo iniciar."
+  systemctl status oracle-agent --no-pager || true
+  exit 1
+fi
+
+echo "Para revisar el resultado: journalctl -u oracle-agent -n 80 --no-pager"
+"""
+
 
 def linux_install_script(request):
     api_url = request.build_absolute_uri("/api/v1/metrics/ingest/")
@@ -1121,6 +1280,13 @@ def rhapsody_install_script(request):
     api_url = request.build_absolute_uri("/api/v1/metrics/rhapsody/ingest/")
     download_base_url = request.build_absolute_uri("/app/agents/download/")
     script = AgentInstallWizardView.rhapsody_bootstrap_script(api_url, download_base_url)
+    return HttpResponse(script, content_type="text/x-shellscript; charset=utf-8")
+
+
+def oracle_db_install_script(request):
+    api_url = request.build_absolute_uri("/api/v1/metrics/oracle/ingest/")
+    download_base_url = request.build_absolute_uri("/app/agents/download/")
+    script = AgentInstallWizardView.oracle_db_bootstrap_script(api_url, download_base_url)
     return HttpResponse(script, content_type="text/x-shellscript; charset=utf-8")
 
 
