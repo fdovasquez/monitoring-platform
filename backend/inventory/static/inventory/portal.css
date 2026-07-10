@@ -255,7 +255,8 @@
 
 .cmdb-network-card {
   padding: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .cmdb-network-card .portal-card-head {
@@ -279,8 +280,9 @@
 
 .cmdb-network-map {
   display: grid;
-  grid-template-columns: minmax(190px, .75fr) 34px minmax(250px, 1.1fr) 34px minmax(210px, .85fr) 34px minmax(230px, .95fr);
-  gap: 0;
+  grid-template-columns: minmax(210px, .8fr) minmax(300px, 1.15fr) minmax(270px, 1fr) minmax(270px, 1fr);
+  gap: 16px;
+  min-width: 1120px;
   padding: 20px;
   background:
     radial-gradient(circle at 16px 16px, rgba(37, 99, 235, .08) 1px, transparent 1.5px) 0 0 / 22px 22px,
@@ -292,6 +294,10 @@
   align-content: start;
   gap: 12px;
   min-width: 0;
+  padding: 14px;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid #dbe5f2;
+  border-radius: 8px;
 }
 
 .cmdb-network-column-head {
@@ -324,22 +330,22 @@
 .cmdb-node-list {
   display: grid;
   gap: 9px;
-  max-height: 374px;
-  overflow: auto;
-  padding-right: 4px;
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .cmdb-node {
   position: relative;
   display: grid;
-  gap: 4px;
-  min-height: 68px;
-  padding: 12px 12px 12px 15px;
+  gap: 5px;
+  min-height: 62px;
+  padding: 11px 12px 11px 15px;
   color: #111827;
   background: rgba(255, 255, 255, .94);
   border: 1px solid #dbe5f2;
   border-radius: 8px;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .035);
 }
 
 .cmdb-node::before {
@@ -354,20 +360,24 @@
 }
 
 .cmdb-node span {
-  overflow: hidden;
+  overflow: visible;
   font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  text-overflow: initial;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .cmdb-node small,
 .cmdb-node i {
-  overflow: hidden;
+  overflow: visible;
   color: #5b6472;
   font-size: 12px;
   font-style: normal;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  text-overflow: initial;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .cmdb-node.asset {
@@ -403,9 +413,7 @@
 }
 
 .cmdb-flow-line {
-  position: relative;
-  align-self: stretch;
-  min-height: 100%;
+  display: none;
 }
 
 .cmdb-flow-line::before {
