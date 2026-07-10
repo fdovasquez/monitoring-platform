@@ -144,7 +144,8 @@
         <thead>
           <tr>
             <th>Dispositivo</th>
-            <th>Estado operacional</th>
+            <th>Conectividad</th>
+            <th>Condicion</th>
             <th>Agente</th>
             <th>CPU</th>
             <th>Memoria</th>
@@ -168,20 +169,20 @@
                 </a>
               </td>
               <td>
-                <div class="state-stack">
-                  {% if device.online %}
-                    <span class="status online">En linea</span>
-                  {% else %}
-                    <span class="status offline">Fuera de linea</span>
-                  {% endif %}
-                  {% if device.alert_level == "critical" %}
-                    <span class="alert-state critical" title="{{ device.alert_title }}: {{ device.alert_message }}">Critico</span>
-                  {% elif device.alert_level == "warning" %}
-                    <span class="alert-state warning" title="{{ device.alert_title }}: {{ device.alert_message }}">Advertencia</span>
-                  {% else %}
-                    <span class="alert-state ok">Normal</span>
-                  {% endif %}
-                </div>
+                {% if device.online %}
+                  <span class="status online">En linea</span>
+                {% else %}
+                  <span class="status offline">Fuera de linea</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if device.alert_level == "critical" %}
+                  <span class="alert-state critical" title="{{ device.alert_title }}: {{ device.alert_message }}">Critico</span>
+                {% elif device.alert_level == "warning" %}
+                  <span class="alert-state warning" title="{{ device.alert_title }}: {{ device.alert_message }}">Advertencia</span>
+                {% else %}
+                  <span class="alert-state ok">Normal</span>
+                {% endif %}
               </td>
               <td>
                 {% if device.agent_version %}
@@ -211,7 +212,7 @@
             </tr>
           {% empty %}
             <tr>
-              <td colspan="10">
+              <td colspan="11">
                 <div class="empty-state">
                   <strong>No hay dispositivos</strong>
                   <span>Usa "Instalar nuevo agente" para crear un servidor, generar token y copiar el instalador.</span>

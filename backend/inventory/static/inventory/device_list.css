@@ -743,24 +743,25 @@ th {
   background: #fff0f2;
 }
 
-.state-stack {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  min-width: 112px;
-}
-
 .alert-state {
   display: inline-flex;
   align-items: center;
-  min-height: 22px;
-  padding: 3px 9px;
+  gap: 6px;
+  min-height: 26px;
+  padding: 4px 10px;
   border: 1px solid transparent;
   border-radius: 999px;
   font-size: 11px;
-  line-height: 1;
+  line-height: 1.1;
   white-space: nowrap;
+}
+
+.alert-state::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .alert-state.ok {
