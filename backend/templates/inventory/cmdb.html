@@ -249,39 +249,50 @@
           <thead>
             <tr>
               <th>Activo</th>
-              <th>Negocio</th>
               <th>Plataforma</th>
               <th>Red</th>
-              <th>Runtime</th>
+              <th>Operacion</th>
               <th>Recursos</th>
-              <th>Riesgo</th>
-              <th>Cobertura</th>
+              <th>Gobierno</th>
             </tr>
           </thead>
           <tbody>
             {% for row in rows %}
               <tr>
                 <td>
-                  <a class="cmdb-asset-link" href="{% url 'device-detail' row.server.id %}">{{ row.server.hostname }}</a>
-                  <small>{{ row.fqdn_label }}</small>
-                  <span class="cmdb-status {% if row.online %}ok{% else %}critical{% endif %}">{% if row.online %}En linea{% else %}Fuera de linea{% endif %}</span>
+                  <div class="cmdb-asset-cell">
+                    <span class="cmdb-asset-avatar">{{ row.server.hostname|slice:":1"|upper }}</span>
+                    <div>
+                      <a class="cmdb-asset-link" href="{% url 'device-detail' row.server.id %}">{{ row.server.hostname }}</a>
+                      <small>{{ row.fqdn_label }}</small>
+                      <div class="cmdb-chip-row">
+                        <span class="cmdb-status {% if row.online %}ok{% else %}critical{% endif %}">{% if row.online %}En linea{% else %}Fuera de linea{% endif %}</span>
+                        <span class="cmdb-tag">{{ row.server.group.name|default:"Sin grupo" }}</span>
+                        <span class="cmdb-tag">{{ row.server.environment|default:"Sin ambiente" }}</span>
+                      </div>
+                      <small>Responsable: {{ row.server.owner|default:"Sin responsable" }}</small>
+                    </div>
+                  </div>
                 </td>
                 <td>
-                  <span>{{ row.server.group.name|default:"Sin grupo" }}</span>
-                  <small>{{ row.server.environment|default:"Sin ambiente" }}</small>
-                  <small>{{ row.server.owner|default:"Sin responsable" }}</small>
+                  <div class="cmdb-main-line">{{ row.os_label }}</div>
+                  <div class="cmdb-meta-grid">
+                    <span>Fabricante</span><strong>{{ row.manufacturer_label }}</strong>
+                    <span>Modelo</span><strong>{{ row.model_label }}</strong>
+                    <span>Serie</span><strong>{{ row.serial_label }}</strong>
+                    <span>Agente</span><strong>{{ row.agent_version }}</strong>
+                  </div>
                 </td>
                 <td>
-                  <span>{{ row.os_label }}</span>
-                  <small>{{ row.manufacturer_label }} / {{ row.model_label }}</small>
-                  <small>Serie: {{ row.serial_label }} - Agente {{ row.agent_version }}</small>
-                </td>
-                <td>
-                  <span>{{ row.ip_label }}</span>
+                  <div class="cmdb-main-line">{{ row.ip_label }}</div>
                   <small>{{ row.interface_count }} interfaces reportadas</small>
-                  {% for interface in row.interface_summary|slice:":2" %}
-                    <small>{{ interface.name }} - {{ interface.ips }}</small>
-                  {% endfor %}
+                  <div class="cmdb-mini-list">
+                    {% for interface in row.interface_summary|slice:":2" %}
+                      <span>{{ interface.name }} <i>{{ interface.ips }}</i></span>
+                    {% empty %}
+                      <span>Sin interfaces reportadas</span>
+                    {% endfor %}
+                  </div>
                 </td>
                 <td>
                   <div class="cmdb-runtime-strip">
@@ -289,19 +300,23 @@
                     <span><strong>{{ row.process_count }}</strong><small>Procesos</small></span>
                     <span><strong>{{ row.port_count }}</strong><small>Puertos</small></span>
                   </div>
-                  <small>{{ row.application_label }}</small>
+                  <div class="cmdb-app-line">{{ row.application_label }}</div>
                 </td>
                 <td>
-                  <span>CPU {{ row.cpu_label }} / RAM {{ row.memory_label }}</span>
-                  <small>Disco {{ row.disk_label }} - {{ row.disk_count }} volumenes</small>
+                  <div class="cmdb-resource-grid">
+                    <span><i>CPU</i><strong>{{ row.cpu_label }}</strong></span>
+                    <span><i>RAM</i><strong>{{ row.memory_label }}</strong></span>
+                    <span><i>Disco</i><strong>{{ row.disk_label }}</strong></span>
+                  </div>
+                  <small>{{ row.disk_count }} volumenes detectados</small>
                   <div class="progress cmdb-resource-bar"><i style="width: {{ row.disk_peak|default:0 }}%;"></i></div>
                 </td>
                 <td>
-                  <span class="cmdb-risk {{ row.alert_level }}">{{ row.alerts|length }} alertas</span>
-                  <small>Seguridad {{ row.security.score }}/100</small>
-                </td>
-                <td>
-                  <strong>{{ row.coverage_score }}%</strong>
+                  <div class="cmdb-governance-stack">
+                    <span class="cmdb-risk {{ row.alert_level }}">{{ row.alerts|length }} alertas</span>
+                    <span>Seguridad <strong>{{ row.security.score }}/100</strong></span>
+                    <span>Cobertura <strong>{{ row.coverage_score }}%</strong></span>
+                  </div>
                   <div class="progress cmdb-coverage {{ row.coverage_tone }}"><i style="width: {{ row.coverage_score }}%;"></i></div>
                   {% if row.missing_inventory %}
                     <small>Falta: {{ row.missing_inventory|join:", " }}</small>
@@ -311,7 +326,7 @@
                 </td>
               </tr>
             {% empty %}
-              <tr><td colspan="8">No hay activos registrados.</td></tr>
+              <tr><td colspan="6">No hay activos registrados.</td></tr>
             {% endfor %}
           </tbody>
         </table>

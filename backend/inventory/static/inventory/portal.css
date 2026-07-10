@@ -745,7 +745,9 @@
 }
 
 .cmdb-table {
-  min-width: 1420px;
+  min-width: 1240px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .cmdb-table th,
@@ -753,8 +755,26 @@
   vertical-align: top;
 }
 
+.cmdb-table th {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
 .cmdb-table td {
+  padding-top: 16px;
+  padding-bottom: 16px;
   white-space: normal;
+}
+
+.cmdb-table tbody tr {
+  transition: background .16s ease;
+}
+
+.cmdb-table tbody tr:hover {
+  background: #f8fafc;
 }
 
 .cmdb-table td > span,
@@ -763,15 +783,41 @@
   display: block;
 }
 
+.cmdb-asset-cell {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.cmdb-asset-avatar {
+  display: inline-grid !important;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
 .cmdb-asset-link {
   margin-bottom: 4px;
   color: #111827;
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
+}
+
+.cmdb-asset-link:hover {
+  color: #2563eb;
 }
 
 .cmdb-table small {
   margin-top: 3px;
   color: #5b6472;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .cmdb-table .state {
@@ -779,16 +825,29 @@
   margin-top: 8px;
 }
 
+.cmdb-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 2px;
+}
+
 .cmdb-status,
-.cmdb-risk {
+.cmdb-risk,
+.cmdb-tag {
   display: inline-flex;
   align-items: center;
   width: max-content;
-  min-height: 24px;
-  margin-top: 8px;
+  min-height: 22px;
   padding: 0 9px;
   border-radius: 999px;
   font-size: 12px;
+}
+
+.cmdb-tag {
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #dbe5f2;
 }
 
 .cmdb-status.ok,
@@ -808,15 +867,78 @@
   background: #fef3c7;
 }
 
+.cmdb-main-line {
+  overflow: hidden;
+  margin-bottom: 8px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdb-meta-grid {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 4px 9px;
+  max-width: 260px;
+}
+
+.cmdb-meta-grid span,
+.cmdb-meta-grid strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdb-meta-grid span {
+  color: #64748b;
+}
+
+.cmdb-meta-grid strong {
+  color: #111827;
+}
+
+.cmdb-mini-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.cmdb-mini-list span {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 8px;
+  min-height: 24px;
+  padding: 4px 8px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.cmdb-mini-list i {
+  overflow: hidden;
+  color: #64748b;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cmdb-runtime-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
-  margin-bottom: 6px;
+  max-width: 230px;
+  margin-bottom: 8px;
 }
 
 .cmdb-runtime-strip span {
-  padding: 8px;
+  min-height: 54px;
+  padding: 8px 6px;
   background: #f8fafc;
   border: 1px solid #e8edf5;
   border-radius: 8px;
@@ -828,14 +950,88 @@
   text-align: center;
 }
 
+.cmdb-runtime-strip strong {
+  color: #111827;
+  font-size: 15px;
+}
+
+.cmdb-runtime-strip small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.cmdb-app-line {
+  overflow: hidden;
+  max-width: 230px;
+  color: #5b6472;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdb-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 230px;
+  margin-bottom: 8px;
+}
+
+.cmdb-resource-grid span {
+  display: grid;
+  gap: 2px;
+  min-height: 48px;
+  padding: 7px;
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+}
+
+.cmdb-resource-grid i {
+  color: #64748b;
+  font-size: 10px;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.cmdb-resource-grid strong {
+  overflow: hidden;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cmdb-resource-bar {
-  width: 128px;
+  width: 100%;
+  max-width: 230px;
   margin-top: 8px;
 }
 
 .cmdb-coverage {
-  width: 120px;
+  width: 100%;
+  max-width: 220px;
   margin: 8px 0;
+}
+
+.cmdb-governance-stack {
+  display: grid;
+  gap: 7px;
+}
+
+.cmdb-governance-stack > span:not(.cmdb-risk) {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  max-width: 220px;
+  color: #5b6472;
+  font-size: 12px;
+}
+
+.cmdb-governance-stack strong {
+  color: #111827;
+  font-weight: 600;
 }
 
 .cmdb-coverage.critical i {
