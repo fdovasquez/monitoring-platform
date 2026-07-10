@@ -47,30 +47,15 @@
             <span class="chevron-icon" aria-hidden="true"></span>
           </button>
           <div class="tool-menu-panel" data-tool-menu-panel hidden>
-            {% if is_linux and can_manage_credentials %}
-              <button class="tool-menu-item" type="button" data-open-modal="console-modal">
-                <span class="tool-menu-icon terminal-mini-icon" aria-hidden="true"></span>
-                <span>Terminal</span>
-              </button>
-            {% else %}
-              <span class="tool-menu-item disabled">
-                <span class="tool-menu-icon terminal-mini-icon" aria-hidden="true"></span>
-                <span>Terminal</span>
-              </span>
-            {% endif %}
-            <a class="tool-menu-item" href="{% url 'device-runtime' server.id %}#file-explorer">
-              <span class="tool-menu-icon files-mini-icon" aria-hidden="true"></span>
-              <span>Explorador de archivos</span>
-            </a>
-            <a class="tool-menu-item" href="{% url 'device-runtime' server.id %}#processes">
+            <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'processes' %}">
               <span class="tool-menu-icon process-mini-icon" aria-hidden="true"></span>
               <span>Procesos</span>
             </a>
-            <a class="tool-menu-item" href="{% url 'device-runtime' server.id %}#services">
+            <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'services' %}">
               <span class="tool-menu-icon service-mini-icon" aria-hidden="true"></span>
               <span>Servicios</span>
             </a>
-            <a class="tool-menu-item" href="{% url 'device-runtime' server.id %}#ports">
+            <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'ports' %}">
               <span class="tool-menu-icon ports-mini-icon" aria-hidden="true"></span>
               <span>Puertos</span>
             </a>

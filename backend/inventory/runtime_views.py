@@ -8,15 +8,38 @@ from .views import sidebar_context
 
 class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
     template_name = "inventory/device_runtime.html"
+    section_options = {
+        "services": {
+            "title": "Servicios",
+            "subtitle": "Estado de servicios reportados por el agente del servidor.",
+            "empty": "Aun no hay servicios reportados por el agente.",
+        },
+        "processes": {
+            "title": "Procesos",
+            "subtitle": "Procesos principales reportados por consumo y usuario.",
+            "empty": "Aun no hay procesos reportados por el agente.",
+        },
+        "ports": {
+            "title": "Puertos",
+            "subtitle": "Puertos abiertos y sockets en escucha detectados por el agente.",
+            "empty": "Aun no hay puertos reportados por el agente.",
+        },
+    }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         server = get_object_or_404(Server.objects.select_related("group"), id=kwargs["pk"])
         runtime = self.runtime_snapshot(server)
+        active_section = kwargs.get("section") or "services"
+        if active_section not in self.section_options:
+            active_section = "services"
         context.update(
             {
                 "server": server,
                 "runtime": runtime,
+                "active_section": active_section,
+                "section_meta": self.section_options[active_section],
+                "section_options": self.section_options,
             }
         )
         context.update(sidebar_context())

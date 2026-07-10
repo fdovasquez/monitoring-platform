@@ -62,6 +62,7 @@ urlpatterns = [
     path("devices/<int:pk>/", DeviceDetailWithMonitorsView.as_view(), name="device-detail"),
     path("devices/<int:pk>/edit/", DeviceEditView.as_view(), name="device-edit"),
     path("devices/<int:pk>/runtime/", DeviceRuntimeView.as_view(), name="device-runtime"),
+    path("devices/<int:pk>/runtime/<str:section>/", DeviceRuntimeView.as_view(), name="device-runtime-section"),
     path("devices/<int:pk>/delete/", DeviceDeleteView.as_view(), name="device-delete"),
     path("devices/<int:pk>/console/", DeviceConsoleView.as_view(), name="device-console"),
     path("devices/<int:pk>/credentials/new/", MachineCredentialCreateView.as_view(), name="machine-credential-create"),
