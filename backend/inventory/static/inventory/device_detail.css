@@ -1573,6 +1573,49 @@
   color: var(--detail-muted);
 }
 
+.oracle-diagnostics {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+}
+
+.oracle-diagnostics strong {
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.oracle-diagnostics ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.oracle-diagnostics li {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  color: #7c2d12;
+  font-size: 12px;
+}
+
+.oracle-diagnostics li span {
+  color: #9a3412;
+}
+
+.oracle-diagnostics li small {
+  color: #7c2d12;
+  word-break: break-word;
+}
+
 .oracle-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

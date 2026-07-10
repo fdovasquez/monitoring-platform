@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/oracle-monitoring-agent.env"
-AGENT_VERSION = "1.0.1-oracle"
+AGENT_VERSION = "1.0.2-oracle"
 
 
 def load_env_file(path):
@@ -86,7 +86,7 @@ exit
 """
     script_path = write_temp_script(script, suffix=".sql")
     try:
-        command = f"{shell_quote(SQLPLUS)} -s / as sysdba @{shell_quote(script_path)}"
+        command = f"{shell_quote(SQLPLUS)} -s {shell_quote('/ as sysdba')} @{shell_quote(script_path)}"
         stdout, stderr, code = run_command(command, timeout=timeout)
         if code != 0:
             return "", (stderr or stdout)[-1000:]
@@ -419,7 +419,14 @@ def ssl_context():
 def send_report():
     if not API_URL or not TOKEN:
         raise RuntimeError("ORACLE_API_URL y ORACLE_AGENT_TOKEN son requeridos.")
-    data = json.dumps(build_payload()).encode("utf-8")
+    payload = build_payload()
+    errors = collection_errors(payload)
+    if errors:
+        print(
+            f"{datetime.now(timezone.utc).isoformat()} diagnostics=" + " | ".join(errors[:4]),
+            flush=True,
+        )
+    data = json.dumps(payload).encode("utf-8")
     request = Request(
         API_URL,
         data=data,
@@ -432,6 +439,24 @@ def send_report():
     with urlopen(request, timeout=25, context=ssl_context()) as response:
         response.read()
         return response.status
+
+
+def collection_errors(payload):
+    checks = [
+        ("database", payload.get("database", {}).get("error")),
+        ("listener", payload.get("listener", {}).get("error")),
+        ("tablespaces", payload.get("tablespaces", {}).get("error")),
+        ("fra", payload.get("fra", {}).get("error")),
+        ("backups", payload.get("backups", {}).get("error")),
+        ("blocking", payload.get("blocking_sessions", {}).get("error")),
+        ("alert_log", payload.get("alert_log", {}).get("error")),
+    ]
+    errors = []
+    for label, value in checks:
+        if value:
+            compact_value = " ".join(str(value).split())[:240]
+            errors.append(f"{label}: {compact_value}")
+    return errors
 
 
 def main():

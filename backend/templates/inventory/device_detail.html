@@ -214,6 +214,16 @@
                 <small>Agente {{ oracle.agent_version }}</small>
               {% endif %}
             </div>
+            {% if oracle.diagnostics %}
+              <div class="oracle-diagnostics">
+                <strong>Diagnostico del agente</strong>
+                <ul>
+                  {% for diagnostic in oracle.diagnostics %}
+                    <li><span>{{ diagnostic.label }}</span><small>{{ diagnostic.message }}</small></li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
             <div class="oracle-grid">
               <section class="oracle-panel">
                 <h3>Base de datos</h3>

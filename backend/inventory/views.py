@@ -398,6 +398,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             "tone": tone_map.get(status_value, "muted"),
             "label": label_map.get(status_value, status_value.title() or "Sin datos"),
             "summary": oracle.get("summary", "Sin resumen reportado."),
+            "diagnostics": DeviceDetailView.oracle_diagnostics(oracle),
             "database": oracle.get("database") if isinstance(oracle.get("database"), dict) else {},
             "listener": oracle.get("listener") if isinstance(oracle.get("listener"), dict) else {},
             "tablespaces": oracle.get("tablespaces", {}).get("items", []) if isinstance(oracle.get("tablespaces"), dict) else [],
@@ -408,6 +409,26 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             "checked_at": oracle.get("timestamp"),
             "agent_version": oracle.get("agent_version", ""),
         }
+
+    @staticmethod
+    def oracle_diagnostics(oracle):
+        sections = [
+            ("Base de datos", oracle.get("database")),
+            ("Listener", oracle.get("listener")),
+            ("Tablespaces", oracle.get("tablespaces")),
+            ("FRA", oracle.get("fra")),
+            ("RMAN", oracle.get("backups")),
+            ("Bloqueos", oracle.get("blocking_sessions")),
+            ("Alert log", oracle.get("alert_log")),
+        ]
+        diagnostics = []
+        for label, section in sections:
+            if not isinstance(section, dict):
+                continue
+            error = section.get("error")
+            if error:
+                diagnostics.append({"label": label, "message": str(error)[:500]})
+        return diagnostics
 
     @staticmethod
     def chart_series(samples):
