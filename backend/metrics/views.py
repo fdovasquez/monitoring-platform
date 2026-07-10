@@ -174,6 +174,13 @@ def resolve_server_for_rhapsody_token(agent_token, data):
         else None
     )
     if existing:
+        if agent_token.server_id != existing.id:
+            previous_server = server if is_pending else None
+            AgentToken.objects.filter(server=existing).exclude(pk=agent_token.pk).delete()
+            agent_token.server = existing
+            agent_token.save(update_fields=["server"])
+            if previous_server:
+                previous_server.delete()
         server = existing
     elif is_pending:
         server.hostname = fqdn or hostname
