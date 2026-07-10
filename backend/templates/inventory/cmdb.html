@@ -49,6 +49,98 @@
       </article>
     </section>
 
+    <section class="portal-card cmdb-network-card">
+      <div class="portal-card-head">
+        <div>
+          <h2>Diagrama de red y dependencias</h2>
+          <small>Representacion CMDB generada desde grupos, agentes, interfaces, aplicaciones y puertos detectados.</small>
+        </div>
+        <span class="cmdb-map-counter">{{ network_diagram.relationship_count }} relaciones</span>
+      </div>
+      <div class="cmdb-network-map" aria-label="Diagrama de relaciones de activos">
+        <div class="cmdb-network-column">
+          <div class="cmdb-network-column-head">
+            <span>01</span>
+            <strong>Grupos / sitios</strong>
+          </div>
+          <div class="cmdb-node-list">
+            {% for group in network_diagram.groups %}
+              <div class="cmdb-node group">
+                <span>{{ group.name }}</span>
+                <small>{{ group.count }} activos relacionados</small>
+              </div>
+            {% empty %}
+              <p class="empty-state">No hay grupos para representar.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="cmdb-flow-line" aria-hidden="true"></div>
+
+        <div class="cmdb-network-column cmdb-network-assets">
+          <div class="cmdb-network-column-head">
+            <span>02</span>
+            <strong>Activos monitoreados</strong>
+          </div>
+          <div class="cmdb-node-list">
+            {% for asset in network_diagram.assets %}
+              <a class="cmdb-node asset {{ asset.status }}" href="{% url 'device-detail' asset.id %}">
+                <span>{{ asset.hostname }}</span>
+                <small>{{ asset.group }} - {{ asset.os }}</small>
+                <i>{{ asset.interfaces }} interfaces / {{ asset.ports }} puertos</i>
+              </a>
+            {% empty %}
+              <p class="empty-state">No hay activos registrados.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="cmdb-flow-line" aria-hidden="true"></div>
+
+        <div class="cmdb-network-column">
+          <div class="cmdb-network-column-head">
+            <span>03</span>
+            <strong>Red</strong>
+          </div>
+          <div class="cmdb-node-list">
+            {% for network in network_diagram.networks %}
+              <div class="cmdb-node network">
+                <span>{{ network.ip }}</span>
+                <small>{{ network.hostname }}</small>
+                <i>{{ network.interface }} / {{ network.interfaces }} interfaces</i>
+              </div>
+            {% empty %}
+              <p class="empty-state">No hay direcciones IP reportadas por el agente.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="cmdb-flow-line" aria-hidden="true"></div>
+
+        <div class="cmdb-network-column">
+          <div class="cmdb-network-column-head">
+            <span>04</span>
+            <strong>Aplicaciones / puertos</strong>
+          </div>
+          <div class="cmdb-node-list">
+            {% for app in network_diagram.applications %}
+              <div class="cmdb-node app">
+                <span>{{ app.name }}</span>
+                <small>{{ app.asset_count }} activos ejecutandola</small>
+                {% if app.ports %}
+                  <i>{{ app.ports|join:", " }}</i>
+                {% else %}
+                  <i>Sin puertos publicados</i>
+                {% endif %}
+              </div>
+            {% empty %}
+              <p class="empty-state">Aun no hay aplicaciones detectadas.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="cmdb-command-grid">
       <article class="portal-card cmdb-classification">
         <div class="portal-card-head">

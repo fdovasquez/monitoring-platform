@@ -296,6 +296,7 @@ class CMDBView(PortalAccessMixin, PortalDataMixin, TemplateView):
                 "summary": self.cmdb_summary(rows),
                 "groups": self.cmdb_groups(rows),
                 "os_groups": self.os_groups(rows),
+                "network_diagram": self.network_diagram(rows),
                 "relationships": self.relationships(rows),
                 "inventory_gaps": self.inventory_gaps(rows),
                 "active_menu": "cmdb",
@@ -353,6 +354,85 @@ class CMDBView(PortalAccessMixin, PortalDataMixin, TemplateView):
             if row["missing_inventory"]:
                 gaps.append(row)
         return sorted(gaps, key=lambda item: item["coverage_score"])[:8]
+
+    @staticmethod
+    def network_diagram(rows):
+        groups = {}
+        assets = []
+        networks = []
+        applications = {}
+
+        def asset_sort_key(row):
+            alert_order = {"critical": 0, "warning": 1, "ok": 2}
+            return (alert_order.get(row["alert_level"], 3), not row["online"], row["server"].hostname)
+
+        for row in sorted(rows, key=asset_sort_key):
+            server = row["server"]
+            group_name = server.group.name if server.group else "Sin grupo"
+            groups.setdefault(group_name, {"name": group_name, "count": 0})
+            groups[group_name]["count"] += 1
+
+            if len(assets) < 12:
+                assets.append(
+                    {
+                        "id": server.id,
+                        "hostname": server.hostname,
+                        "group": group_name,
+                        "ip": row["ip_label"],
+                        "status": "offline" if not row["online"] else row["alert_level"],
+                        "status_label": "Fuera de linea" if not row["online"] else row["alert_level"],
+                        "os": row["os_label"],
+                        "apps": row["applications"][:2],
+                        "ports": row["port_count"],
+                        "interfaces": row["interface_count"],
+                    }
+                )
+
+            if row["ip_label"] != "-" and len(networks) < 12:
+                primary_interface = row["interface_summary"][0]["name"] if row["interface_summary"] else "Interfaz no reportada"
+                networks.append(
+                    {
+                        "hostname": server.hostname,
+                        "ip": row["ip_label"],
+                        "interface": primary_interface,
+                        "interfaces": row["interface_count"],
+                    }
+                )
+
+            runtime = row["runtime"]
+            raw_data = runtime.raw_data if runtime and isinstance(runtime.raw_data, dict) else {}
+            runtime_apps = raw_data.get("applications") if isinstance(raw_data.get("applications"), dict) else {}
+            for app_name, app_data in runtime_apps.items():
+                name = app_name.title()
+                app_entry = applications.setdefault(name, {"name": name, "assets": set(), "ports": set()})
+                app_entry["assets"].add(server.hostname)
+                ports = app_data.get("ports", []) if isinstance(app_data, dict) else []
+                for port in ports:
+                    if not isinstance(port, dict):
+                        continue
+                    port_label = port.get("local_port") or port.get("port")
+                    protocol = (port.get("protocol") or "tcp").upper()
+                    if port_label:
+                        app_entry["ports"].add(f"{protocol}/{port_label}")
+
+        application_nodes = []
+        for app in sorted(applications.values(), key=lambda item: (-len(item["assets"]), item["name"]))[:8]:
+            application_nodes.append(
+                {
+                    "name": app["name"],
+                    "asset_count": len(app["assets"]),
+                    "ports": sorted(app["ports"])[:4],
+                }
+            )
+
+        return {
+            "groups": sorted(groups.values(), key=lambda item: (-item["count"], item["name"]))[:8],
+            "assets": assets,
+            "networks": networks,
+            "applications": application_nodes,
+            "asset_count": len(rows),
+            "relationship_count": sum(len(row["applications"]) + row["interface_count"] + (1 if row["ip_label"] != "-" else 0) for row in rows),
+        }
 
     @staticmethod
     def relationships(rows):
