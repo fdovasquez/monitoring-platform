@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/oracle-monitoring-agent.env"
-AGENT_VERSION = "1.0.2-oracle"
+AGENT_VERSION = "1.0.3-oracle"
 
 
 def load_env_file(path):
@@ -59,9 +59,22 @@ def run_command(command, timeout=25, as_oracle=True):
     try:
         if as_oracle and ORACLE_RUN_AS_USER and os.geteuid() == 0:
             args = ["su", "-", ORACLE_RUN_AS_USER, "-c", full_command]
-            result = subprocess.run(args, text=True, capture_output=True, timeout=timeout)
+            result = subprocess.run(
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                timeout=timeout,
+            )
         else:
-            result = subprocess.run(full_command, shell=True, text=True, capture_output=True, timeout=timeout)
+            result = subprocess.run(
+                full_command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                timeout=timeout,
+            )
     except Exception as exc:
         return "", str(exc), 1
     return result.stdout.strip(), result.stderr.strip(), result.returncode
