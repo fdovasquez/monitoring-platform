@@ -24,6 +24,7 @@
             <h1>Alertas</h1>
             <span class="status online">En linea</span>
           </div>
+          <p class="monitor-subtitle">Gestiona reglas, asignaciones por servidor, destinatarios e historial operativo.</p>
           <span class="monitor-kind">MONITOREO GLOBAL</span>
         </div>
       </div>
@@ -32,7 +33,6 @@
           <a class="submit-button monitor-primary-action" href="{% url 'alert-settings' %}?tab=monitors&new_rule=1">Agregar alerta</a>
         {% endif %}
         <a class="ghost-button" href="{% url 'site-settings' %}?tab=smtp">Configurar SMTP</a>
-        <button class="ghost-button" type="button">Columnas</button>
       </div>
     </header>
 
