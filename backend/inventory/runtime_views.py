@@ -69,6 +69,7 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
             cpu_percent = DeviceRuntimeView.number_value(process.get("cpu_percent"), 0)
             memory_mb = DeviceRuntimeView.number_value(process.get("memory_mb"), 0)
             memory_percent = DeviceRuntimeView.number_value(process.get("memory_percent"), 0)
+            running_seconds = DeviceRuntimeView.number_value(process.get("running_seconds"), None)
             processes.append(
                 {
                     "pid": process.get("pid") or "-",
@@ -82,6 +83,8 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
                     "path": process.get("path") or process.get("exe") or "-",
                     "window_title": process.get("window_title") or "",
                     "category": process.get("category") or "",
+                    "start_time": process.get("start_time") or "",
+                    "runtime_label": DeviceRuntimeView.duration_label(running_seconds),
                 }
             )
         process_groups = DeviceRuntimeView.process_groups(server, processes)
@@ -149,6 +152,20 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
             return float(value)
         except (TypeError, ValueError):
             return default
+
+    @staticmethod
+    def duration_label(seconds):
+        if seconds is None or seconds < 0:
+            return "Sin dato"
+        seconds = int(seconds)
+        days, remainder = divmod(seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, _ = divmod(remainder, 60)
+        if days:
+            return f"{days}d {hours}h"
+        if hours:
+            return f"{hours}h {minutes}m"
+        return f"{minutes}m"
 
     @staticmethod
     def cpu_label(cpu_percent):

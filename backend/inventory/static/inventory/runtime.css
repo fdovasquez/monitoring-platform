@@ -261,7 +261,7 @@
 .windows-process-head,
 .windows-process-row {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 96px 110px 150px;
+  grid-template-columns: minmax(280px, 1fr) 86px 128px 110px 150px;
   align-items: center;
   gap: 0;
 }
@@ -379,7 +379,7 @@
 
   .windows-process-head,
   .windows-process-row {
-    grid-template-columns: minmax(220px, 1fr) 76px 86px 110px;
+    grid-template-columns: minmax(220px, 1fr) 70px 112px 82px 108px;
   }
 }
 

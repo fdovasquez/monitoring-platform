@@ -123,6 +123,7 @@
                 <div class="windows-process-head">
                   <span>Nombre</span>
                   <span>PID</span>
+                  <span>Tiempo abierto</span>
                   <span>CPU</span>
                   <span>Memoria</span>
                 </div>
@@ -139,6 +140,7 @@
                           </div>
                         </div>
                         <span>{{ process.pid|default:"-" }}</span>
+                        <span>{{ process.runtime_label|default:"Sin dato" }}</span>
                         <span class="metric-cell cpu">{{ process.cpu_label|default:"-" }}</span>
                         <span class="metric-cell memory">{{ process.memory_label|default:"Sin dato" }}</span>
                       </article>
@@ -157,6 +159,7 @@
                       <th>Proceso</th>
                       <th>CPU</th>
                       <th>RAM MB</th>
+                      <th>Tiempo abierto</th>
                       <th>Usuario</th>
                       <th>Ruta</th>
                     </tr>
@@ -168,6 +171,7 @@
                         <td><strong>{{ process.name|default:"-" }}</strong></td>
                         <td>{{ process.cpu_label|default:"-" }}</td>
                         <td>{{ process.memory_label|default:"Sin dato" }}</td>
+                        <td>{{ process.runtime_label|default:"Sin dato" }}</td>
                         <td>{{ process.username|default:"-" }}</td>
                         <td class="runtime-muted runtime-path">{{ process.path|default:"-" }}</td>
                       </tr>

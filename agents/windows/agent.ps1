@@ -84,6 +84,18 @@ $Processes = @(Get-Process | Sort-Object WorkingSet64 -Descending | Select-Objec
     } catch {
         $WindowTitle = ""
     }
+    $StartTimeText = ""
+    $RunningSeconds = $null
+    try {
+        $StartTime = $_.StartTime
+        if ($StartTime) {
+            $StartTimeText = $StartTime.ToString("o")
+            $RunningSeconds = [int]((Get-Date) - $StartTime).TotalSeconds
+        }
+    } catch {
+        $StartTimeText = ""
+        $RunningSeconds = $null
+    }
     $PreviousCpu = if ($ProcessCpuSample.ContainsKey($_.Id)) { $ProcessCpuSample[$_.Id] } else { $_.CPU }
     $CpuDelta = if ($_.CPU -and $PreviousCpu -ne $null) { $_.CPU - $PreviousCpu } else { 0 }
     $CpuPercent = if ($ProcessorCount -gt 0) { [math]::Round(($CpuDelta / 0.5 / $ProcessorCount) * 100, 2) } else { 0 }
@@ -97,6 +109,8 @@ $Processes = @(Get-Process | Sort-Object WorkingSet64 -Descending | Select-Objec
         memory_percent = if ($Computer.TotalPhysicalMemory -gt 0) { [math]::Round(($_.WorkingSet64 / $Computer.TotalPhysicalMemory) * 100, 2) } else { 0 }
         window_title = $WindowTitle
         category = if ($WindowTitle) { "app" } else { "background" }
+        start_time = $StartTimeText
+        running_seconds = $RunningSeconds
         path = $ProcessPath
     }
 })
