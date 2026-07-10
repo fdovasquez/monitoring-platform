@@ -139,8 +139,8 @@
                           </div>
                         </div>
                         <span>{{ process.pid|default:"-" }}</span>
-                        <span class="metric-cell cpu">{{ process.cpu_percent|default:"0" }}%</span>
-                        <span class="metric-cell memory">{{ process.memory_mb|default:"0" }} MB</span>
+                        <span class="metric-cell cpu">{{ process.cpu_label|default:"-" }}</span>
+                        <span class="metric-cell memory">{{ process.memory_label|default:"Sin dato" }}</span>
                       </article>
                     {% empty %}
                       <div class="runtime-empty compact">Sin procesos en esta categoria.</div>
@@ -166,8 +166,8 @@
                       <tr>
                         <td>{{ process.pid|default:"-" }}</td>
                         <td><strong>{{ process.name|default:"-" }}</strong></td>
-                        <td>{{ process.cpu_percent|default:"0" }}%</td>
-                        <td>{{ process.memory_mb|default:"0" }}</td>
+                        <td>{{ process.cpu_label|default:"-" }}</td>
+                        <td>{{ process.memory_label|default:"Sin dato" }}</td>
                         <td>{{ process.username|default:"-" }}</td>
                         <td class="runtime-muted runtime-path">{{ process.path|default:"-" }}</td>
                       </tr>

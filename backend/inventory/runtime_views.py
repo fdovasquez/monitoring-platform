@@ -62,21 +62,28 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
             for service in runtime.services or []
             if isinstance(service, dict)
         ]
-        processes = [
-            {
-                "pid": process.get("pid") or "-",
-                "name": process.get("name") or process.get("command") or "-",
-                "cpu_percent": process.get("cpu_percent") or 0,
-                "memory_mb": process.get("memory_mb") or 0,
-                "memory_percent": process.get("memory_percent") or 0,
-                "username": process.get("username") or process.get("user") or "-",
-                "path": process.get("path") or process.get("exe") or "-",
-                "window_title": process.get("window_title") or "",
-                "category": process.get("category") or "",
-            }
-            for process in runtime.processes or []
-            if isinstance(process, dict)
-        ]
+        processes = []
+        for process in runtime.processes or []:
+            if not isinstance(process, dict):
+                continue
+            cpu_percent = DeviceRuntimeView.number_value(process.get("cpu_percent"), 0)
+            memory_mb = DeviceRuntimeView.number_value(process.get("memory_mb"), 0)
+            memory_percent = DeviceRuntimeView.number_value(process.get("memory_percent"), 0)
+            processes.append(
+                {
+                    "pid": process.get("pid") or "-",
+                    "name": process.get("name") or process.get("command") or "-",
+                    "cpu_percent": cpu_percent,
+                    "cpu_label": DeviceRuntimeView.cpu_label(cpu_percent),
+                    "memory_mb": memory_mb,
+                    "memory_percent": memory_percent,
+                    "memory_label": DeviceRuntimeView.memory_label(memory_mb, memory_percent),
+                    "username": process.get("username") or process.get("user") or "-",
+                    "path": process.get("path") or process.get("exe") or "-",
+                    "window_title": process.get("window_title") or "",
+                    "category": process.get("category") or "",
+                }
+            )
         process_groups = DeviceRuntimeView.process_groups(server, processes)
         ports = [
             {
@@ -119,7 +126,7 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
             name = str(process.get("name") or "")
             title = str(process.get("window_title") or "").strip()
             path = str(process.get("path") or "")
-            is_app = process.get("category") == "app" or bool(title)
+            is_app = DeviceRuntimeView.is_windows_app_process(name, path, title, process.get("category"))
             item = {
                 **process,
                 "display_name": title or name,
@@ -135,3 +142,70 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
             {"title": "Aplicaciones", "items": apps[:40], "count": len(apps)},
             {"title": "Procesos en segundo plano", "items": background[:80], "count": len(background)},
         ]
+
+    @staticmethod
+    def number_value(value, default=0):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    @staticmethod
+    def cpu_label(cpu_percent):
+        if cpu_percent < 0:
+            return "-"
+        if cpu_percent > 100:
+            return "Pendiente"
+        if cpu_percent == int(cpu_percent):
+            return f"{int(cpu_percent)}%"
+        return f"{cpu_percent:.2f}%".replace(".", ",")
+
+    @staticmethod
+    def memory_label(memory_mb, memory_percent):
+        if memory_mb > 0:
+            if memory_mb >= 1024:
+                return f"{memory_mb / 1024:.2f} GB".replace(".", ",")
+            return f"{memory_mb:.1f} MB".replace(".", ",")
+        if memory_percent > 0:
+            return f"{memory_percent:.2f}%".replace(".", ",")
+        return "Sin dato"
+
+    @staticmethod
+    def is_windows_app_process(name, path, title, category):
+        normalized_name = (name or "").lower().replace(".exe", "")
+        normalized_path = (path or "").lower().replace("/", "\\")
+        known_apps = {
+            "acrord32",
+            "chrome",
+            "code",
+            "cmd",
+            "excel",
+            "firefox",
+            "iexplore",
+            "mremoteng",
+            "msedge",
+            "mstsc",
+            "notepad",
+            "notepad++",
+            "outlook",
+            "powerpnt",
+            "powershell",
+            "powershell_ise",
+            "putty",
+            "sqldeveloper",
+            "sqldeveloper64w",
+            "taskmgr",
+            "teams",
+            "wezterm",
+            "winword",
+            "winscp",
+            "windowsterminal",
+            "wt",
+        }
+        if category == "app" or title:
+            return True
+        if normalized_name in known_apps:
+            return True
+        if "\\users\\" in normalized_path and "\\desktop\\" in normalized_path:
+            return True
+        return False
