@@ -50,68 +50,127 @@
     </nav>
 
     {% if active_settings_tab == 'site' %}
-    <section class="settings-layout">
-      <form class="profile-card settings-card" method="post" enctype="multipart/form-data" data-loading-form>
+    <section class="settings-layout visual-settings-layout">
+      <form class="profile-card settings-card visual-settings-card" method="post" enctype="multipart/form-data" data-loading-form>
         {% csrf_token %}
         <input type="hidden" name="action" value="save_site">
         <div class="profile-card-head">
           <div>
-            <h2>Identidad visual</h2>
-            <p>Los cambios se aplican a la cabecera del sitio despues de guardar.</p>
+            <h2>Identidad visual corporativa</h2>
+            <p>Administra la marca visible en cabecera, login y vistas principales de la plataforma.</p>
           </div>
         </div>
 
-        <div class="brand-preview">
-          <div class="brand-preview-logo" data-logo-preview-secondary>
-            {% if site_settings_edit.logo %}
-              <img src="{{ site_settings_edit.logo.url }}" alt="{{ site_settings_edit.site_name }}" data-resizable-logo>
-            {% else %}
-              <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings_edit.site_name }}" data-resizable-logo>
-            {% endif %}
-          </div>
-          <div>
-            <strong>{{ site_settings_edit.site_name }}</strong>
-            <span>{{ site_settings_edit.subtitle }}</span>
-          </div>
-        </div>
-
-        <div class="form-grid">
-          <div class="field">
-            <label for="{{ settings_form.site_name.id_for_label }}">Nombre del sitio</label>
-            {{ settings_form.site_name }}
-            {% for error in settings_form.site_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-          </div>
-          <div class="field">
-            <label for="{{ settings_form.subtitle.id_for_label }}">Texto inferior</label>
-            {{ settings_form.subtitle }}
-            {% for error in settings_form.subtitle.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-          </div>
-          <div class="field">
-            <label for="{{ settings_form.logo_width.id_for_label }}">Ancho del logo <span>px</span></label>
-            {{ settings_form.logo_width }}
-            {% if settings_form.logo_width.help_text %}<small>{{ settings_form.logo_width.help_text }}</small>{% endif %}
-            {% for error in settings_form.logo_width.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-          </div>
-          <div class="field">
-            <label for="{{ settings_form.logo_height.id_for_label }}">Alto del logo <span>px</span></label>
-            {{ settings_form.logo_height }}
-            {% if settings_form.logo_height.help_text %}<small>{{ settings_form.logo_height.help_text }}</small>{% endif %}
-            {% for error in settings_form.logo_height.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-          </div>
-          <div class="field field-wide">
-            <label for="{{ settings_form.logo.id_for_label }}">Logo</label>
-            <div class="upload-row">
-              <label class="file-button" for="{{ settings_form.logo.id_for_label }}">Subir logo</label>
-              {{ settings_form.logo }}
-              <span>JPG, PNG o WEBP hasta 2 MB.</span>
+        <div class="visual-brand-console">
+          <aside class="brand-preview-panel">
+            <span class="panel-label">Vista previa</span>
+            <div class="brand-browser-frame">
+              <div class="brand-browser-top">
+                <i></i><i></i><i></i>
+                <span>monitor.local</span>
+              </div>
+              <div class="brand-header-preview">
+                <div class="brand-preview-logo" data-logo-preview-secondary>
+                  {% if site_settings_edit.logo %}
+                    <img src="{{ site_settings_edit.logo.url }}" alt="{{ site_settings_edit.site_name }}" data-resizable-logo>
+                  {% else %}
+                    <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings_edit.site_name }}" data-resizable-logo>
+                  {% endif %}
+                </div>
+                <nav>
+                  <span class="active"></span>
+                  <span></span>
+                  <span></span>
+                </nav>
+              </div>
+              <div class="brand-login-preview">
+                <div>
+                  <strong>{{ site_settings_edit.site_name }}</strong>
+                  <span>{{ site_settings_edit.subtitle }}</span>
+                </div>
+                <em>Acceso corporativo</em>
+              </div>
             </div>
-            {% if site_settings_edit.logo %}
-              <label class="inline-check">
-                {{ settings_form.delete_logo }}
-                <span>Eliminar logo actual y usar el logo por defecto</span>
-              </label>
-            {% endif %}
-            {% for error in settings_form.logo.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            <div class="brand-rules">
+              <span>Formato recomendado</span>
+              <strong>PNG transparente o SVG convertido a PNG</strong>
+              <small>Usa contraste alto y evita margenes blancos dentro del archivo.</small>
+            </div>
+          </aside>
+
+          <div class="visual-form-panel">
+            <div class="settings-section-title">
+              <span>01</span>
+              <div>
+                <h3>Datos visibles</h3>
+                <p>Textos que identifican la instancia ante los usuarios.</p>
+              </div>
+            </div>
+
+            <div class="form-grid compact-form-grid">
+              <div class="field">
+                <label for="{{ settings_form.site_name.id_for_label }}">Nombre del sitio</label>
+                {{ settings_form.site_name }}
+                {% for error in settings_form.site_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+              </div>
+              <div class="field">
+                <label for="{{ settings_form.subtitle.id_for_label }}">Texto inferior</label>
+                {{ settings_form.subtitle }}
+                {% for error in settings_form.subtitle.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+              </div>
+            </div>
+
+            <div class="settings-section-title">
+              <span>02</span>
+              <div>
+                <h3>Logo y proporciones</h3>
+                <p>Ajusta el tamano que se renderiza en la cabecera.</p>
+              </div>
+            </div>
+
+            <div class="logo-control-grid">
+              <div class="field">
+                <label for="{{ settings_form.logo_width.id_for_label }}">Ancho del logo <span>px</span></label>
+                {{ settings_form.logo_width }}
+                {% if settings_form.logo_width.help_text %}<small>{{ settings_form.logo_width.help_text }}</small>{% endif %}
+                {% for error in settings_form.logo_width.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+              </div>
+              <div class="field">
+                <label for="{{ settings_form.logo_height.id_for_label }}">Alto del logo <span>px</span></label>
+                {{ settings_form.logo_height }}
+                {% if settings_form.logo_height.help_text %}<small>{{ settings_form.logo_height.help_text }}</small>{% endif %}
+                {% for error in settings_form.logo_height.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+              </div>
+              <div class="logo-size-hint">
+                <span>Actual</span>
+                <strong>{{ site_settings_edit.logo_width }} x {{ site_settings_edit.logo_height }} px</strong>
+                <small>Se aplica despues de guardar.</small>
+              </div>
+            </div>
+
+            <div class="settings-section-title">
+              <span>03</span>
+              <div>
+                <h3>Archivo de marca</h3>
+                <p>Reemplaza o elimina el logo corporativo actual.</p>
+              </div>
+            </div>
+
+            <div class="field field-wide upload-panel">
+              <label for="{{ settings_form.logo.id_for_label }}">Logo</label>
+              <div class="upload-row">
+                <label class="file-button" for="{{ settings_form.logo.id_for_label }}">Seleccionar archivo</label>
+                {{ settings_form.logo }}
+                <span>JPG, PNG o WEBP hasta 2 MB.</span>
+              </div>
+              {% if site_settings_edit.logo %}
+                <label class="inline-check">
+                  {{ settings_form.delete_logo }}
+                  <span>Eliminar logo actual y usar el logo por defecto</span>
+                </label>
+              {% endif %}
+              {% for error in settings_form.logo.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
           </div>
         </div>
 
