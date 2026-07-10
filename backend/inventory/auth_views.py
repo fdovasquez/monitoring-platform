@@ -1,6 +1,7 @@
 import hashlib
 import secrets
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from django import forms
 from django.contrib import messages
@@ -86,6 +87,32 @@ def safe_next_url(request):
     return next_url
 
 
+def is_viewer_only(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or user.groups.filter(name__in=["Administrador", "Editor"]).exists():
+        return False
+    return user.groups.filter(name="Visualizador").exists()
+
+
+def role_safe_next_url(user, next_url):
+    if not next_url:
+        return reverse("device-list")
+    if not is_viewer_only(user):
+        return next_url
+
+    path = urlparse(next_url).path or next_url
+    allowed_paths = (
+        reverse("device-list"),
+        reverse("profile"),
+        reverse("password-change"),
+    )
+    for allowed_path in allowed_paths:
+        if path == allowed_path or path.startswith(f"{allowed_path.rstrip('/')}/"):
+            return next_url
+    return reverse("device-list")
+
+
 def code_hash(code):
     return hashlib.sha256(code.encode("utf-8")).hexdigest()
 
@@ -116,7 +143,7 @@ class CorporateLoginView(TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect(safe_next_url(request))
+            return redirect(role_safe_next_url(request.user, safe_next_url(request)))
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -135,7 +162,7 @@ class CorporateLoginView(TemplateView):
         next_url = safe_next_url(request)
         if user.is_superuser or user.groups.filter(name="Administrador").exists():
             login(request, user)
-            return redirect(next_url)
+            return redirect(role_safe_next_url(user, next_url))
 
         code = f"{secrets.randbelow(1000000):06d}"
         try:
@@ -192,7 +219,7 @@ class LoginCodeVerifyView(TemplateView):
         if form.is_valid() and code_hash(form.cleaned_data["code"]) == pending.get("code_hash"):
             request.session.pop("pending_login_2fa", None)
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-            return redirect(pending.get("next_url") or reverse("device-list"))
+            return redirect(role_safe_next_url(user, pending.get("next_url") or reverse("device-list")))
 
         pending["attempts"] = int(pending.get("attempts", 0)) + 1
         request.session["pending_login_2fa"] = pending
