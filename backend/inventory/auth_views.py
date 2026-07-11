@@ -4,6 +4,7 @@ from datetime import timedelta
 from urllib.parse import urlparse
 
 from django import forms
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -17,6 +18,12 @@ from django.views.generic import TemplateView
 
 from alerts.models import SmtpSettings
 from alerts.services import sender, smtp_backend
+
+
+def default_login_redirect():
+    if django_settings.CENTRAL_PORTAL_ENABLED:
+        return reverse("hub-dashboard")
+    return reverse("device-list")
 
 
 class CorporateLoginForm(forms.Form):
@@ -81,9 +88,9 @@ class LoginCodeForm(forms.Form):
 
 
 def safe_next_url(request):
-    next_url = request.POST.get("next") or request.GET.get("next") or reverse("device-list")
+    next_url = request.POST.get("next") or request.GET.get("next") or default_login_redirect()
     if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        return reverse("device-list")
+        return default_login_redirect()
     return next_url
 
 
@@ -97,20 +104,27 @@ def is_viewer_only(user):
 
 def role_safe_next_url(user, next_url):
     if not next_url:
-        return reverse("device-list")
+        return default_login_redirect()
     if not is_viewer_only(user):
         return next_url
 
     path = urlparse(next_url).path or next_url
-    allowed_paths = (
-        reverse("device-list"),
-        reverse("profile"),
-        reverse("password-change"),
-    )
+    if django_settings.CENTRAL_PORTAL_ENABLED:
+        allowed_paths = (
+            reverse("hub-dashboard"),
+            reverse("profile"),
+            reverse("password-change"),
+        )
+    else:
+        allowed_paths = (
+            reverse("device-list"),
+            reverse("profile"),
+            reverse("password-change"),
+        )
     for allowed_path in allowed_paths:
         if path == allowed_path or path.startswith(f"{allowed_path.rstrip('/')}/"):
             return next_url
-    return reverse("device-list")
+    return default_login_redirect()
 
 
 def code_hash(code):
@@ -219,7 +233,7 @@ class LoginCodeVerifyView(TemplateView):
         if form.is_valid() and code_hash(form.cleaned_data["code"]) == pending.get("code_hash"):
             request.session.pop("pending_login_2fa", None)
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-            return redirect(role_safe_next_url(user, pending.get("next_url") or reverse("device-list")))
+            return redirect(role_safe_next_url(user, pending.get("next_url") or default_login_redirect()))
 
         pending["attempts"] = int(pending.get("attempts", 0)) + 1
         request.session["pending_login_2fa"] = pending

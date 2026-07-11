@@ -76,6 +76,16 @@
                   <span><strong>{{ satellite.servers_total }}</strong><small>Servidores</small></span>
                   <span><strong>{{ satellite.alerts_unresolved }}</strong><small>Alertas</small></span>
                 </div>
+                <div class="site-disk-risk {% if item.worst_disk.percent >= 90 %}critical{% elif item.worst_disk.percent >= 80 %}warning{% else %}normal{% endif %}">
+                  <span>Disco mas exigido</span>
+                  {% if item.worst_disk %}
+                    <strong>{{ item.worst_disk.server.name|default:item.worst_disk.server.hostname }} / {{ item.worst_disk.label }}</strong>
+                    <small>{{ item.worst_disk.percent|floatformat:1 }}% utilizado{% if item.worst_disk.free_gb is not None %} / {{ item.worst_disk.free_gb|floatformat:1 }} GB libres{% endif %}</small>
+                  {% else %}
+                    <strong>Sin discos reportados</strong>
+                    <small>El satelite aun no informa particiones o uso general de disco.</small>
+                  {% endif %}
+                </div>
                 <div class="site-footer">
                   <span>Ultimo reporte</span>
                   <strong>

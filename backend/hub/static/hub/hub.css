@@ -258,6 +258,44 @@
   font-size: 20px;
 }
 
+.site-disk-risk {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+}
+
+.site-disk-risk span {
+  color: #526174;
+  font-size: 12px;
+}
+
+.site-disk-risk strong {
+  color: #111827;
+}
+
+.site-disk-risk.warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.site-disk-risk.warning span,
+.site-disk-risk.warning small {
+  color: #92400e;
+}
+
+.site-disk-risk.critical {
+  background: #fff7f7;
+  border-color: #fecaca;
+}
+
+.site-disk-risk.critical span,
+.site-disk-risk.critical small {
+  color: #b91c1c;
+}
+
 .site-footer {
   padding-top: 12px;
   border-top: 1px solid #edf2f7;

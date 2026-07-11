@@ -14,6 +14,54 @@ from .serializers import SatelliteReportSerializer
 from .services import store_report
 
 
+def number_or_none(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def server_disk_risk(server):
+    metric = server.latest_metric if isinstance(server.latest_metric, dict) else {}
+    payload = metric.get("payload") if isinstance(metric.get("payload"), dict) else {}
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    disks = metrics.get("disks")
+    candidates = []
+
+    if isinstance(disks, list):
+        for disk in disks:
+            if not isinstance(disk, dict):
+                continue
+            percent = number_or_none(disk.get("percent"))
+            if percent is None:
+                continue
+            candidates.append(
+                {
+                    "server": server,
+                    "label": disk.get("mountpoint") or disk.get("device") or "Disco",
+                    "percent": percent,
+                    "free_gb": number_or_none(disk.get("free_gb")),
+                    "total_gb": number_or_none(disk.get("total_gb")),
+                }
+            )
+
+    disk_percent = number_or_none(metric.get("disk_percent"))
+    if not candidates and disk_percent is not None:
+        candidates.append(
+            {
+                "server": server,
+                "label": "Principal",
+                "percent": disk_percent,
+                "free_gb": None,
+                "total_gb": None,
+            }
+        )
+
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: item["percent"])
+
+
 def incoming_token(request):
     header = request.headers.get("Authorization", "")
     prefix = "Bearer "
@@ -114,12 +162,18 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             minutes_since_report = None
             if satellite.last_report_at:
                 minutes_since_report = int((now - satellite.last_report_at).total_seconds() / 60)
+            satellite_servers = [server for server in servers if server.satellite_id == satellite.id]
+            disk_risks = [risk for risk in (server_disk_risk(server) for server in satellite_servers) if risk]
+            worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
             site_cards.append(
                 {
                     "satellite": satellite,
                     "minutes_since_report": minutes_since_report,
                     "is_stale": minutes_since_report is None or minutes_since_report > 15,
-                    "server_count": satellite.server_snapshots.count(),
+                    "server_count": len(satellite_servers),
+                    "worst_disk": worst_disk,
+                    "disk_warning_count": sum(1 for risk in disk_risks if risk["percent"] >= 80),
+                    "disk_critical_count": sum(1 for risk in disk_risks if risk["percent"] >= 90),
                 }
             )
 
