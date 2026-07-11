@@ -11,65 +11,151 @@
 <body>
   {% include "inventory/partials/app_header.html" %}
   <main class="app-main hub-page">
-    <section class="hub-hero">
-      <div>
-        <span class="eyebrow">OPERACION CENTRALIZADA</span>
-        <h1>Hub Central</h1>
-        <p>Consolida satelites remotos, estado de sitios, servidores reportados y alertas activas recibidas por HTTPS saliente.</p>
+    <section class="hub-command">
+      <div class="hub-command-title">
+        <span class="hub-icon">HC</span>
+        <div>
+          <span class="eyebrow">CENTRO DE OPERACION</span>
+          <h1>Monitoreo centralizado</h1>
+          <p>Vista consolidada de satelites, servidores, alertas y continuidad operacional recibida por HTTPS saliente.</p>
+        </div>
       </div>
-      <div class="hub-endpoint">
-        <span>Endpoint de recepcion</span>
-        <code>/api/v1/satellites/report</code>
+      <div class="hub-command-status">
+        <span class="status-dot ok"></span>
+        <div>
+          <strong>{{ summary.health_percent }}%</strong>
+          <small>Salud global de sitios</small>
+        </div>
       </div>
     </section>
 
     <section class="hub-kpis" aria-label="Indicadores centrales">
       <article>
-        <span>Satelites</span>
+        <span>Satelites conectados</span>
         <strong>{{ summary.satellites }}</strong>
-        <small>Sitios registrados</small>
+        <small>Origenes remotos registrados</small>
       </article>
       <article>
-        <span>Servidores</span>
+        <span>Servidores consolidados</span>
         <strong>{{ summary.servers }}</strong>
-        <small>Activos consolidados</small>
+        <small>Activos reportados por los satelites</small>
       </article>
       <article class="warn">
         <span>Alertas abiertas</span>
         <strong>{{ summary.unresolved_alerts }}</strong>
-        <small>{{ summary.critical }} criticas / {{ summary.warning }} advertencias</small>
+        <small>{{ summary.critical|add:summary.critica }} criticas / {{ summary.warning|add:summary.advertencia }} advertencias</small>
       </article>
+      <article>
+        <span>Ultima revision</span>
+        <strong>{{ now|date:"H:i" }}</strong>
+        <small>{{ now|date:"d/m/Y" }}</small>
+      </article>
+    </section>
+
+    <section class="hub-layout">
+      <article class="hub-card hub-sites">
+        <div class="hub-card-head">
+          <div>
+            <h2>Estado por sitio</h2>
+            <p>Resumen operacional de cada monitor local conectado al Hub Central.</p>
+          </div>
+        </div>
+        <div class="site-grid">
+          {% for item in site_cards %}
+            {% with satellite=item.satellite %}
+              <div class="site-card {{ satellite.status }}{% if item.is_stale %} stale{% endif %}">
+                <div class="site-card-head">
+                  <div>
+                    <strong>{{ satellite.name }}</strong>
+                    <small>{{ satellite.satellite_id }} / {{ satellite.hostname|default:"sin hostname" }}</small>
+                  </div>
+                  <span class="site-state"><i class="hub-status {{ satellite.status }}"></i>{{ satellite.get_status_display }}</span>
+                </div>
+                <div class="site-metrics">
+                  <span><strong>{{ satellite.servers_online }}</strong><small>En linea</small></span>
+                  <span><strong>{{ satellite.servers_total }}</strong><small>Servidores</small></span>
+                  <span><strong>{{ satellite.alerts_unresolved }}</strong><small>Alertas</small></span>
+                </div>
+                <div class="site-footer">
+                  <span>Ultimo reporte</span>
+                  <strong>
+                    {% if item.minutes_since_report is not None %}
+                      hace {{ item.minutes_since_report }} min
+                    {% else %}
+                      sin reporte
+                    {% endif %}
+                  </strong>
+                </div>
+              </div>
+            {% endwith %}
+          {% empty %}
+            <div class="hub-empty">Aun no hay satelites reportando hacia el Hub Central.</div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <aside class="hub-card hub-alerts">
+        <div class="hub-card-head">
+          <div>
+            <h2>Alertas relevantes</h2>
+            <p>Eventos abiertos recibidos desde los sitios.</p>
+          </div>
+        </div>
+        <div class="alert-stack">
+          {% for alert in critical_alerts %}
+            <div class="alert-item critical">
+              <span>Critica</span>
+              <strong>{{ alert.rule|default:"Alerta critica" }}</strong>
+              <small>{{ alert.satellite.name }} / {{ alert.server_hostname|default:"sin servidor" }}</small>
+            </div>
+          {% endfor %}
+          {% for alert in warning_alerts %}
+            <div class="alert-item warning">
+              <span>Advertencia</span>
+              <strong>{{ alert.rule|default:"Alerta de advertencia" }}</strong>
+              <small>{{ alert.satellite.name }} / {{ alert.server_hostname|default:"sin servidor" }}</small>
+            </div>
+          {% endfor %}
+          {% if not critical_alerts and not warning_alerts %}
+            <div class="hub-empty">No hay alertas abiertas relevantes.</div>
+          {% endif %}
+        </div>
+      </aside>
     </section>
 
     <section class="hub-grid">
       <article class="hub-card">
         <div class="hub-card-head">
           <div>
-            <h2>Satelites conectados</h2>
-            <p>Ultimo estado reportado por cada monitor local.</p>
+            <h2>Servidores consolidados</h2>
+            <p>Activos reportados por todos los satelites, priorizados por condicion.</p>
           </div>
         </div>
-        <div class="hub-table">
-          <div class="hub-row hub-row-head">
-            <span>Sitio</span>
-            <span>Estado</span>
-            <span>Servidores</span>
-            <span>Alertas</span>
-            <span>Ultimo reporte</span>
-          </div>
-          {% for satellite in satellites %}
-            <div class="hub-row">
-              <span>
-                <strong>{{ satellite.name }}</strong>
-                <small>{{ satellite.satellite_id }} · {{ satellite.hostname|default:"sin hostname" }}</small>
-              </span>
-              <span><i class="hub-status {{ satellite.status }}"></i>{{ satellite.get_status_display }}</span>
-              <span>{{ satellite.servers_online }} / {{ satellite.servers_total }}</span>
-              <span>{{ satellite.alerts_unresolved }}</span>
-              <span>{{ satellite.last_report_at|date:"d/m/Y H:i"|default:"Sin reporte" }}</span>
-            </div>
+        <div class="server-list">
+          {% for item in server_cards %}
+            {% with server=item.server %}
+              <div class="server-card {{ item.priority }}">
+                <div class="server-main">
+                  <span class="server-avatar">{{ server.os_type|default:"SRV"|slice:":3"|upper }}</span>
+                  <div>
+                    <strong>{{ server.name|default:server.hostname }}</strong>
+                    <small>{{ server.satellite.name }} / {{ server.ip_address|default:"Sin IP" }}</small>
+                  </div>
+                </div>
+                <div class="server-condition">
+                  <span class="condition-pill {{ item.priority }}">
+                    {% if item.priority == "critical" %}Critico{% elif item.priority == "warning" %}Advertencia{% else %}Normal{% endif %}
+                  </span>
+                </div>
+                <div class="server-metrics">
+                  <span>CPU <strong>{{ item.cpu|default:"-" }}{% if item.cpu %}%{% endif %}</strong></span>
+                  <span>RAM <strong>{{ item.memory|default:"-" }}{% if item.memory %}%{% endif %}</strong></span>
+                  <span>Disco <strong>{{ item.disk|default:"-" }}{% if item.disk %}%{% endif %}</strong></span>
+                </div>
+              </div>
+            {% endwith %}
           {% empty %}
-            <div class="hub-empty">Aun no hay satelites reportando hacia el Hub Central.</div>
+            <div class="hub-empty">No hay servidores consolidados.</div>
           {% endfor %}
         </div>
       </article>
@@ -85,7 +171,7 @@
           {% for report in recent_reports %}
             <div class="hub-report">
               <span>{{ report.satellite.name }}</span>
-              <strong>{{ report.agents_count }} servidores · {{ report.alerts_count }} alertas</strong>
+              <strong>{{ report.agents_count }} servidores / {{ report.alerts_count }} alertas</strong>
               <small>{{ report.received_at|date:"d/m/Y H:i:s" }}</small>
             </div>
           {% empty %}

@@ -65,24 +65,88 @@ class HubDashboardView(HubAccessMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         satellites = list(Satellite.objects.all())
-        total_servers = SatelliteServerSnapshot.objects.count()
-        unresolved_alerts = SatelliteAlert.objects.filter(is_resolved=False)
+        servers = list(SatelliteServerSnapshot.objects.select_related("satellite").all())
+        total_servers = len(servers)
+        unresolved_alerts = SatelliteAlert.objects.filter(is_resolved=False).select_related("satellite")
         reports = SatelliteReport.objects.select_related("satellite").order_by("-received_at")[:10]
         priority_counts = {
             item["priority"] or "sin_prioridad": item["total"]
             for item in unresolved_alerts.values("priority").annotate(total=Count("id"))
         }
+        critical_terms = {"critical", "critica", "critico"}
+        warning_terms = {"warning", "advertencia"}
+        critical_alerts = [
+            alert for alert in unresolved_alerts if (alert.priority or "").lower() in critical_terms
+        ]
+        warning_alerts = [
+            alert for alert in unresolved_alerts if (alert.priority or "").lower() in warning_terms
+        ]
+        alert_lookup = {}
+        for alert in unresolved_alerts:
+            alert_lookup.setdefault((alert.satellite_id, alert.server_hostname), []).append(alert)
+
+        server_cards = []
+        for server in servers:
+            metric = server.latest_metric if isinstance(server.latest_metric, dict) else {}
+            server_alerts = alert_lookup.get((server.satellite_id, server.hostname), [])
+            priority = "normal"
+            if any((alert.priority or "").lower() in critical_terms for alert in server_alerts):
+                priority = "critical"
+            elif server_alerts:
+                priority = "warning"
+            server_cards.append(
+                {
+                    "server": server,
+                    "metric": metric,
+                    "alerts": server_alerts,
+                    "priority": priority,
+                    "cpu": metric.get("cpu_percent"),
+                    "memory": metric.get("memory_percent"),
+                    "disk": metric.get("disk_percent"),
+                }
+            )
+
+        site_cards = []
+        now = timezone.now()
+        for satellite in satellites:
+            minutes_since_report = None
+            if satellite.last_report_at:
+                minutes_since_report = int((now - satellite.last_report_at).total_seconds() / 60)
+            site_cards.append(
+                {
+                    "satellite": satellite,
+                    "minutes_since_report": minutes_since_report,
+                    "is_stale": minutes_since_report is None or minutes_since_report > 15,
+                    "server_count": satellite.server_snapshots.count(),
+                }
+            )
+
+        health_percent = 100
+        if satellites:
+            healthy = sum(1 for satellite in satellites if satellite.status == Satellite.STATUS_OK)
+            health_percent = round((healthy / len(satellites)) * 100)
+
         context.update(
             {
                 "active_menu": "hub",
                 "satellites": satellites,
+                "site_cards": site_cards,
+                "server_cards": sorted(
+                    server_cards,
+                    key=lambda item: {"critical": 0, "warning": 1, "normal": 2}[item["priority"]],
+                )[:12],
+                "critical_alerts": critical_alerts[:8],
+                "warning_alerts": warning_alerts[:8],
                 "recent_reports": reports,
                 "summary": {
                     "satellites": len(satellites),
                     "servers": total_servers,
                     "unresolved_alerts": unresolved_alerts.count(),
                     "critical": priority_counts.get("critical", 0),
+                    "critica": priority_counts.get("critica", 0),
                     "warning": priority_counts.get("warning", 0),
+                    "advertencia": priority_counts.get("advertencia", 0),
+                    "health_percent": health_percent,
                 },
                 "now": timezone.now(),
             }
