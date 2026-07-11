@@ -1,0 +1,99 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hub Central</title>
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <link rel="stylesheet" href="{% static 'hub/hub.css' %}">
+</head>
+<body>
+  {% include "inventory/partials/app_header.html" %}
+  <main class="app-main hub-page">
+    <section class="hub-hero">
+      <div>
+        <span class="eyebrow">OPERACION CENTRALIZADA</span>
+        <h1>Hub Central</h1>
+        <p>Consolida satelites remotos, estado de sitios, servidores reportados y alertas activas recibidas por HTTPS saliente.</p>
+      </div>
+      <div class="hub-endpoint">
+        <span>Endpoint de recepcion</span>
+        <code>/api/v1/satellites/report</code>
+      </div>
+    </section>
+
+    <section class="hub-kpis" aria-label="Indicadores centrales">
+      <article>
+        <span>Satelites</span>
+        <strong>{{ summary.satellites }}</strong>
+        <small>Sitios registrados</small>
+      </article>
+      <article>
+        <span>Servidores</span>
+        <strong>{{ summary.servers }}</strong>
+        <small>Activos consolidados</small>
+      </article>
+      <article class="warn">
+        <span>Alertas abiertas</span>
+        <strong>{{ summary.unresolved_alerts }}</strong>
+        <small>{{ summary.critical }} criticas / {{ summary.warning }} advertencias</small>
+      </article>
+    </section>
+
+    <section class="hub-grid">
+      <article class="hub-card">
+        <div class="hub-card-head">
+          <div>
+            <h2>Satelites conectados</h2>
+            <p>Ultimo estado reportado por cada monitor local.</p>
+          </div>
+        </div>
+        <div class="hub-table">
+          <div class="hub-row hub-row-head">
+            <span>Sitio</span>
+            <span>Estado</span>
+            <span>Servidores</span>
+            <span>Alertas</span>
+            <span>Ultimo reporte</span>
+          </div>
+          {% for satellite in satellites %}
+            <div class="hub-row">
+              <span>
+                <strong>{{ satellite.name }}</strong>
+                <small>{{ satellite.satellite_id }} · {{ satellite.hostname|default:"sin hostname" }}</small>
+              </span>
+              <span><i class="hub-status {{ satellite.status }}"></i>{{ satellite.get_status_display }}</span>
+              <span>{{ satellite.servers_online }} / {{ satellite.servers_total }}</span>
+              <span>{{ satellite.alerts_unresolved }}</span>
+              <span>{{ satellite.last_report_at|date:"d/m/Y H:i"|default:"Sin reporte" }}</span>
+            </div>
+          {% empty %}
+            <div class="hub-empty">Aun no hay satelites reportando hacia el Hub Central.</div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="hub-card">
+        <div class="hub-card-head">
+          <div>
+            <h2>Reportes recientes</h2>
+            <p>Recepciones registradas por el endpoint central.</p>
+          </div>
+        </div>
+        <div class="hub-report-list">
+          {% for report in recent_reports %}
+            <div class="hub-report">
+              <span>{{ report.satellite.name }}</span>
+              <strong>{{ report.agents_count }} servidores · {{ report.alerts_count }} alertas</strong>
+              <small>{{ report.received_at|date:"d/m/Y H:i:s" }}</small>
+            </div>
+          {% empty %}
+            <div class="hub-empty">Sin reportes recibidos.</div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

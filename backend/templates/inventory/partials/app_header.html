@@ -21,6 +21,7 @@
         <a class="{% if active_menu == 'incidents' %}active{% endif %}" href="{% url 'incidents' %}">Incidentes</a>
         <a class="{% if active_menu == 'compliance' %}active{% endif %}" href="{% url 'compliance' %}">Cumplimiento</a>
         <a class="{% if active_menu == 'reports' %}active{% endif %}" href="{% url 'reports' %}">Reportes</a>
+        <a class="{% if active_menu == 'hub' %}active{% endif %}" href="{% url 'hub-dashboard' %}">Central</a>
       {% endif %}
       {% if can_manage_devices %}
         <a class="{% if active_menu == 'agents' %}active{% endif %}" href="{% url 'agent-install' %}">Instalar agente</a>

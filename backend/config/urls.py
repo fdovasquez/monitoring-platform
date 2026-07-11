@@ -10,7 +10,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("app/", include("inventory.urls")),
     path("app/alerts/", include("alerts.urls")),
+    path("app/hub/", include("hub.app_urls")),
     path("api/v1/metrics/", include("metrics.urls")),
+    path("api/v1/satellites/", include("hub.urls")),
 ]
 
 if settings.DEBUG:
