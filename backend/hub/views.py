@@ -157,6 +157,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             )
 
         site_cards = []
+        site_status_counts = {"all": len(satellites), "critical": 0, "warning": 0, "ok": 0, "offline": 0}
         now = timezone.now()
         for satellite in satellites:
             minutes_since_report = None
@@ -176,6 +177,25 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     "disk_critical_count": sum(1 for risk in disk_risks if risk["percent"] >= 90),
                 }
             )
+            if minutes_since_report is None or minutes_since_report > 15 or satellite.status == Satellite.STATUS_OFFLINE:
+                site_status_counts["offline"] += 1
+            elif satellite.status == Satellite.STATUS_CRITICAL:
+                site_status_counts["critical"] += 1
+            elif satellite.status == Satellite.STATUS_WARNING:
+                site_status_counts["warning"] += 1
+            else:
+                site_status_counts["ok"] += 1
+
+        site_cards = sorted(
+            site_cards,
+            key=lambda item: (
+                {"critical": 0, "offline": 1, "warning": 2, "ok": 3}.get(
+                    "offline" if item["is_stale"] else item["satellite"].status,
+                    4,
+                ),
+                item["satellite"].name.lower(),
+            ),
+        )
 
         health_percent = 100
         if satellites:
@@ -187,6 +207,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                 "active_menu": "hub",
                 "satellites": satellites,
                 "site_cards": site_cards,
+                "site_status_counts": site_status_counts,
                 "server_cards": sorted(
                     server_cards,
                     key=lambda item: {"critical": 0, "warning": 1, "normal": 2}[item["priority"]],

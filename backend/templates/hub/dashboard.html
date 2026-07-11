@@ -54,16 +54,34 @@
 
     <section class="hub-layout">
       <article class="hub-card hub-sites">
-        <div class="hub-card-head">
+        <div class="hub-card-head hub-card-head-stack">
           <div>
             <h2>Estado por sitio</h2>
-            <p>Resumen operacional de cada monitor local conectado al Hub Central.</p>
+            <p>Resumen operacional de cada monitor local conectado al Hub Central. Preparado para operar multiples satelites.</p>
+          </div>
+          <div class="site-toolbar" aria-label="Filtros de satelites">
+            <label class="site-search">
+              <span>Buscar</span>
+              <input id="siteSearch" type="search" placeholder="Sitio, ID, hostname o estado">
+            </label>
+            <div class="site-filters" role="group" aria-label="Filtrar por estado">
+              <button class="active" type="button" data-site-filter="all">Todos <span>{{ site_status_counts.all }}</span></button>
+              <button type="button" data-site-filter="critical">Criticos <span>{{ site_status_counts.critical }}</span></button>
+              <button type="button" data-site-filter="warning">Advertencia <span>{{ site_status_counts.warning }}</span></button>
+              <button type="button" data-site-filter="ok">Normal <span>{{ site_status_counts.ok }}</span></button>
+              <button type="button" data-site-filter="offline">Sin reporte <span>{{ site_status_counts.offline }}</span></button>
+            </div>
           </div>
         </div>
         <div class="site-grid">
           {% for item in site_cards %}
             {% with satellite=item.satellite %}
-              <div class="site-card {{ satellite.status }}{% if item.is_stale %} stale{% endif %}">
+              <div
+                class="site-card {{ satellite.status }}{% if item.is_stale %} stale{% endif %}"
+                data-site-card
+                data-site-status="{% if item.is_stale %}offline{% else %}{{ satellite.status }}{% endif %}"
+                data-site-search="{{ satellite.name }} {{ satellite.satellite_id }} {{ satellite.hostname|default:'' }} {{ satellite.get_status_display }}"
+              >
                 <div class="site-card-head">
                   <div>
                     <strong>{{ satellite.name }}</strong>
@@ -87,14 +105,20 @@
                   {% endif %}
                 </div>
                 <div class="site-footer">
-                  <span>Ultimo reporte</span>
-                  <strong>
-                    {% if item.minutes_since_report is not None %}
-                      hace {{ item.minutes_since_report }} min
-                    {% else %}
-                      sin reporte
-                    {% endif %}
-                  </strong>
+                  <span>
+                    <small>Ultimo reporte</small>
+                    <strong>
+                      {% if item.minutes_since_report is not None %}
+                        hace {{ item.minutes_since_report }} min
+                      {% else %}
+                        sin reporte
+                      {% endif %}
+                    </strong>
+                  </span>
+                  <span>
+                    <small>Discos en riesgo</small>
+                    <strong>{{ item.disk_critical_count }} criticos / {{ item.disk_warning_count }} advertencia</strong>
+                  </span>
                 </div>
               </div>
             {% endwith %}
@@ -102,6 +126,7 @@
             <div class="hub-empty">Aun no hay satelites reportando hacia el Hub Central.</div>
           {% endfor %}
         </div>
+        <div class="hub-empty site-empty" id="siteEmpty" hidden>No hay sitios que coincidan con el filtro.</div>
       </article>
 
       <aside class="hub-card hub-alerts">
@@ -191,5 +216,42 @@
       </article>
     </section>
   </main>
+  <script>
+    (function () {
+      const searchInput = document.getElementById("siteSearch");
+      const filterButtons = Array.from(document.querySelectorAll("[data-site-filter]"));
+      const cards = Array.from(document.querySelectorAll("[data-site-card]"));
+      const empty = document.getElementById("siteEmpty");
+      let activeFilter = "all";
+
+      function normalize(value) {
+        return (value || "").toString().toLowerCase();
+      }
+
+      function applyFilters() {
+        const query = normalize(searchInput ? searchInput.value : "");
+        let visible = 0;
+        cards.forEach((card) => {
+          const status = card.dataset.siteStatus || "";
+          const text = normalize(card.dataset.siteSearch);
+          const statusMatches = activeFilter === "all" || status === activeFilter;
+          const textMatches = !query || text.includes(query);
+          const show = statusMatches && textMatches;
+          card.hidden = !show;
+          if (show) visible += 1;
+        });
+        if (empty) empty.hidden = visible !== 0;
+      }
+
+      filterButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.siteFilter || "all";
+          filterButtons.forEach((item) => item.classList.toggle("active", item === button));
+          applyFilters();
+        });
+      });
+      if (searchInput) searchInput.addEventListener("input", applyFilters);
+    })();
+  </script>
 </body>
 </html>
