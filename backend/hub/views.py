@@ -62,6 +62,31 @@ def server_disk_risk(server):
     return max(candidates, key=lambda item: item["percent"])
 
 
+def average_metric(values):
+    clean_values = [value for value in values if value is not None]
+    if not clean_values:
+        return None
+    return round(sum(clean_values) / len(clean_values), 1)
+
+
+def disk_status_for(risk):
+    if not risk:
+        return "unknown"
+    if risk["percent"] >= 90:
+        return "critical"
+    if risk["percent"] >= 80:
+        return "warning"
+    return "normal"
+
+
+def percent_label(value):
+    if value is None:
+        return "-"
+    if float(value).is_integer():
+        return f"{int(value)}%"
+    return f"{value:.1f}%"
+
+
 def incoming_token(request):
     header = request.headers.get("Authorization", "")
     prefix = "Bearer "
@@ -150,11 +175,14 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     "metric": metric,
                     "alerts": server_alerts,
                     "priority": priority,
-                    "cpu": metric.get("cpu_percent"),
-                    "memory": metric.get("memory_percent"),
-                    "disk": metric.get("disk_percent"),
+                    "cpu": number_or_none(metric.get("cpu_percent")),
+                    "memory": number_or_none(metric.get("memory_percent")),
+                    "disk": number_or_none(metric.get("disk_percent")),
                 }
             )
+            server_cards[-1]["cpu_label"] = percent_label(server_cards[-1]["cpu"])
+            server_cards[-1]["memory_label"] = percent_label(server_cards[-1]["memory"])
+            server_cards[-1]["disk_label"] = percent_label(server_cards[-1]["disk"])
 
         site_cards = []
         site_status_counts = {"all": len(satellites), "critical": 0, "warning": 0, "ok": 0, "offline": 0}
@@ -166,22 +194,33 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             satellite_servers = [server for server in servers if server.satellite_id == satellite.id]
             disk_risks = [risk for risk in (server_disk_risk(server) for server in satellite_servers) if risk]
             worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
+            is_stale = minutes_since_report is None or minutes_since_report > 15
+            operational_status = "offline" if is_stale or satellite.status == Satellite.STATUS_OFFLINE else satellite.status
+            status_labels = {
+                "ok": "Normal",
+                "warning": "Advertencia",
+                "critical": "Critico",
+                "offline": "Sin reporte",
+            }
             site_cards.append(
                 {
                     "satellite": satellite,
                     "minutes_since_report": minutes_since_report,
-                    "is_stale": minutes_since_report is None or minutes_since_report > 15,
+                    "is_stale": is_stale,
+                    "operational_status": operational_status,
+                    "status_label": status_labels.get(operational_status, "Normal"),
                     "server_count": len(satellite_servers),
                     "worst_disk": worst_disk,
+                    "disk_status": disk_status_for(worst_disk),
                     "disk_warning_count": sum(1 for risk in disk_risks if risk["percent"] >= 80),
                     "disk_critical_count": sum(1 for risk in disk_risks if risk["percent"] >= 90),
                 }
             )
-            if minutes_since_report is None or minutes_since_report > 15 or satellite.status == Satellite.STATUS_OFFLINE:
+            if operational_status == "offline":
                 site_status_counts["offline"] += 1
-            elif satellite.status == Satellite.STATUS_CRITICAL:
+            elif operational_status == Satellite.STATUS_CRITICAL:
                 site_status_counts["critical"] += 1
-            elif satellite.status == Satellite.STATUS_WARNING:
+            elif operational_status == Satellite.STATUS_WARNING:
                 site_status_counts["warning"] += 1
             else:
                 site_status_counts["ok"] += 1
@@ -190,7 +229,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             site_cards,
             key=lambda item: (
                 {"critical": 0, "offline": 1, "warning": 2, "ok": 3}.get(
-                    "offline" if item["is_stale"] else item["satellite"].status,
+                    item["operational_status"],
                     4,
                 ),
                 item["satellite"].name.lower(),
@@ -199,8 +238,19 @@ class HubDashboardView(HubAccessMixin, TemplateView):
 
         health_percent = 100
         if satellites:
-            healthy = sum(1 for satellite in satellites if satellite.status == Satellite.STATUS_OK)
+            healthy = site_status_counts["ok"]
             health_percent = round((healthy / len(satellites)) * 100)
+
+        disk_risk_sites = sum(
+            1 for item in site_cards if item["disk_status"] in {"critical", "warning"}
+        )
+        stale_sites = site_status_counts["offline"]
+        critical_total = priority_counts.get("critical", 0) + priority_counts.get("critica", 0)
+        warning_total = priority_counts.get("warning", 0) + priority_counts.get("advertencia", 0)
+        avg_cpu = average_metric([item["cpu"] for item in server_cards])
+        avg_memory = average_metric([item["memory"] for item in server_cards])
+        avg_disk = average_metric([item["disk"] for item in server_cards])
+        online_servers = sum(satellite.servers_online for satellite in satellites)
 
         context.update(
             {
@@ -218,12 +268,23 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                 "summary": {
                     "satellites": len(satellites),
                     "servers": total_servers,
+                    "servers_online": online_servers,
                     "unresolved_alerts": unresolved_alerts.count(),
                     "critical": priority_counts.get("critical", 0),
                     "critica": priority_counts.get("critica", 0),
                     "warning": priority_counts.get("warning", 0),
                     "advertencia": priority_counts.get("advertencia", 0),
+                    "critical_total": critical_total,
+                    "warning_total": warning_total,
                     "health_percent": health_percent,
+                    "stale_sites": stale_sites,
+                    "disk_risk_sites": disk_risk_sites,
+                    "avg_cpu": avg_cpu,
+                    "avg_memory": avg_memory,
+                    "avg_disk": avg_disk,
+                    "avg_cpu_label": percent_label(avg_cpu),
+                    "avg_memory_label": percent_label(avg_memory),
+                    "avg_disk_label": percent_label(avg_disk),
                 },
                 "now": timezone.now(),
             }

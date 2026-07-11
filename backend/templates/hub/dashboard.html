@@ -11,130 +11,183 @@
 <body>
   {% include "inventory/partials/app_header.html" %}
   <main class="app-main hub-page">
-    <section class="hub-command">
-      <div class="hub-command-title">
-        <span class="hub-icon">HC</span>
-        <div>
-          <span class="eyebrow">CENTRO DE OPERACION</span>
-          <h1>Monitoreo centralizado</h1>
-          <p>Vista consolidada de satelites, servidores, alertas y continuidad operacional recibida por HTTPS saliente.</p>
-        </div>
+    <section class="hub-hero">
+      <div class="hub-hero-copy">
+        <span class="hub-eyebrow">CENTRO DE CONTROL</span>
+        <h1>Operacion centralizada de sitios</h1>
+        <p>Monitoreo consolidado de satelites, servidores, alertas y continuidad operacional recibido por HTTPS saliente.</p>
       </div>
-      <div class="hub-command-status">
-        <span class="status-dot ok"></span>
-        <div>
-          <strong>{{ summary.health_percent }}%</strong>
-          <small>Salud global de sitios</small>
-        </div>
+      <div class="hub-health-card">
+        <span class="hub-health-label">Salud global</span>
+        <strong>{{ summary.health_percent }}%</strong>
+        <div class="hub-health-bar"><span style="width: {{ summary.health_percent }}%"></span></div>
+        <small>{{ site_status_counts.ok }} sitios normales de {{ site_status_counts.all }} conectados</small>
       </div>
     </section>
 
-    <section class="hub-kpis" aria-label="Indicadores centrales">
-      <article>
-        <span>Satelites conectados</span>
+    <section class="hub-metric-grid" aria-label="Indicadores ejecutivos">
+      <article class="hub-metric is-blue">
+        <span>Sitios conectados</span>
         <strong>{{ summary.satellites }}</strong>
-        <small>Origenes remotos registrados</small>
+        <small>{{ summary.stale_sites }} sin reporte reciente</small>
       </article>
-      <article>
-        <span>Servidores consolidados</span>
-        <strong>{{ summary.servers }}</strong>
-        <small>Activos reportados por los satelites</small>
+      <article class="hub-metric is-green">
+        <span>Servidores en linea</span>
+        <strong>{{ summary.servers_online }}</strong>
+        <small>{{ summary.servers }} activos consolidados</small>
       </article>
-      <article class="warn">
-        <span>Alertas abiertas</span>
-        <strong>{{ summary.unresolved_alerts }}</strong>
-        <small>{{ summary.critical|add:summary.critica }} criticas / {{ summary.warning|add:summary.advertencia }} advertencias</small>
+      <article class="hub-metric is-red">
+        <span>Alertas criticas</span>
+        <strong>{{ summary.critical_total }}</strong>
+        <small>{{ summary.warning_total }} advertencias abiertas</small>
       </article>
-      <article>
-        <span>Ultima revision</span>
-        <strong>{{ now|date:"H:i" }}</strong>
-        <small>{{ now|date:"d/m/Y" }}</small>
+      <article class="hub-metric is-amber">
+        <span>Sitios con disco en riesgo</span>
+        <strong>{{ summary.disk_risk_sites }}</strong>
+        <small>Mayor uso reportado por sitio</small>
+      </article>
+      <article class="hub-metric">
+        <span>CPU promedio</span>
+        <strong>{{ summary.avg_cpu_label }}</strong>
+        <small>Servidores con metrica disponible</small>
+      </article>
+      <article class="hub-metric">
+        <span>Memoria promedio</span>
+        <strong>{{ summary.avg_memory_label }}</strong>
+        <small>Uso consolidado reportado</small>
       </article>
     </section>
 
-    <section class="hub-layout">
-      <article class="hub-card hub-sites">
-        <div class="hub-card-head hub-card-head-stack">
-          <div>
-            <h2>Estado por sitio</h2>
-            <p>Resumen operacional de cada monitor local conectado al Hub Central. Preparado para operar multiples satelites.</p>
-          </div>
-          <div class="site-toolbar" aria-label="Filtros de satelites">
-            <label class="site-search">
-              <span>Buscar</span>
-              <input id="siteSearch" type="search" placeholder="Sitio, ID, hostname o estado">
-            </label>
-            <div class="site-filters" role="group" aria-label="Filtrar por estado">
-              <button class="active" type="button" data-site-filter="all">Todos <span>{{ site_status_counts.all }}</span></button>
-              <button type="button" data-site-filter="critical">Criticos <span>{{ site_status_counts.critical }}</span></button>
-              <button type="button" data-site-filter="warning">Advertencia <span>{{ site_status_counts.warning }}</span></button>
-              <button type="button" data-site-filter="ok">Normal <span>{{ site_status_counts.ok }}</span></button>
-              <button type="button" data-site-filter="offline">Sin reporte <span>{{ site_status_counts.offline }}</span></button>
-            </div>
+    <section class="hub-board">
+      <div class="hub-board-header">
+        <div>
+          <span class="hub-eyebrow">SITIOS MONITOREADOS</span>
+          <h2>Mapa operacional</h2>
+          <p>Priorizado por criticidad, falta de reporte y capacidad de disco.</p>
+        </div>
+        <div class="site-toolbar">
+          <label class="site-search">
+            <span>Buscar sitio</span>
+            <input id="siteSearch" type="search" placeholder="Nombre, ID, hostname o estado">
+          </label>
+          <div class="site-filters" role="group" aria-label="Filtrar por estado">
+            <button class="active" type="button" data-site-filter="all">Todos <span>{{ site_status_counts.all }}</span></button>
+            <button type="button" data-site-filter="critical">Criticos <span>{{ site_status_counts.critical }}</span></button>
+            <button type="button" data-site-filter="warning">Advertencia <span>{{ site_status_counts.warning }}</span></button>
+            <button type="button" data-site-filter="ok">Normal <span>{{ site_status_counts.ok }}</span></button>
+            <button type="button" data-site-filter="offline">Sin reporte <span>{{ site_status_counts.offline }}</span></button>
           </div>
         </div>
-        <div class="site-grid">
-          {% for item in site_cards %}
-            {% with satellite=item.satellite %}
-              <div
-                class="site-card {{ satellite.status }}{% if item.is_stale %} stale{% endif %}"
-                data-site-card
-                data-site-status="{% if item.is_stale %}offline{% else %}{{ satellite.status }}{% endif %}"
-                data-site-search="{{ satellite.name }} {{ satellite.satellite_id }} {{ satellite.hostname|default:'' }} {{ satellite.get_status_display }}"
-              >
-                <div class="site-card-head">
-                  <div>
-                    <strong>{{ satellite.name }}</strong>
-                    <small>{{ satellite.satellite_id }} / {{ satellite.hostname|default:"sin hostname" }}</small>
-                  </div>
-                  <span class="site-state"><i class="hub-status {{ satellite.status }}"></i>{{ satellite.get_status_display }}</span>
+      </div>
+
+      <div class="site-grid">
+        {% for item in site_cards %}
+          {% with satellite=item.satellite %}
+            <article
+              class="site-card status-{{ item.operational_status }}"
+              data-site-card
+              data-site-status="{{ item.operational_status }}"
+              data-site-search="{{ satellite.name }} {{ satellite.satellite_id }} {{ satellite.hostname|default:'' }} {{ item.status_label }}"
+            >
+              <div class="site-topline">
+                <span class="site-status-dot {{ item.operational_status }}"></span>
+                <span>{{ item.status_label }}</span>
+              </div>
+              <div class="site-title-row">
+                <div>
+                  <h3>{{ satellite.name }}</h3>
+                  <p>{{ satellite.satellite_id }} / {{ satellite.hostname|default:"sin hostname" }}</p>
                 </div>
-                <div class="site-metrics">
-                  <span><strong>{{ satellite.servers_online }}</strong><small>En linea</small></span>
-                  <span><strong>{{ satellite.servers_total }}</strong><small>Servidores</small></span>
-                  <span><strong>{{ satellite.alerts_unresolved }}</strong><small>Alertas</small></span>
+              </div>
+              <div class="site-scoreline">
+                <div>
+                  <strong>{{ satellite.servers_online }}/{{ satellite.servers_total }}</strong>
+                  <small>Servidores en linea</small>
                 </div>
-                <div class="site-disk-risk {% if item.worst_disk.percent >= 90 %}critical{% elif item.worst_disk.percent >= 80 %}warning{% else %}normal{% endif %}">
-                  <span>Disco mas exigido</span>
+                <div>
+                  <strong>{{ satellite.alerts_unresolved }}</strong>
+                  <small>Alertas abiertas</small>
+                </div>
+                <div>
+                  <strong>
+                    {% if item.minutes_since_report is not None %}
+                      {{ item.minutes_since_report }} min
+                    {% else %}
+                      -
+                    {% endif %}
+                  </strong>
+                  <small>Ultimo reporte</small>
+                </div>
+              </div>
+              <div class="site-capacity {{ item.disk_status }}">
+                <div class="site-capacity-title">
+                  <span>Capacidad mas exigida</span>
                   {% if item.worst_disk %}
-                    <strong>{{ item.worst_disk.server.name|default:item.worst_disk.server.hostname }} / {{ item.worst_disk.label }}</strong>
-                    <small>{{ item.worst_disk.percent|floatformat:1 }}% utilizado{% if item.worst_disk.free_gb is not None %} / {{ item.worst_disk.free_gb|floatformat:1 }} GB libres{% endif %}</small>
+                    <strong>{{ item.worst_disk.percent|floatformat:1 }}%</strong>
                   {% else %}
-                    <strong>Sin discos reportados</strong>
-                    <small>El satelite aun no informa particiones o uso general de disco.</small>
+                    <strong>Sin dato</strong>
                   {% endif %}
                 </div>
-                <div class="site-footer">
-                  <span>
-                    <small>Ultimo reporte</small>
-                    <strong>
-                      {% if item.minutes_since_report is not None %}
-                        hace {{ item.minutes_since_report }} min
-                      {% else %}
-                        sin reporte
-                      {% endif %}
-                    </strong>
-                  </span>
-                  <span>
-                    <small>Discos en riesgo</small>
-                    <strong>{{ item.disk_critical_count }} criticos / {{ item.disk_warning_count }} advertencia</strong>
-                  </span>
+                {% if item.worst_disk %}
+                  <div class="site-capacity-bar"><span style="width: {{ item.worst_disk.percent|floatformat:0 }}%"></span></div>
+                  <small>{{ item.worst_disk.server.name|default:item.worst_disk.server.hostname }} / {{ item.worst_disk.label }}{% if item.worst_disk.free_gb is not None %} / {{ item.worst_disk.free_gb|floatformat:1 }} GB libres{% endif %}</small>
+                {% else %}
+                  <div class="site-capacity-bar empty"><span></span></div>
+                  <small>El satelite aun no reporta informacion de discos.</small>
+                {% endif %}
+              </div>
+            </article>
+          {% endwith %}
+        {% empty %}
+          <div class="hub-empty">Aun no hay satelites reportando hacia el Hub Central.</div>
+        {% endfor %}
+      </div>
+      <div class="hub-empty site-empty" id="siteEmpty" hidden>No hay sitios que coincidan con el filtro.</div>
+    </section>
+
+    <section class="hub-two-column">
+      <article class="hub-panel">
+        <div class="hub-panel-head">
+          <div>
+            <span class="hub-eyebrow">RIESGO OPERACIONAL</span>
+            <h2>Servidores priorizados</h2>
+          </div>
+          <small>Top 12 por condicion</small>
+        </div>
+        <div class="server-table">
+          {% for item in server_cards %}
+            {% with server=item.server %}
+              <div class="server-row {{ item.priority }}">
+                <div class="server-identity">
+                  <span>{{ server.os_type|default:"SRV"|slice:":3"|upper }}</span>
+                  <div>
+                    <strong>{{ server.name|default:server.hostname }}</strong>
+                    <small>{{ server.satellite.name }} / {{ server.ip_address|default:"Sin IP" }}</small>
+                  </div>
+                </div>
+                <span class="condition-pill {{ item.priority }}">
+                  {% if item.priority == "critical" %}Critico{% elif item.priority == "warning" %}Advertencia{% else %}Normal{% endif %}
+                </span>
+                <div class="server-metric-strip">
+                  <span>CPU <strong>{{ item.cpu_label }}</strong></span>
+                  <span>RAM <strong>{{ item.memory_label }}</strong></span>
+                  <span>Disco <strong>{{ item.disk_label }}</strong></span>
                 </div>
               </div>
             {% endwith %}
           {% empty %}
-            <div class="hub-empty">Aun no hay satelites reportando hacia el Hub Central.</div>
+            <div class="hub-empty">No hay servidores consolidados.</div>
           {% endfor %}
         </div>
-        <div class="hub-empty site-empty" id="siteEmpty" hidden>No hay sitios que coincidan con el filtro.</div>
       </article>
 
-      <aside class="hub-card hub-alerts">
-        <div class="hub-card-head">
+      <article class="hub-panel">
+        <div class="hub-panel-head">
           <div>
+            <span class="hub-eyebrow">EVENTOS ABIERTOS</span>
             <h2>Alertas relevantes</h2>
-            <p>Eventos abiertos recibidos desde los sitios.</p>
           </div>
+          <small>{{ summary.unresolved_alerts }} abiertas</small>
         </div>
         <div class="alert-stack">
           {% for alert in critical_alerts %}
@@ -154,64 +207,6 @@
           {% if not critical_alerts and not warning_alerts %}
             <div class="hub-empty">No hay alertas abiertas relevantes.</div>
           {% endif %}
-        </div>
-      </aside>
-    </section>
-
-    <section class="hub-grid">
-      <article class="hub-card">
-        <div class="hub-card-head">
-          <div>
-            <h2>Servidores consolidados</h2>
-            <p>Activos reportados por todos los satelites, priorizados por condicion.</p>
-          </div>
-        </div>
-        <div class="server-list">
-          {% for item in server_cards %}
-            {% with server=item.server %}
-              <div class="server-card {{ item.priority }}">
-                <div class="server-main">
-                  <span class="server-avatar">{{ server.os_type|default:"SRV"|slice:":3"|upper }}</span>
-                  <div>
-                    <strong>{{ server.name|default:server.hostname }}</strong>
-                    <small>{{ server.satellite.name }} / {{ server.ip_address|default:"Sin IP" }}</small>
-                  </div>
-                </div>
-                <div class="server-condition">
-                  <span class="condition-pill {{ item.priority }}">
-                    {% if item.priority == "critical" %}Critico{% elif item.priority == "warning" %}Advertencia{% else %}Normal{% endif %}
-                  </span>
-                </div>
-                <div class="server-metrics">
-                  <span>CPU <strong>{{ item.cpu|default:"-" }}{% if item.cpu %}%{% endif %}</strong></span>
-                  <span>RAM <strong>{{ item.memory|default:"-" }}{% if item.memory %}%{% endif %}</strong></span>
-                  <span>Disco <strong>{{ item.disk|default:"-" }}{% if item.disk %}%{% endif %}</strong></span>
-                </div>
-              </div>
-            {% endwith %}
-          {% empty %}
-            <div class="hub-empty">No hay servidores consolidados.</div>
-          {% endfor %}
-        </div>
-      </article>
-
-      <article class="hub-card">
-        <div class="hub-card-head">
-          <div>
-            <h2>Reportes recientes</h2>
-            <p>Recepciones registradas por el endpoint central.</p>
-          </div>
-        </div>
-        <div class="hub-report-list">
-          {% for report in recent_reports %}
-            <div class="hub-report">
-              <span>{{ report.satellite.name }}</span>
-              <strong>{{ report.agents_count }} servidores / {{ report.alerts_count }} alertas</strong>
-              <small>{{ report.received_at|date:"d/m/Y H:i:s" }}</small>
-            </div>
-          {% empty %}
-            <div class="hub-empty">Sin reportes recibidos.</div>
-          {% endfor %}
         </div>
       </article>
     </section>
