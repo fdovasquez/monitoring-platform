@@ -253,6 +253,7 @@ a {
 }
 
 .content,
+.app-main,
 .detail-shell,
 .profile-shell,
 .alerts-shell {
@@ -260,6 +261,7 @@ a {
 }
 
 .content,
+.app-main,
 .detail-shell,
 .profile-shell,
 .alerts-shell,
@@ -272,7 +274,8 @@ a {
   padding-left: var(--app-page-padding) !important;
 }
 
-.content {
+.content,
+.app-main {
   padding-top: 24px !important;
   padding-bottom: 24px !important;
 }
@@ -479,6 +482,7 @@ pre {
   }
 
   .content,
+  .app-main,
   .detail-shell,
   .profile-shell,
   .alerts-shell,

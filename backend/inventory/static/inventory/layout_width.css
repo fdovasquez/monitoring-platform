@@ -5,6 +5,7 @@
 }
 
 .content,
+.app-main,
 .detail-shell,
 .profile-shell,
 .alerts-shell,
@@ -28,7 +29,8 @@
   padding-bottom: 0 !important;
 }
 
-.content {
+.content,
+.app-main {
   padding-top: 24px !important;
   padding-bottom: 24px !important;
 }
