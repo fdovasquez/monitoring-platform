@@ -21,6 +21,10 @@ def alert_status(status_summary):
     return Satellite.STATUS_OK, critical, warning
 
 
+def is_test_report(status_summary):
+    return bool(status_summary.get("test"))
+
+
 def metric_index(metrics):
     indexed = {}
     for metric in metrics:
@@ -42,9 +46,10 @@ def store_report(payload, validated):
     metrics = payload.get("metrics") if isinstance(payload.get("metrics"), list) else []
     alerts = payload.get("alerts") if isinstance(payload.get("alerts"), list) else []
     status_summary = payload.get("status") if isinstance(payload.get("status"), dict) else {}
+    test_report = is_test_report(status_summary)
     status, critical_alerts, warning_alerts = alert_status(status_summary)
 
-    satellite, _ = Satellite.objects.update_or_create(
+    satellite, created = Satellite.objects.get_or_create(
         satellite_id=validated["satellite_id"],
         defaults={
             "name": validated["satellite_name"],
@@ -61,6 +66,21 @@ def store_report(payload, validated):
         },
     )
 
+    if not created:
+        satellite.name = validated["satellite_name"]
+        satellite.hostname = clean_text(validated.get("hostname"))
+        satellite.site_name = clean_text(validated.get("site_name"))
+        satellite.last_report_at = validated["timestamp"]
+        if not test_report:
+            satellite.status = status
+            satellite.servers_total = int(status_summary.get("servers_total") or len(agents))
+            satellite.servers_online = int(status_summary.get("servers_online") or 0)
+            satellite.alerts_unresolved = int(status_summary.get("alerts_unresolved") or 0)
+            satellite.critical_alerts = critical_alerts
+            satellite.warning_alerts = warning_alerts
+            satellite.last_payload = payload
+        satellite.save()
+
     report = SatelliteReport.objects.create(
         satellite=satellite,
         report_timestamp=validated["timestamp"],
@@ -72,6 +92,9 @@ def store_report(payload, validated):
         status_summary=status_summary,
         payload=payload,
     )
+
+    if test_report:
+        return report
 
     indexed_metrics = metric_index(metrics)
     seen_hosts = []
