@@ -56,6 +56,8 @@ class SatelliteReportIngestView(APIView):
 
 class HubAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
+        if settings.CENTRAL_PORTAL_ENABLED:
+            return self.request.user.is_authenticated
         return user_can_manage_devices(self.request.user)
 
 

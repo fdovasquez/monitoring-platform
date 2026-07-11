@@ -1,3 +1,5 @@
+from django.conf import settings as django_settings
+
 from .models import SiteSettings
 
 
@@ -18,5 +20,6 @@ def site_settings(request):
         "can_manage_users": is_admin,
         "can_manage_site_settings": is_admin,
         "can_manage_alerts": is_admin,
+        "central_portal_enabled": django_settings.CENTRAL_PORTAL_ENABLED,
         "is_viewer_role": bool(is_authenticated and user.groups.filter(name="Visualizador").exists() and not is_admin and not is_editor),
     }
