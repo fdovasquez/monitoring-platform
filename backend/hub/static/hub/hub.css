@@ -105,41 +105,93 @@
 
 .hub-metric-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
 }
 
 .hub-metric {
   display: grid;
-  gap: 6px;
-  min-height: 126px;
-  padding: 16px;
+  align-content: center;
+  gap: 8px;
+  min-height: 124px;
+  padding: 18px 20px;
   position: relative;
   overflow: hidden;
+  border-color: #dbe4f0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
 }
 
 .hub-metric::before {
   content: "";
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
+  top: 22px;
+  left: 18px;
+  width: 10px;
+  height: 10px;
   background: #94a3b8;
+  border-radius: 999px;
+  box-shadow: 0 0 0 5px rgba(148, 163, 184, .14);
 }
 
-.hub-metric.is-blue::before {
+.hub-metric::after {
+  content: "";
+  position: absolute;
+  right: -44px;
+  bottom: -58px;
+  width: 142px;
+  height: 142px;
+  background: rgba(148, 163, 184, .14);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.hub-metric.is-blue {
+  border-color: #bfdbfe;
+}
+
+.hub-metric.is-blue::before,
+.hub-metric.is-blue::after {
   background: #2563eb;
+}
+
+.hub-metric.is-blue::after {
+  background: rgba(37, 99, 235, .13);
+}
+
+.hub-metric.is-green {
+  border-color: #bbf7d0;
 }
 
 .hub-metric.is-green::before {
   background: #22c55e;
 }
 
+.hub-metric.is-green::after {
+  background: rgba(34, 197, 94, .14);
+}
+
+.hub-metric.is-red {
+  border-color: #fecaca;
+}
+
 .hub-metric.is-red::before {
   background: #ef4444;
 }
 
+.hub-metric.is-red::after {
+  background: rgba(239, 68, 68, .15);
+}
+
+.hub-metric.is-amber {
+  border-color: #fde68a;
+}
+
 .hub-metric.is-amber::before {
   background: #f59e0b;
+}
+
+.hub-metric.is-amber::after {
+  background: rgba(245, 158, 11, .16);
 }
 
 .hub-metric span,
@@ -148,13 +200,14 @@
 }
 
 .hub-metric span {
+  padding-left: 18px;
   font-size: 13px;
 }
 
 .hub-metric strong {
-  align-self: end;
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 500;
+  line-height: 1;
 }
 
 .hub-board,
