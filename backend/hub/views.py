@@ -324,6 +324,11 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
             elif server_alerts:
                 priority = "warning"
             disk_risk = server_disk_risk(server)
+            disk_status = disk_status_for(disk_risk)
+            if disk_status == "critical":
+                priority = "critical"
+            elif disk_status == "warning" and priority == "normal":
+                priority = "warning"
             if disk_risk:
                 disk_risks.append(disk_risk)
             cpu = number_or_none(metric.get("cpu_percent"))
@@ -338,7 +343,7 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
                     "memory_label": percent_label(memory),
                     "disk_label": percent_label(disk),
                     "disk_risk": disk_risk,
-                    "disk_status": disk_status_for(disk_risk),
+                    "disk_status": disk_status,
                 }
             )
 
@@ -362,12 +367,8 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
                 "disk_status": disk_status_for(worst_disk),
                 "servers_count": len(servers),
                 "servers_online": sum(1 for server in servers if server.is_active),
-                "critical_count": sum(
-                    1 for alert in unresolved_alerts if (alert.priority or "").lower() in critical_terms
-                ),
-                "warning_count": sum(
-                    1 for alert in unresolved_alerts if (alert.priority or "").lower() in warning_terms
-                ),
+                "critical_count": sum(1 for item in server_cards if item["priority"] == "critical"),
+                "warning_count": sum(1 for item in server_cards if item["priority"] == "warning"),
             }
         )
         context.update(sidebar_context())
