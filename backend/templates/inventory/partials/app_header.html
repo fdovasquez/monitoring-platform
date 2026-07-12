@@ -1,4 +1,8 @@
 {% load static %}
+<script>
+  document.body.classList.add("theme-{{ user_theme|default:'light' }}");
+</script>
+<link rel="stylesheet" href="{% static 'inventory/theme.css' %}">
 <header class="app-header">
   <div class="app-header-inner">
     <a class="app-brand" href="{% if central_portal_enabled %}{% url 'hub-dashboard' %}{% else %}{% url 'executive-dashboard' %}{% endif %}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">

@@ -31,10 +31,20 @@ def site_logo_path(instance, filename):
 
 
 class UserProfile(models.Model):
+    THEME_LIGHT = "light"
+    THEME_GRAY = "gray"
+    THEME_DARK = "dark"
+    THEME_CHOICES = (
+        (THEME_LIGHT, "Blanco"),
+        (THEME_GRAY, "Gris"),
+        (THEME_DARK, "Oscuro"),
+    )
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     phone = models.CharField(max_length=40, blank=True)
     position = models.CharField(max_length=120, blank=True)
     photo = models.ImageField(upload_to=profile_photo_path, blank=True, null=True)
+    theme = models.CharField(max_length=20, choices=THEME_CHOICES, default=THEME_LIGHT)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

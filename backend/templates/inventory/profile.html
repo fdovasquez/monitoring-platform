@@ -98,6 +98,12 @@
             {{ profile_form.position }}
             {% for error in profile_form.position.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
           </div>
+          <div class="field field-wide">
+            <label for="{{ profile_form.theme.id_for_label }}">Tema visual</label>
+            {{ profile_form.theme }}
+            <p class="field-help">Elige como quieres visualizar la plataforma. Blanco es el tema por defecto.</p>
+            {% for error in profile_form.theme.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
         </div>
 
         <div class="form-actions">

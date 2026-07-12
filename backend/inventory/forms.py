@@ -89,6 +89,7 @@ class ProfileForm(forms.Form):
     email = forms.EmailField(label="Correo electrÃ³nico")
     phone = forms.CharField(label="TelÃ©fono", max_length=40, required=False)
     position = forms.CharField(label="Cargo", max_length=120, required=False)
+    theme = forms.ChoiceField(label="Tema visual", choices=UserProfile.THEME_CHOICES)
     photo = forms.ImageField(label="Foto de perfil", required=False)
     delete_photo = forms.BooleanField(label="Eliminar foto actual", required=False)
 
@@ -106,6 +107,7 @@ class ProfileForm(forms.Form):
                 "email": self.user.email,
                 "phone": self.profile.phone,
                 "position": self.profile.position,
+                "theme": self.profile.theme,
             }
         )
         super().__init__(*args, initial=initial, **kwargs)
@@ -128,6 +130,7 @@ class ProfileForm(forms.Form):
 
         self.profile.phone = self.cleaned_data.get("phone", "").strip()
         self.profile.position = self.cleaned_data.get("position", "").strip()
+        self.profile.theme = self.cleaned_data.get("theme") or UserProfile.THEME_LIGHT
         if self.cleaned_data.get("delete_photo") and self.profile.photo:
             self.profile.photo.delete(save=False)
             self.profile.photo = None

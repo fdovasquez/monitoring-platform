@@ -69,7 +69,7 @@ class MachineCredentialAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "phone", "position", "updated_at")
+    list_display = ("user", "phone", "position", "theme", "updated_at")
     search_fields = ("user__username", "user__first_name", "user__last_name", "user__email", "phone", "position")
     readonly_fields = ("updated_at",)
 
