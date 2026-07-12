@@ -194,6 +194,20 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             if satellite.last_report_at:
                 minutes_since_report = int((now - satellite.last_report_at).total_seconds() / 60)
             satellite_servers = [server for server in active_servers if server.satellite_id == satellite.id]
+            satellite_server_cards = [
+                item for item in server_cards if item["server"].satellite_id == satellite.id
+            ]
+            critical_server_count = sum(
+                1 for item in satellite_server_cards if item["priority"] == "critical"
+            )
+            warning_server_count = sum(
+                1 for item in satellite_server_cards if item["priority"] == "warning"
+            )
+            normal_server_count = sum(
+                1 for item in satellite_server_cards if item["priority"] == "normal"
+            )
+            alerted_server_count = critical_server_count + warning_server_count
+            alert_status = "critical" if critical_server_count else "warning" if warning_server_count else "ok"
             satellite_online_servers = sum(1 for server in satellite_servers if server.is_active)
             disk_risks = [risk for risk in (server_disk_risk(server) for server in satellite_servers) if risk]
             worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
@@ -220,6 +234,11 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     "status_label": status_labels.get(operational_status, "Normal"),
                     "server_count": len(satellite_servers),
                     "online_count": satellite_online_servers,
+                    "alerted_server_count": alerted_server_count,
+                    "critical_server_count": critical_server_count,
+                    "warning_server_count": warning_server_count,
+                    "normal_server_count": normal_server_count,
+                    "alert_status": alert_status,
                     "worst_disk": worst_disk,
                     "disk_status": disk_status,
                     "disk_warning_count": sum(1 for risk in disk_risks if risk["percent"] >= 80),

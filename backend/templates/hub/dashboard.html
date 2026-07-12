@@ -101,21 +101,20 @@
                   <small>Ultimo reporte</small>
                 </div>
               </div>
-              <div class="site-capacity {{ item.disk_status }}">
-                <div class="site-capacity-title">
-                  <span>Capacidad mas exigida</span>
-                  {% if item.worst_disk %}
-                    <strong>{{ item.worst_disk.percent|floatformat:1 }}%</strong>
-                  {% else %}
-                    <strong>Sin dato</strong>
-                  {% endif %}
+              <div class="site-alert-summary {{ item.alert_status }}">
+                <div class="site-alert-title">
+                  <span>Servidores alertados</span>
+                  <strong>{{ item.alerted_server_count }}</strong>
                 </div>
-                {% if item.worst_disk %}
-                  <div class="site-capacity-bar"><span style="width: {{ item.worst_disk.percent|floatformat:0 }}%"></span></div>
-                  <small>{{ item.worst_disk.server.name|default:item.worst_disk.server.hostname }} / {{ item.worst_disk.label }}</small>
+                <div class="site-alert-breakdown" aria-label="Resumen de condicion del sitio">
+                  <span class="critical"><strong>{{ item.critical_server_count }}</strong> Criticos</span>
+                  <span class="warning"><strong>{{ item.warning_server_count }}</strong> Advertencia</span>
+                  <span class="ok"><strong>{{ item.normal_server_count }}</strong> Normal</span>
+                </div>
+                {% if item.alerted_server_count %}
+                  <small>{{ item.alerted_server_count }} servidores requieren revision operativa.</small>
                 {% else %}
-                  <div class="site-capacity-bar empty"><span></span></div>
-                  <small>El satelite aun no reporta informacion de discos.</small>
+                  <small>Sin servidores con incidentes activos.</small>
                 {% endif %}
               </div>
             </article>
