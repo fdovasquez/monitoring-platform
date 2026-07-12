@@ -123,6 +123,37 @@ body.theme-dark .site-link {
   color: #93c5fd !important;
 }
 
+body.theme-dark .site-filters button {
+  color: #dbeafe !important;
+  background: #162235 !important;
+  border-color: #3b4f6c !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .site-filters button:hover {
+  color: #ffffff !important;
+  background: #1d2d46 !important;
+  border-color: #60a5fa !important;
+}
+
+body.theme-dark .site-filters button.active {
+  color: #ffffff !important;
+  background: #1e3a5f !important;
+  border-color: #60a5fa !important;
+}
+
+body.theme-dark .site-filters span {
+  color: #e0f2fe !important;
+  background: #0f1b2e !important;
+  border-color: #42607f !important;
+}
+
+body.theme-dark .site-filters button.active span {
+  color: #ffffff !important;
+  background: rgba(96, 165, 250, .22) !important;
+  border-color: rgba(147, 197, 253, .55) !important;
+}
+
 body.theme-dark .hub-metric {
   background: linear-gradient(180deg, #162235 0%, #111a2a 100%) !important;
   border-color: #33445f !important;
