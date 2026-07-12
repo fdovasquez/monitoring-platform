@@ -145,19 +145,11 @@ class HubDashboardView(HubAccessMixin, TemplateView):
         active_servers = [server for server in servers if server.is_active]
         total_servers = len(active_servers)
         unresolved_alerts = SatelliteAlert.objects.filter(is_resolved=False).select_related("satellite")
-        reports = SatelliteReport.objects.select_related("satellite").order_by("-received_at")[:10]
         priority_counts = {
             item["priority"] or "sin_prioridad": item["total"]
             for item in unresolved_alerts.values("priority").annotate(total=Count("id"))
         }
         critical_terms = {"critical", "critica", "critico"}
-        warning_terms = {"warning", "advertencia"}
-        critical_alerts = [
-            alert for alert in unresolved_alerts if (alert.priority or "").lower() in critical_terms
-        ]
-        warning_alerts = [
-            alert for alert in unresolved_alerts if (alert.priority or "").lower() in warning_terms
-        ]
         alert_lookup = {}
         for alert in unresolved_alerts:
             alert_lookup.setdefault((alert.satellite_id, alert.server_hostname), []).append(alert)
@@ -266,9 +258,6 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     server_cards,
                     key=lambda item: {"critical": 0, "warning": 1, "normal": 2}[item["priority"]],
                 )[:12],
-                "critical_alerts": critical_alerts[:8],
-                "warning_alerts": warning_alerts[:8],
-                "recent_reports": reports,
                 "summary": {
                     "satellites": len(satellites),
                     "servers": total_servers,

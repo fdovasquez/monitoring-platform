@@ -11,20 +11,6 @@
 <body>
   {% include "inventory/partials/app_header.html" %}
   <main class="app-main hub-page">
-    <section class="hub-hero">
-      <div class="hub-hero-copy">
-        <span class="hub-eyebrow">CENTRO DE CONTROL</span>
-        <h1>Operacion centralizada de sitios</h1>
-        <p>Monitoreo consolidado de satelites, servidores, alertas y continuidad operacional recibido por HTTPS saliente.</p>
-      </div>
-      <div class="hub-health-card">
-        <span class="hub-health-label">Salud global</span>
-        <strong>{{ summary.health_percent }}%</strong>
-        <div class="hub-health-bar"><span style="width: {{ summary.health_percent }}%"></span></div>
-        <small>{{ site_status_counts.ok }} sitios normales de {{ site_status_counts.all }} conectados</small>
-      </div>
-    </section>
-
     <section class="hub-metric-grid" aria-label="Indicadores ejecutivos">
       <article class="hub-metric is-blue">
         <span>Sitios conectados</span>
@@ -66,10 +52,6 @@
           <p>Priorizado por criticidad, falta de reporte y capacidad de disco.</p>
         </div>
         <div class="site-toolbar">
-          <label class="site-search">
-            <span>Buscar sitio</span>
-            <input id="siteSearch" type="search" placeholder="Nombre, ID, hostname o estado">
-          </label>
           <div class="site-filters" role="group" aria-label="Filtrar por estado">
             <button class="active" type="button" data-site-filter="all">Todos <span>{{ site_status_counts.all }}</span></button>
             <button type="button" data-site-filter="critical">Criticos <span>{{ site_status_counts.critical }}</span></button>
@@ -87,7 +69,6 @@
               class="site-card status-{{ item.operational_status }}"
               data-site-card
               data-site-status="{{ item.operational_status }}"
-              data-site-search="{{ satellite.name }} {{ satellite.satellite_id }} {{ satellite.hostname|default:'' }} {{ item.status_label }}"
             >
               <div class="site-topline">
                 <span class="site-status-dot {{ item.operational_status }}"></span>
@@ -145,94 +126,20 @@
       </div>
       <div class="hub-empty site-empty" id="siteEmpty" hidden>No hay sitios que coincidan con el filtro.</div>
     </section>
-
-    <section class="hub-two-column">
-      <article class="hub-panel">
-        <div class="hub-panel-head">
-          <div>
-            <span class="hub-eyebrow">RIESGO OPERACIONAL</span>
-            <h2>Servidores priorizados</h2>
-          </div>
-          <small>Top 12 por condicion</small>
-        </div>
-        <div class="server-table">
-          {% for item in server_cards %}
-            {% with server=item.server %}
-              <div class="server-row {{ item.priority }}">
-                <div class="server-identity">
-                  <span>{{ server.os_type|default:"SRV"|slice:":3"|upper }}</span>
-                  <div>
-                    <strong>{{ server.name|default:server.hostname }}</strong>
-                    <small>{{ server.satellite.name }} / {{ server.ip_address|default:"Sin IP" }}</small>
-                  </div>
-                </div>
-                <span class="condition-pill {{ item.priority }}">
-                  {% if item.priority == "critical" %}Critico{% elif item.priority == "warning" %}Advertencia{% else %}Normal{% endif %}
-                </span>
-                <div class="server-metric-strip">
-                  <span>CPU <strong>{{ item.cpu_label }}</strong></span>
-                  <span>RAM <strong>{{ item.memory_label }}</strong></span>
-                  <span>Disco <strong>{{ item.disk_label }}</strong></span>
-                </div>
-              </div>
-            {% endwith %}
-          {% empty %}
-            <div class="hub-empty">No hay servidores consolidados.</div>
-          {% endfor %}
-        </div>
-      </article>
-
-      <article class="hub-panel">
-        <div class="hub-panel-head">
-          <div>
-            <span class="hub-eyebrow">EVENTOS ABIERTOS</span>
-            <h2>Alertas relevantes</h2>
-          </div>
-          <small>{{ summary.unresolved_alerts }} abiertas</small>
-        </div>
-        <div class="alert-stack">
-          {% for alert in critical_alerts %}
-            <div class="alert-item critical">
-              <span>Critica</span>
-              <strong>{{ alert.rule|default:"Alerta critica" }}</strong>
-              <small>{{ alert.satellite.name }} / {{ alert.server_hostname|default:"sin servidor" }}</small>
-            </div>
-          {% endfor %}
-          {% for alert in warning_alerts %}
-            <div class="alert-item warning">
-              <span>Advertencia</span>
-              <strong>{{ alert.rule|default:"Alerta de advertencia" }}</strong>
-              <small>{{ alert.satellite.name }} / {{ alert.server_hostname|default:"sin servidor" }}</small>
-            </div>
-          {% endfor %}
-          {% if not critical_alerts and not warning_alerts %}
-            <div class="hub-empty">No hay alertas abiertas relevantes.</div>
-          {% endif %}
-        </div>
-      </article>
-    </section>
   </main>
   <script>
     (function () {
-      const searchInput = document.getElementById("siteSearch");
       const filterButtons = Array.from(document.querySelectorAll("[data-site-filter]"));
       const cards = Array.from(document.querySelectorAll("[data-site-card]"));
       const empty = document.getElementById("siteEmpty");
       let activeFilter = "all";
 
-      function normalize(value) {
-        return (value || "").toString().toLowerCase();
-      }
-
       function applyFilters() {
-        const query = normalize(searchInput ? searchInput.value : "");
         let visible = 0;
         cards.forEach((card) => {
           const status = card.dataset.siteStatus || "";
-          const text = normalize(card.dataset.siteSearch);
           const statusMatches = activeFilter === "all" || status === activeFilter;
-          const textMatches = !query || text.includes(query);
-          const show = statusMatches && textMatches;
+          const show = statusMatches;
           card.hidden = !show;
           if (show) visible += 1;
         });
@@ -246,7 +153,6 @@
           applyFilters();
         });
       });
-      if (searchInput) searchInput.addEventListener("input", applyFilters);
     })();
   </script>
 </body>
