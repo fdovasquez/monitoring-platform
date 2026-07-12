@@ -23,9 +23,9 @@
         <small>{{ summary.servers }} activos consolidados</small>
       </article>
       <article class="hub-metric is-red">
-        <span>Alertas criticas</span>
-        <strong>{{ summary.critical_total }}</strong>
-        <small>{{ summary.warning_total }} advertencias abiertas</small>
+        <span>Sitios criticos</span>
+        <strong>{{ site_status_counts.critical }}</strong>
+        <small>{{ summary.critical_total }} alertas criticas abiertas</small>
       </article>
       <article class="hub-metric is-amber">
         <span>Sitios con disco en riesgo</span>
