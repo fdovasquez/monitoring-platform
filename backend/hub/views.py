@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.generic import TemplateView
 from rest_framework import status
@@ -192,6 +193,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             if satellite.last_report_at:
                 minutes_since_report = int((now - satellite.last_report_at).total_seconds() / 60)
             satellite_servers = [server for server in servers if server.satellite_id == satellite.id]
+            satellite_online_servers = sum(1 for server in satellite_servers if server.is_active)
             disk_risks = [risk for risk in (server_disk_risk(server) for server in satellite_servers) if risk]
             worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
             is_stale = minutes_since_report is None or minutes_since_report > 15
@@ -210,6 +212,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     "operational_status": operational_status,
                     "status_label": status_labels.get(operational_status, "Normal"),
                     "server_count": len(satellite_servers),
+                    "online_count": satellite_online_servers,
                     "worst_disk": worst_disk,
                     "disk_status": disk_status_for(worst_disk),
                     "disk_warning_count": sum(1 for risk in disk_risks if risk["percent"] >= 80),
@@ -287,6 +290,88 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     "avg_disk_label": percent_label(avg_disk),
                 },
                 "now": timezone.now(),
+            }
+        )
+        context.update(sidebar_context())
+        return context
+
+
+class HubSiteDetailView(HubAccessMixin, TemplateView):
+    template_name = "hub/site_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        satellite = get_object_or_404(Satellite, pk=self.kwargs["pk"])
+        servers = list(
+            SatelliteServerSnapshot.objects.filter(satellite=satellite).order_by("name", "hostname")
+        )
+        unresolved_alerts = list(
+            SatelliteAlert.objects.filter(satellite=satellite, is_resolved=False).order_by(
+                "priority", "-source_created_at"
+            )
+        )
+        reports = SatelliteReport.objects.filter(satellite=satellite).order_by("-received_at")[:8]
+        critical_terms = {"critical", "critica", "critico"}
+        warning_terms = {"warning", "advertencia"}
+        alert_lookup = {}
+        for alert in unresolved_alerts:
+            alert_lookup.setdefault(alert.server_hostname, []).append(alert)
+
+        server_cards = []
+        disk_risks = []
+        for server in servers:
+            metric = server.latest_metric if isinstance(server.latest_metric, dict) else {}
+            server_alerts = alert_lookup.get(server.hostname, [])
+            priority = "normal"
+            if any((alert.priority or "").lower() in critical_terms for alert in server_alerts):
+                priority = "critical"
+            elif server_alerts:
+                priority = "warning"
+            disk_risk = server_disk_risk(server)
+            if disk_risk:
+                disk_risks.append(disk_risk)
+            cpu = number_or_none(metric.get("cpu_percent"))
+            memory = number_or_none(metric.get("memory_percent"))
+            disk = number_or_none(metric.get("disk_percent"))
+            server_cards.append(
+                {
+                    "server": server,
+                    "alerts": server_alerts,
+                    "priority": priority,
+                    "cpu_label": percent_label(cpu),
+                    "memory_label": percent_label(memory),
+                    "disk_label": percent_label(disk),
+                    "disk_risk": disk_risk,
+                    "disk_status": disk_status_for(disk_risk),
+                }
+            )
+
+        now = timezone.now()
+        minutes_since_report = None
+        if satellite.last_report_at:
+            minutes_since_report = int((now - satellite.last_report_at).total_seconds() / 60)
+        worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
+        context.update(
+            {
+                "active_menu": "hub",
+                "satellite": satellite,
+                "server_cards": sorted(
+                    server_cards,
+                    key=lambda item: {"critical": 0, "warning": 1, "normal": 2}[item["priority"]],
+                ),
+                "alerts": unresolved_alerts,
+                "recent_reports": reports,
+                "minutes_since_report": minutes_since_report,
+                "worst_disk": worst_disk,
+                "disk_status": disk_status_for(worst_disk),
+                "servers_count": len(servers),
+                "servers_online": sum(1 for server in servers if server.is_active),
+                "critical_count": sum(
+                    1 for alert in unresolved_alerts if (alert.priority or "").lower() in critical_terms
+                ),
+                "warning_count": sum(
+                    1 for alert in unresolved_alerts if (alert.priority or "").lower() in warning_terms
+                ),
             }
         )
         context.update(sidebar_context())

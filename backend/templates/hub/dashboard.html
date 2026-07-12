@@ -92,16 +92,17 @@
               <div class="site-topline">
                 <span class="site-status-dot {{ item.operational_status }}"></span>
                 <span>{{ item.status_label }}</span>
+                <a href="{% url 'hub-site-detail' satellite.id %}">Ver sitio</a>
               </div>
               <div class="site-title-row">
                 <div>
                   <h3>{{ satellite.name }}</h3>
-                  <p>{{ satellite.satellite_id }} / {{ satellite.hostname|default:"sin hostname" }}</p>
+                  <p>{{ satellite.site_name|default:satellite.satellite_id }} / {{ satellite.hostname|default:"sin hostname" }}</p>
                 </div>
               </div>
               <div class="site-scoreline">
                 <div>
-                  <strong>{{ satellite.servers_online }}/{{ satellite.servers_total }}</strong>
+                  <strong>{{ item.online_count }}/{{ item.server_count }}</strong>
                   <small>Servidores en linea</small>
                 </div>
                 <div>
@@ -130,7 +131,7 @@
                 </div>
                 {% if item.worst_disk %}
                   <div class="site-capacity-bar"><span style="width: {{ item.worst_disk.percent|floatformat:0 }}%"></span></div>
-                  <small>{{ item.worst_disk.server.name|default:item.worst_disk.server.hostname }} / {{ item.worst_disk.label }}{% if item.worst_disk.free_gb is not None %} / {{ item.worst_disk.free_gb|floatformat:1 }} GB libres{% endif %}</small>
+                  <small>{{ item.worst_disk.server.name|default:item.worst_disk.server.hostname }} / {{ item.worst_disk.label }}</small>
                 {% else %}
                   <div class="site-capacity-bar empty"><span></span></div>
                   <small>El satelite aun no reporta informacion de discos.</small>
