@@ -12,13 +12,13 @@ body.theme-gray {
 }
 
 body.theme-dark {
-  --corp-ink: #e5edf8;
-  --corp-muted: #a5b4c8;
-  --corp-subtle: #7f8ea3;
-  --corp-line: #26364d;
-  --corp-soft-line: #1f2c40;
-  --corp-canvas: #0b1220;
-  --corp-surface: #111827;
+  --corp-ink: #eef4ff;
+  --corp-muted: #b8c5d8;
+  --corp-subtle: #8ea0b8;
+  --corp-line: #33445f;
+  --corp-soft-line: #23334a;
+  --corp-canvas: #0d1422;
+  --corp-surface: #131d2d;
   --corp-blue: #60a5fa;
   --corp-blue-dark: #3b82f6;
   --corp-navy: #dbeafe;
@@ -51,6 +51,22 @@ body.theme-dark :where(.profile-hero, .profile-card, .wizard-card, .device-panel
   background: var(--corp-surface) !important;
   border-color: var(--corp-line) !important;
   box-shadow: var(--corp-shadow) !important;
+}
+
+body.theme-dark .app-header {
+  background: #111a2a !important;
+  border-bottom-color: #31425c !important;
+}
+
+body.theme-dark .app-brand {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .app-nav a.active {
+  color: #bfdbfe !important;
+  background: #1b2a42 !important;
+  border-bottom-color: #60a5fa !important;
 }
 
 body.theme-dark :where(.hub-metric, .site-scoreline > div, .site-alert-summary, .device-table thead, .detail-table thead, .runtime-table thead, .profile-card-head, .form-section, .code-block, .info-box, .empty-state, input, select, textarea) {
@@ -89,22 +105,74 @@ body.theme-dark :where(.status, .status-pill, .badge, .nav-count, .site-status-d
   box-shadow: none !important;
 }
 
+body.theme-dark .hub-page,
+body.theme-dark .hub-board,
+body.theme-dark .hub-panel,
+body.theme-dark .site-card,
+body.theme-dark .hub-metric {
+  color: var(--corp-ink) !important;
+}
+
+body.theme-dark .hub-board-header {
+  border-bottom-color: #31425c !important;
+}
+
+body.theme-dark .hub-eyebrow,
+body.theme-dark .site-topline a,
+body.theme-dark .site-link {
+  color: #93c5fd !important;
+}
+
+body.theme-dark .hub-metric {
+  background: linear-gradient(180deg, #162235 0%, #111a2a 100%) !important;
+  border-color: #33445f !important;
+}
+
+body.theme-dark .hub-metric span,
+body.theme-dark .hub-metric small,
+body.theme-dark .hub-board p,
+body.theme-dark .site-card p,
+body.theme-dark .site-card small,
+body.theme-dark .site-alert-summary small,
+body.theme-dark .site-alert-title span,
+body.theme-dark .site-alert-breakdown span {
+  color: var(--corp-muted) !important;
+}
+
+body.theme-dark .hub-metric strong,
+body.theme-dark .site-title-row h3,
+body.theme-dark .site-scoreline strong,
+body.theme-dark .site-alert-title strong,
+body.theme-dark .site-alert-breakdown strong {
+  color: var(--corp-ink) !important;
+}
+
+body.theme-dark .site-card {
+  background: linear-gradient(180deg, #141f30 0%, #111a2a 100%) !important;
+  border-color: #33445f !important;
+}
+
 body.theme-dark .site-alert-summary.critical,
 body.theme-dark .site-card.status-critical {
-  background: #1f1217 !important;
+  background: linear-gradient(180deg, #251720 0%, #171522 100%) !important;
   border-color: #7f1d1d !important;
 }
 
 body.theme-dark .site-alert-summary.warning,
 body.theme-dark .site-card.status-warning {
-  background: #1f1a0b !important;
+  background: linear-gradient(180deg, #251f12 0%, #171a22 100%) !important;
   border-color: #854d0e !important;
+}
+
+body.theme-dark .site-card.status-offline {
+  background: linear-gradient(180deg, #151f2e 0%, #111a2a 100%) !important;
+  border-color: #475569 !important;
 }
 
 body.theme-dark .site-alert-breakdown span,
 body.theme-dark .site-scoreline > div {
-  background: rgba(15, 23, 42, .78) !important;
-  border-color: #26364d !important;
+  background: rgba(10, 17, 29, .72) !important;
+  border-color: #33445f !important;
 }
 
 body.theme-dark .hub-health-bar,
@@ -113,9 +181,24 @@ body.theme-dark .chart-surface {
   background: #1e293b !important;
 }
 
+body.theme-dark .site-alert-breakdown .critical strong {
+  color: #f87171 !important;
+}
+
+body.theme-dark .site-alert-breakdown .warning strong {
+  color: #fbbf24 !important;
+}
+
+body.theme-dark .site-alert-breakdown .ok strong {
+  color: #34d399 !important;
+}
+
 body.theme-gray .site-card::after,
-body.theme-gray .hub-metric::after,
+body.theme-gray .hub-metric::after {
+  opacity: .12 !important;
+}
+
 body.theme-dark .site-card::after,
 body.theme-dark .hub-metric::after {
-  opacity: .12 !important;
+  display: none !important;
 }
