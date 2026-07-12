@@ -189,8 +189,14 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             satellite_online_servers = sum(1 for server in satellite_servers if server.is_active)
             disk_risks = [risk for risk in (server_disk_risk(server) for server in satellite_servers) if risk]
             worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
+            disk_status = disk_status_for(worst_disk)
             is_stale = minutes_since_report is None or minutes_since_report > 15
             operational_status = "offline" if is_stale or satellite.status == Satellite.STATUS_OFFLINE else satellite.status
+            if operational_status != "offline":
+                if satellite.status == Satellite.STATUS_CRITICAL or disk_status == "critical":
+                    operational_status = Satellite.STATUS_CRITICAL
+                elif satellite.status == Satellite.STATUS_WARNING or disk_status == "warning":
+                    operational_status = Satellite.STATUS_WARNING
             status_labels = {
                 "ok": "Normal",
                 "warning": "Advertencia",
@@ -207,7 +213,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     "server_count": len(satellite_servers),
                     "online_count": satellite_online_servers,
                     "worst_disk": worst_disk,
-                    "disk_status": disk_status_for(worst_disk),
+                    "disk_status": disk_status,
                     "disk_warning_count": sum(1 for risk in disk_risks if risk["percent"] >= 80),
                     "disk_critical_count": sum(1 for risk in disk_risks if risk["percent"] >= 90),
                 }
