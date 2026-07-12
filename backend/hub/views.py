@@ -163,12 +163,20 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                 priority = "critical"
             elif server_alerts:
                 priority = "warning"
+            disk_risk = server_disk_risk(server)
+            disk_status = disk_status_for(disk_risk)
+            if disk_status == "critical":
+                priority = "critical"
+            elif disk_status == "warning" and priority == "normal":
+                priority = "warning"
             server_cards.append(
                 {
                     "server": server,
                     "metric": metric,
                     "alerts": server_alerts,
                     "priority": priority,
+                    "disk_risk": disk_risk,
+                    "disk_status": disk_status,
                     "cpu": number_or_none(metric.get("cpu_percent")),
                     "memory": number_or_none(metric.get("memory_percent")),
                     "disk": number_or_none(metric.get("disk_percent")),
@@ -253,6 +261,8 @@ class HubDashboardView(HubAccessMixin, TemplateView):
         avg_memory = average_metric([item["memory"] for item in server_cards])
         avg_disk = average_metric([item["disk"] for item in server_cards])
         online_servers = sum(1 for server in active_servers if server.is_active)
+        critical_servers = sum(1 for item in server_cards if item["priority"] == "critical")
+        warning_servers = sum(1 for item in server_cards if item["priority"] == "warning")
 
         context.update(
             {
@@ -275,6 +285,8 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     "advertencia": priority_counts.get("advertencia", 0),
                     "critical_total": critical_total,
                     "warning_total": warning_total,
+                    "critical_servers": critical_servers,
+                    "warning_servers": warning_servers,
                     "health_percent": health_percent,
                     "stale_sites": stale_sites,
                     "disk_risk_sites": disk_risk_sites,
