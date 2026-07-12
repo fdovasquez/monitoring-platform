@@ -127,6 +127,11 @@ def store_report(payload, validated):
             },
         )
 
+    SatelliteServerSnapshot.objects.filter(satellite=satellite).exclude(hostname__in=seen_hosts).update(
+        is_active=False,
+        latest_metric={},
+    )
+
     for alert in alerts:
         if not isinstance(alert, dict):
             continue

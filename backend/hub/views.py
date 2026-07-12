@@ -142,7 +142,8 @@ class HubDashboardView(HubAccessMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         satellites = list(Satellite.objects.all())
         servers = list(SatelliteServerSnapshot.objects.select_related("satellite").all())
-        total_servers = len(servers)
+        active_servers = [server for server in servers if server.is_active]
+        total_servers = len(active_servers)
         unresolved_alerts = SatelliteAlert.objects.filter(is_resolved=False).select_related("satellite")
         reports = SatelliteReport.objects.select_related("satellite").order_by("-received_at")[:10]
         priority_counts = {
@@ -162,7 +163,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             alert_lookup.setdefault((alert.satellite_id, alert.server_hostname), []).append(alert)
 
         server_cards = []
-        for server in servers:
+        for server in active_servers:
             metric = server.latest_metric if isinstance(server.latest_metric, dict) else {}
             server_alerts = alert_lookup.get((server.satellite_id, server.hostname), [])
             priority = "normal"
@@ -192,7 +193,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             minutes_since_report = None
             if satellite.last_report_at:
                 minutes_since_report = int((now - satellite.last_report_at).total_seconds() / 60)
-            satellite_servers = [server for server in servers if server.satellite_id == satellite.id]
+            satellite_servers = [server for server in active_servers if server.satellite_id == satellite.id]
             satellite_online_servers = sum(1 for server in satellite_servers if server.is_active)
             disk_risks = [risk for risk in (server_disk_risk(server) for server in satellite_servers) if risk]
             worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
@@ -253,7 +254,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
         avg_cpu = average_metric([item["cpu"] for item in server_cards])
         avg_memory = average_metric([item["memory"] for item in server_cards])
         avg_disk = average_metric([item["disk"] for item in server_cards])
-        online_servers = sum(satellite.servers_online for satellite in satellites)
+        online_servers = sum(1 for server in active_servers if server.is_active)
 
         context.update(
             {
@@ -303,7 +304,7 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         satellite = get_object_or_404(Satellite, pk=self.kwargs["pk"])
         servers = list(
-            SatelliteServerSnapshot.objects.filter(satellite=satellite).order_by("name", "hostname")
+            SatelliteServerSnapshot.objects.filter(satellite=satellite, is_active=True).order_by("name", "hostname")
         )
         unresolved_alerts = list(
             SatelliteAlert.objects.filter(satellite=satellite, is_resolved=False).order_by(
