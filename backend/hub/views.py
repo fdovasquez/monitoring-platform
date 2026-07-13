@@ -8,11 +8,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from inventory.status import is_recent_report, relative_report_label
 from inventory.views import sidebar_context, user_can_manage_devices
 
 from .models import Satellite, SatelliteAlert, SatelliteReport, SatelliteServerSnapshot
 from .serializers import SatelliteReportSerializer
 from .services import store_report
+
+
+SATELLITE_STALE_MINUTES = 15
 
 
 def number_or_none(value):
@@ -88,6 +92,23 @@ def percent_label(value):
     return f"{value:.1f}%"
 
 
+def minutes_since(value, now):
+    if not value:
+        return None
+    return int((now - value).total_seconds() / 60)
+
+
+def server_snapshot_online(server, now):
+    satellite = getattr(server, "satellite", None)
+    if satellite and (minutes_since(satellite.last_report_at, now) is None or minutes_since(satellite.last_report_at, now) > SATELLITE_STALE_MINUTES):
+        return False
+    raw_data = server.raw_data if isinstance(server.raw_data, dict) else {}
+    reported_online = raw_data.get("online")
+    if isinstance(reported_online, bool):
+        return reported_online
+    return is_recent_report(server.last_seen, now)
+
+
 def incoming_token(request):
     header = request.headers.get("Authorization", "")
     prefix = "Bearer "
@@ -154,10 +175,12 @@ class HubDashboardView(HubAccessMixin, TemplateView):
         for alert in unresolved_alerts:
             alert_lookup.setdefault((alert.satellite_id, alert.server_hostname), []).append(alert)
 
+        now = timezone.now()
         server_cards = []
         for server in active_servers:
             metric = server.latest_metric if isinstance(server.latest_metric, dict) else {}
             server_alerts = alert_lookup.get((server.satellite_id, server.hostname), [])
+            online = server_snapshot_online(server, now)
             priority = "normal"
             if any((alert.priority or "").lower() in critical_terms for alert in server_alerts):
                 priority = "critical"
@@ -165,15 +188,14 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                 priority = "warning"
             disk_risk = server_disk_risk(server)
             disk_status = disk_status_for(disk_risk)
-            if disk_status == "critical":
-                priority = "critical"
-            elif disk_status == "warning" and priority == "normal":
-                priority = "warning"
             server_cards.append(
                 {
                     "server": server,
                     "metric": metric,
                     "alerts": server_alerts,
+                    "online": online,
+                    "connectivity_label": "En linea" if online else "Sin reporte",
+                    "last_report_label": relative_report_label(server.last_seen, now),
                     "priority": priority,
                     "disk_risk": disk_risk,
                     "disk_status": disk_status,
@@ -188,11 +210,8 @@ class HubDashboardView(HubAccessMixin, TemplateView):
 
         site_cards = []
         site_status_counts = {"all": len(satellites), "critical": 0, "warning": 0, "ok": 0, "offline": 0}
-        now = timezone.now()
         for satellite in satellites:
-            minutes_since_report = None
-            if satellite.last_report_at:
-                minutes_since_report = int((now - satellite.last_report_at).total_seconds() / 60)
+            minutes_since_report = minutes_since(satellite.last_report_at, now)
             satellite_servers = [server for server in active_servers if server.satellite_id == satellite.id]
             satellite_server_cards = [
                 item for item in server_cards if item["server"].satellite_id == satellite.id
@@ -208,16 +227,16 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             )
             alerted_server_count = critical_server_count + warning_server_count
             alert_status = "critical" if critical_server_count else "warning" if warning_server_count else "ok"
-            satellite_online_servers = sum(1 for server in satellite_servers if server.is_active)
+            satellite_online_servers = sum(1 for item in satellite_server_cards if item["online"])
             disk_risks = [risk for risk in (server_disk_risk(server) for server in satellite_servers) if risk]
             worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
             disk_status = disk_status_for(worst_disk)
-            is_stale = minutes_since_report is None or minutes_since_report > 15
+            is_stale = minutes_since_report is None or minutes_since_report > SATELLITE_STALE_MINUTES
             operational_status = "offline" if is_stale or satellite.status == Satellite.STATUS_OFFLINE else satellite.status
             if operational_status != "offline":
-                if satellite.status == Satellite.STATUS_CRITICAL or disk_status == "critical":
+                if satellite.status == Satellite.STATUS_CRITICAL:
                     operational_status = Satellite.STATUS_CRITICAL
-                elif satellite.status == Satellite.STATUS_WARNING or disk_status == "warning":
+                elif satellite.status == Satellite.STATUS_WARNING:
                     operational_status = Satellite.STATUS_WARNING
             status_labels = {
                 "ok": "Normal",
@@ -229,6 +248,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                 {
                     "satellite": satellite,
                     "minutes_since_report": minutes_since_report,
+                    "last_report_label": relative_report_label(satellite.last_report_at, now),
                     "is_stale": is_stale,
                     "operational_status": operational_status,
                     "status_label": status_labels.get(operational_status, "Normal"),
@@ -279,7 +299,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
         avg_cpu = average_metric([item["cpu"] for item in server_cards])
         avg_memory = average_metric([item["memory"] for item in server_cards])
         avg_disk = average_metric([item["disk"] for item in server_cards])
-        online_servers = sum(1 for server in active_servers if server.is_active)
+        online_servers = sum(1 for item in server_cards if item["online"])
         critical_servers = sum(1 for item in server_cards if item["priority"] == "critical")
         warning_servers = sum(1 for item in server_cards if item["priority"] == "warning")
 
@@ -330,7 +350,9 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         satellite = get_object_or_404(Satellite, pk=self.kwargs["pk"])
         servers = list(
-            SatelliteServerSnapshot.objects.filter(satellite=satellite, is_active=True).order_by("name", "hostname")
+            SatelliteServerSnapshot.objects.select_related("satellite")
+            .filter(satellite=satellite, is_active=True)
+            .order_by("name", "hostname")
         )
         unresolved_alerts = list(
             SatelliteAlert.objects.filter(satellite=satellite, is_resolved=False).order_by(
@@ -344,11 +366,13 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
         for alert in unresolved_alerts:
             alert_lookup.setdefault(alert.server_hostname, []).append(alert)
 
+        now = timezone.now()
         server_cards = []
         disk_risks = []
         for server in servers:
             metric = server.latest_metric if isinstance(server.latest_metric, dict) else {}
             server_alerts = alert_lookup.get(server.hostname, [])
+            online = server_snapshot_online(server, now)
             priority = "normal"
             if any((alert.priority or "").lower() in critical_terms for alert in server_alerts):
                 priority = "critical"
@@ -356,10 +380,6 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
                 priority = "warning"
             disk_risk = server_disk_risk(server)
             disk_status = disk_status_for(disk_risk)
-            if disk_status == "critical":
-                priority = "critical"
-            elif disk_status == "warning" and priority == "normal":
-                priority = "warning"
             if disk_risk:
                 disk_risks.append(disk_risk)
             cpu = number_or_none(metric.get("cpu_percent"))
@@ -369,6 +389,9 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
                 {
                     "server": server,
                     "alerts": server_alerts,
+                    "online": online,
+                    "connectivity_label": "En linea" if online else "Sin reporte",
+                    "last_report_label": relative_report_label(server.last_seen, now),
                     "priority": priority,
                     "cpu_label": percent_label(cpu),
                     "memory_label": percent_label(memory),
@@ -378,10 +401,7 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
                 }
             )
 
-        now = timezone.now()
-        minutes_since_report = None
-        if satellite.last_report_at:
-            minutes_since_report = int((now - satellite.last_report_at).total_seconds() / 60)
+        minutes_since_report = minutes_since(satellite.last_report_at, now)
         worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
         context.update(
             {
@@ -394,10 +414,11 @@ class HubSiteDetailView(HubAccessMixin, TemplateView):
                 "alerts": unresolved_alerts,
                 "recent_reports": reports,
                 "minutes_since_report": minutes_since_report,
+                "last_report_label": relative_report_label(satellite.last_report_at, now),
                 "worst_disk": worst_disk,
                 "disk_status": disk_status_for(worst_disk),
                 "servers_count": len(servers),
-                "servers_online": sum(1 for server in servers if server.is_active),
+                "servers_online": sum(1 for item in server_cards if item["online"]),
                 "critical_count": sum(1 for item in server_cards if item["priority"] == "critical"),
                 "warning_count": sum(1 for item in server_cards if item["priority"] == "warning"),
             }
