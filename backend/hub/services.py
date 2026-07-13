@@ -155,4 +155,10 @@ def store_report(payload, validated):
             },
         )
 
+    if int(status_summary.get("alerts_unresolved") or 0) == 0:
+        SatelliteAlert.objects.filter(satellite=satellite, is_resolved=False).update(
+            is_resolved=True,
+            source_resolved_at=validated["timestamp"],
+        )
+
     return report
