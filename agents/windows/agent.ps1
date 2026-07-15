@@ -69,10 +69,34 @@ $ProcessCpuSample = @{}
 Get-Process | ForEach-Object {
     $ProcessCpuSample[$_.Id] = if ($_.CPU) { $_.CPU } else { 0 }
 }
+function Convert-DmtfDateSafe {
+    param($Value)
+
+    if ($null -eq $Value) {
+        return $null
+    }
+    if ($Value -is [datetime]) {
+        return $Value
+    }
+
+    $Text = [string]$Value
+    if ([string]::IsNullOrWhiteSpace($Text) -or $Text.Length -lt 14) {
+        return $null
+    }
+
+    try {
+        return [System.Management.ManagementDateTimeConverter]::ToDateTime($Text)
+    } catch {
+        return $null
+    }
+}
 $ProcessCreationMap = @{}
 Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object {
     if ($_.ProcessId -and $_.CreationDate) {
-        $ProcessCreationMap[[int]$_.ProcessId] = [System.Management.ManagementDateTimeConverter]::ToDateTime($_.CreationDate)
+        $CreatedAt = Convert-DmtfDateSafe $_.CreationDate
+        if ($null -ne $CreatedAt) {
+            $ProcessCreationMap[[int]$_.ProcessId] = $CreatedAt
+        }
     }
 }
 Start-Sleep -Milliseconds 500
