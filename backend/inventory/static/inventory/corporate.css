@@ -92,12 +92,13 @@ a {
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  align-items: flex-start !important;
-  gap: 1px !important;
-  min-width: max(180px, calc(var(--brand-logo-width, 120px) + 36px)) !important;
+  align-items: center !important;
+  gap: 2px !important;
+  min-width: max(200px, calc(var(--brand-logo-width, 120px) + 48px)) !important;
   min-height: 72px !important;
   height: auto !important;
-  padding: 0 !important;
+  padding: 6px 10px !important;
+  box-sizing: border-box !important;
   text-decoration: none !important;
 }
 
@@ -108,14 +109,17 @@ a {
   max-width: none !important;
   max-height: none !important;
   object-fit: contain !important;
-  object-position: left center !important;
+  object-position: center center !important;
 }
 
 .app-brand span {
   display: block !important;
   margin: 0 !important;
+  width: var(--brand-logo-width, 120px) !important;
+  max-width: 100% !important;
   font-size: 11px !important;
   line-height: 1.1 !important;
+  text-align: center !important;
 }
 
 .app-nav {
