@@ -969,7 +969,7 @@ echo "Para revisar el resultado: journalctl -u monitoring-agent -n 50 --no-pager
         return (
             "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
             f"\"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; "
-            f"[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {{ $true }}; "
+            f"[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {{ `$true }}; "
             f"iex (New-Object Net.WebClient).DownloadString('{escaped_url}'); "
             f"Install-MonitoringAgent -Token '{escaped_token}'\""
         )
