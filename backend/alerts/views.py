@@ -16,7 +16,7 @@ from .models import AlertEmailLog, AlertRule, ServerMonitorAssignment
 
 
 def user_can_manage_alerts(user):
-    return user.is_superuser or user.groups.filter(name="Administrador").exists()
+    return user.is_superuser or user.is_staff or user.groups.filter(name="Administrador").exists()
 
 
 MONITOR_CATEGORY_DEFINITIONS = [
