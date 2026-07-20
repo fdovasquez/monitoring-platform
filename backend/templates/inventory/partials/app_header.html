@@ -19,8 +19,8 @@
         {% if can_manage_users %}
           <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
         {% endif %}
-        {% if can_manage_alerts %}
-          <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}">Alertas</a>
+        {% if can_manage_alerts or can_view_alert_history %}
+          <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}{% if not can_manage_alerts %}?tab=history{% endif %}">Alertas</a>
         {% endif %}
         {% if can_manage_site_settings %}
           <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
@@ -48,8 +48,8 @@
         {% if can_manage_site_settings %}
           <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
         {% endif %}
-        {% if can_manage_alerts %}
-          <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}">Alertas</a>
+        {% if can_manage_alerts or can_view_alert_history %}
+          <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}{% if not can_manage_alerts %}?tab=history{% endif %}">Alertas</a>
         {% endif %}
       {% endif %}
     </nav>

@@ -24,22 +24,32 @@
             <h1>Alertas</h1>
             <span class="status online">En linea</span>
           </div>
-          <p class="monitor-subtitle">Gestiona reglas, asignaciones por servidor, destinatarios e historial operativo.</p>
+          <p class="monitor-subtitle">
+            {% if can_manage_alert_settings %}
+              Gestiona reglas, asignaciones por servidor, destinatarios e historial operativo.
+            {% else %}
+              Consulta el historial operativo de alertas enviadas por la plataforma.
+            {% endif %}
+          </p>
           <span class="monitor-kind">MONITOREO GLOBAL</span>
         </div>
       </div>
-      <div class="monitor-actions">
-        {% if active_tab == 'monitors' %}
-          <a class="submit-button monitor-primary-action" href="{% url 'alert-settings' %}?tab=monitors&new_rule=1">Agregar alerta</a>
-        {% endif %}
-        <a class="ghost-button" href="{% url 'site-settings' %}?tab=smtp">Configurar SMTP</a>
-      </div>
+      {% if can_manage_alert_settings %}
+        <div class="monitor-actions">
+          {% if active_tab == 'monitors' %}
+            <a class="submit-button monitor-primary-action" href="{% url 'alert-settings' %}?tab=monitors&new_rule=1">Agregar alerta</a>
+          {% endif %}
+          <a class="ghost-button" href="{% url 'site-settings' %}?tab=smtp">Configurar SMTP</a>
+        </div>
+      {% endif %}
     </header>
 
     <nav class="monitor-tabs" aria-label="Secciones de alertas">
-      <a class="{% if active_tab == 'monitors' %}active{% endif %}" href="?tab=monitors">Monitores</a>
-      <a class="{% if active_tab == 'server_monitors' %}active{% endif %}" href="?tab=server_monitors">Monitores por servidor</a>
-      <a class="{% if active_tab == 'recipients' %}active{% endif %}" href="?tab=recipients">Destinatarios globales</a>
+      {% if can_manage_alert_settings %}
+        <a class="{% if active_tab == 'monitors' %}active{% endif %}" href="?tab=monitors">Monitores</a>
+        <a class="{% if active_tab == 'server_monitors' %}active{% endif %}" href="?tab=server_monitors">Monitores por servidor</a>
+        <a class="{% if active_tab == 'recipients' %}active{% endif %}" href="?tab=recipients">Destinatarios globales</a>
+      {% endif %}
       <a class="{% if active_tab == 'history' %}active{% endif %}" href="?tab=history">Historial de alertas</a>
     </nav>
 

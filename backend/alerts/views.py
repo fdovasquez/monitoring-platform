@@ -19,6 +19,10 @@ def user_can_manage_alerts(user):
     return user.is_superuser or user.is_staff or user.groups.filter(name="Administrador").exists()
 
 
+def user_can_view_alert_history(user):
+    return bool(user and user.is_authenticated)
+
+
 MONITOR_CATEGORY_DEFINITIONS = [
     {
         "key": "availability",
@@ -69,7 +73,11 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "alerts/alert_settings.html"
 
     def test_func(self):
-        return user_can_manage_alerts(self.request.user)
+        if user_can_manage_alerts(self.request.user):
+            return True
+        if self.request.method != "GET":
+            return False
+        return self.request.GET.get("tab") in {None, "history"} and user_can_view_alert_history(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -98,9 +106,14 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         AlertEmailLog.objects.filter(created_at__lt=cutoff).delete()
         rules = list(self.filtered_rules())
         category_rules = list(self.filtered_rules(apply_category=False))
+        can_manage = user_can_manage_alerts(self.request.user)
+        active_tab = kwargs.get("active_tab") or self.request.GET.get("tab", "monitors")
+        if not can_manage:
+            active_tab = "history"
         context.update(
             {
-                "active_tab": kwargs.get("active_tab") or self.request.GET.get("tab", "monitors"),
+                "active_tab": active_tab,
+                "can_manage_alert_settings": can_manage,
                 "rule_form": rule_form,
                 "bulk_recipients_form": kwargs.get("bulk_recipients_form") or BulkRecipientsForm(),
                 "edit_rule": edit_rule,
@@ -462,7 +475,7 @@ def ensure_default_monitors():
 
 class AlertHistoryExportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def test_func(self):
-        return user_can_manage_alerts(self.request.user)
+        return user_can_manage_alerts(self.request.user) or user_can_view_alert_history(self.request.user)
 
     def get(self, request):
         response = HttpResponse(content_type="text/csv; charset=utf-8")
