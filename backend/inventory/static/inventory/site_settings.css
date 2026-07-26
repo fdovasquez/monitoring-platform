@@ -690,6 +690,14 @@
   overflow: hidden;
 }
 
+.group-create-card .profile-card-head {
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+}
+
+.group-create-grid {
+  grid-template-columns: minmax(220px, .75fr) minmax(280px, 1.25fr);
+}
+
 .group-list-toolbar {
   display: flex;
   align-items: center;
@@ -717,36 +725,72 @@
 
 .group-management-list {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 12px;
   padding: 20px 24px 24px;
 }
 
-.group-management-row {
+.group-management-item {
   min-width: 0;
 }
 
 .group-edit-form {
   display: grid;
-  grid-template-columns: 92px minmax(180px, .75fr) minmax(260px, 1.15fr) 216px;
-  gap: 12px;
-  align-items: end;
+  grid-template-rows: auto 1fr auto;
+  gap: 14px;
   min-width: 0;
-  padding: 14px;
+  min-height: 238px;
+  padding: 16px;
   background: #ffffff;
   border: 1px solid #dbe5f1;
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+}
+
+.group-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.group-card-head div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.group-card-head div:first-child span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.group-card-head div:first-child strong {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .group-row-meta {
   display: grid;
   gap: 3px;
-  min-height: 42px;
+  min-width: 76px;
+  min-height: 48px;
   align-content: center;
-  padding: 8px 10px;
-  background: #fff;
+  justify-items: center;
+  padding: 8px 12px;
+  background: #f8fafc;
   border: 1px solid #e1e9f3;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .group-row-meta span {
@@ -758,6 +802,12 @@
 .group-row-meta small {
   color: #52637a;
   font-size: 12px;
+}
+
+.group-card-fields {
+  display: grid;
+  gap: 12px;
+  align-content: start;
 }
 
 .group-form-field {
@@ -788,6 +838,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #edf2f7;
 }
 
 .group-action-set .submit-button,
@@ -824,12 +876,8 @@
 }
 
 @media (max-width: 1100px) {
-  .group-edit-form {
-    grid-template-columns: 82px minmax(180px, 1fr) minmax(220px, 1fr);
-  }
-
-  .group-action-set {
-    grid-column: 2 / -1;
+  .group-create-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -878,9 +926,5 @@
 
   .group-edit-form {
     grid-template-columns: 1fr;
-  }
-
-  .group-action-set {
-    grid-column: auto;
   }
 }

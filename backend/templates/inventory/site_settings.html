@@ -327,7 +327,7 @@
         </aside>
 
         <div class="settings-workspace">
-          <form class="profile-card settings-card visual-settings-card enterprise-form-card" method="post" data-loading-form>
+          <form class="profile-card settings-card visual-settings-card enterprise-form-card group-create-card" method="post" data-loading-form>
             {% csrf_token %}
             <input type="hidden" name="action" value="save_group">
             <div class="profile-card-head">
@@ -337,7 +337,7 @@
               </div>
               <span class="health-ok">Gestion interna</span>
             </div>
-            <div class="form-grid">
+            <div class="form-grid group-create-grid">
               <div class="field">
                 <label for="{{ group_form.name.id_for_label }}">{{ group_form.name.label }}</label>
                 {{ group_form.name }}
@@ -369,21 +369,29 @@
             </div>
             <div class="group-management-list">
               {% for group in device_groups %}
-                <article class="group-management-row">
+                <article class="group-management-item">
                   <form class="group-edit-form" method="post" data-loading-form>
                     {% csrf_token %}
                     <input type="hidden" name="group_id" value="{{ group.id }}">
-                    <div class="group-row-meta">
-                      <span>{{ group.server_count }}</span>
-                      <small>servidor{% if group.server_count != 1 %}es{% endif %}</small>
+                    <div class="group-card-head">
+                      <div>
+                        <span>Grupo</span>
+                        <strong>{{ group.name }}</strong>
+                      </div>
+                      <div class="group-row-meta">
+                        <span>{{ group.server_count }}</span>
+                        <small>servidor{% if group.server_count != 1 %}es{% endif %}</small>
+                      </div>
                     </div>
-                    <div class="group-form-field">
-                      <label for="group-name-{{ group.id }}">Nombre</label>
-                      <input class="profile-input" id="group-name-{{ group.id }}" name="name" value="{{ group.name }}" maxlength="120" required>
-                    </div>
-                    <div class="group-form-field">
-                      <label for="group-description-{{ group.id }}">Descripcion</label>
-                      <input class="profile-input" id="group-description-{{ group.id }}" name="description" value="{{ group.description }}" maxlength="500">
+                    <div class="group-card-fields">
+                      <div class="group-form-field">
+                        <label for="group-name-{{ group.id }}">Nombre</label>
+                        <input class="profile-input" id="group-name-{{ group.id }}" name="name" value="{{ group.name }}" maxlength="120" required>
+                      </div>
+                      <div class="group-form-field">
+                        <label for="group-description-{{ group.id }}">Descripcion</label>
+                        <input class="profile-input" id="group-description-{{ group.id }}" name="description" value="{{ group.description }}" maxlength="500" placeholder="Sin descripcion">
+                      </div>
                     </div>
                     <div class="group-action-set">
                       <button class="submit-button group-save-button" type="submit" name="action" value="save_group" data-loading-label="Guardando...">Guardar</button>
