@@ -47,6 +47,7 @@
       <a class="{% if active_settings_tab == 'smtp' %}active{% endif %}" href="{% url 'site-settings' %}?tab=smtp">Correo SMTP</a>
       <a class="{% if active_settings_tab == 'https' %}active{% endif %}" href="{% url 'site-settings' %}?tab=https">HTTPS y certificados</a>
       <a class="{% if active_settings_tab == 'central' %}active{% endif %}" href="{% url 'site-settings' %}?tab=central">Monitor central</a>
+      <a class="{% if active_settings_tab == 'groups' %}active{% endif %}" href="{% url 'site-settings' %}?tab=groups">Grupos de dispositivos</a>
     </nav>
 
     {% if active_settings_tab == 'site' %}
@@ -303,6 +304,100 @@
           </form>
           <p class="tls-note">La prueba usa POST HTTPS con autenticacion Bearer Token. Si falla, el monitoreo local sigue funcionando.</p>
         </section>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if active_settings_tab == 'groups' %}
+      <section class="settings-layout enterprise-settings-layout">
+        <aside class="settings-status-panel groups-panel">
+          <span class="panel-label">Inventario</span>
+          <h2>Grupos de dispositivos</h2>
+          <p>Organiza los servidores por servicio, ubicacion, area o criticidad operacional para facilitar filtros, reportes y dashboards.</p>
+          <div class="settings-status-stack">
+            <span class="status-line ok">{{ device_groups|length }} grupos registrados</span>
+            <span>Los cambios se reflejan inmediatamente en Dispositivos, CMDB y reportes.</span>
+            <span>Los servidores no se eliminan al renombrar un grupo.</span>
+          </div>
+          <div class="settings-flow">
+            <span>01 Crear grupo</span>
+            <span>02 Renombrar o describir</span>
+            <span>03 Reasignar servidores si corresponde</span>
+          </div>
+        </aside>
+
+        <div class="settings-workspace">
+          <form class="profile-card settings-card visual-settings-card enterprise-form-card" method="post" data-loading-form>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_group">
+            <div class="profile-card-head">
+              <div>
+                <h2>Crear nuevo grupo</h2>
+                <p>Agrega una categoria para clasificar servidores monitoreados.</p>
+              </div>
+              <span class="health-ok">Gestion interna</span>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="{{ group_form.name.id_for_label }}">{{ group_form.name.label }}</label>
+                {{ group_form.name }}
+                {% for error in group_form.name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+              </div>
+              <div class="field">
+                <label for="{{ group_form.description.id_for_label }}">{{ group_form.description.label }}</label>
+                {{ group_form.description }}
+                {% for error in group_form.description.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+              </div>
+            </div>
+            {% for error in group_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            <div class="form-actions">
+              <a class="ghost-button" href="{% url 'device-list' %}">Volver a dispositivos</a>
+              <button class="submit-button" type="submit" data-loading-label="Guardando...">Crear grupo</button>
+            </div>
+          </form>
+
+          <section class="profile-card settings-card visual-settings-card enterprise-form-card group-management-card">
+            <div class="profile-card-head">
+              <div>
+                <h2>Grupos existentes</h2>
+                <p>Edita nombres y descripciones. Para eliminar, el grupo debe estar vacio.</p>
+              </div>
+            </div>
+            <div class="group-management-list">
+              {% for group in device_groups %}
+                <article class="group-management-row">
+                  <form method="post" data-loading-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save_group">
+                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                    <div class="group-row-meta">
+                      <span>{{ group.server_count }}</span>
+                      <small>servidor{% if group.server_count != 1 %}es{% endif %}</small>
+                    </div>
+                    <div class="field">
+                      <label for="group-name-{{ group.id }}">Nombre</label>
+                      <input class="profile-input" id="group-name-{{ group.id }}" name="name" value="{{ group.name }}" maxlength="120" required>
+                    </div>
+                    <div class="field">
+                      <label for="group-description-{{ group.id }}">Descripcion</label>
+                      <input class="profile-input" id="group-description-{{ group.id }}" name="description" value="{{ group.description }}" maxlength="500">
+                    </div>
+                    <div class="group-row-actions">
+                      <button class="submit-button" type="submit" data-loading-label="Guardando...">Guardar</button>
+                    </div>
+                  </form>
+                  <form method="post" class="group-delete-form" onsubmit="return confirm('Eliminar este grupo? Solo se permite si no tiene servidores asociados.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_group">
+                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                    <button class="danger-button" type="submit" {% if group.server_count %}disabled title="Reasigna los servidores antes de eliminar"{% endif %}>Eliminar</button>
+                  </form>
+                </article>
+              {% empty %}
+                <div class="empty-state group-empty-state">No hay grupos creados.</div>
+              {% endfor %}
+            </div>
+          </section>
         </div>
       </section>
     {% endif %}

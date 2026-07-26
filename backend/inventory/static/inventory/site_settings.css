@@ -154,6 +154,10 @@
   --settings-accent: #6366f1;
 }
 
+.groups-panel {
+  --settings-accent: #0f766e;
+}
+
 .settings-status-panel .panel-label {
   color: var(--settings-accent);
 }
@@ -682,6 +686,96 @@
   overflow-wrap: anywhere;
 }
 
+.group-management-card {
+  overflow: hidden;
+}
+
+.group-management-list {
+  display: grid;
+  gap: 10px;
+  padding: 20px 24px 24px;
+}
+
+.group-management-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e1e9f3;
+  border-radius: 10px;
+}
+
+.group-management-row > form:first-child {
+  display: grid;
+  grid-template-columns: 96px minmax(180px, .8fr) minmax(220px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  min-width: 0;
+}
+
+.group-row-meta {
+  display: grid;
+  gap: 3px;
+  min-height: 42px;
+  align-content: center;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid #e1e9f3;
+  border-radius: 8px;
+}
+
+.group-row-meta span {
+  color: #071426;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.group-row-meta small {
+  color: #52637a;
+  font-size: 12px;
+}
+
+.group-row-actions,
+.group-delete-form {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+}
+
+.group-row-actions .submit-button,
+.group-delete-form .danger-button {
+  min-width: 96px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 7px;
+}
+
+.danger-button {
+  color: #b91c1c;
+  background: #fff;
+  border: 1px solid #fecaca;
+  cursor: pointer;
+  font: inherit;
+}
+
+.danger-button:disabled {
+  color: #94a3b8;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.group-empty-state {
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  color: #52637a;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+}
+
 @media (max-width: 640px) {
   .settings-layout {
     grid-template-columns: 1fr;
@@ -714,5 +808,20 @@
   .brand-preview {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .group-management-row,
+  .group-management-row > form:first-child {
+    grid-template-columns: 1fr;
+  }
+
+  .group-row-actions,
+  .group-delete-form {
+    justify-content: stretch;
+  }
+
+  .group-row-actions .submit-button,
+  .group-delete-form .danger-button {
+    width: 100%;
   }
 }

@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 
-from .models import MachineCredential, Server, UserProfile
+from .models import DeviceGroup, MachineCredential, Server, UserProfile
 
 
 ROLE_NAMES = ["Administrador", "Editor", "Visualizador"]
@@ -211,6 +211,24 @@ class MachineCredentialForm(forms.ModelForm):
         if commit:
             credential.save()
         return credential
+
+
+class DeviceGroupForm(forms.ModelForm):
+    class Meta:
+        model = DeviceGroup
+        fields = ["name", "description"]
+        labels = {
+            "name": "Nombre del grupo",
+            "description": "Descripcion",
+        }
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "profile-input"})
 
 
 class ServerEditForm(forms.ModelForm):
