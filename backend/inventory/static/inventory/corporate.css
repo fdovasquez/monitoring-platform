@@ -174,7 +174,14 @@ a {
 }
 
 .app-nav a.active::after {
+  position: absolute !important;
+  right: 14px !important;
+  bottom: 0 !important;
+  left: 14px !important;
+  height: 2px !important;
+  content: "" !important;
   background: var(--corp-blue) !important;
+  border-radius: 999px 999px 0 0 !important;
 }
 
 .app-actions {
