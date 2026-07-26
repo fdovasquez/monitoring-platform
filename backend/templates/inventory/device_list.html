@@ -142,69 +142,6 @@
     </section>
 
     <section class="ops-visual-board" aria-label="Vista visual de dispositivos">
-      <div class="ops-focus-grid">
-        <section class="ops-priority-panel">
-          <header>
-            <div>
-              <span class="ops-eyebrow">Prioridad operativa</span>
-              <h3>Servidores que revisar primero</h3>
-            </div>
-            <strong>{{ alert_dashboard.attention_count }} con alerta</strong>
-          </header>
-          <div class="ops-priority-list">
-            {% for device in priority_devices %}
-              <a class="ops-priority-row {{ device.alert_level }}{% if not device.online %} offline{% endif %}" href="{% url 'device-detail' device.server.id %}">
-                <span class="ops-priority-icon {{ device.server.os_type }}">{{ device.server.os_type|slice:":1"|upper }}</span>
-                <div>
-                  <strong>{{ device.server.name|default:device.server.hostname }}</strong>
-                  <small>
-                    {% if not device.online %}
-                      Sin reporte reciente
-                    {% elif device.alert_count %}
-                      {{ device.alert_title }} - {{ device.alert_count }} alerta{{ device.alert_count|pluralize }}
-                    {% else %}
-                      Operacion normal - {{ device.server.ip_address|default:"Sin IP" }}
-                    {% endif %}
-                  </small>
-                </div>
-                <span class="ops-priority-state">
-                  {% if not device.online %}Sin reporte{% else %}{{ device.alert_label }}{% endif %}
-                </span>
-              </a>
-            {% empty %}
-              <div class="ops-empty compact">No hay dispositivos reportados.</div>
-            {% endfor %}
-          </div>
-        </section>
-
-        <section class="ops-map-panel">
-          <header>
-            <div>
-              <span class="ops-eyebrow">Distribucion por estado</span>
-              <h3>Semaforo operacional</h3>
-            </div>
-          </header>
-          <div class="ops-status-bars">
-            <div class="status-bar critical">
-              <span>Critico</span>
-              <strong>{{ alert_dashboard.critical_count }}</strong>
-              <i style="--bar: {{ alert_dashboard.critical_percent }}%"></i>
-            </div>
-            <div class="status-bar warning">
-              <span>Advertencia</span>
-              <strong>{{ alert_dashboard.warning_count }}</strong>
-              <i style="--bar: {{ alert_dashboard.warning_percent }}%"></i>
-            </div>
-            <div class="status-bar ok">
-              <span>Normal</span>
-              <strong>{{ alert_dashboard.ok_count }}</strong>
-              <i style="--bar: {{ alert_dashboard.ok_percent }}%"></i>
-            </div>
-          </div>
-          <p>Usa esta vista para explicar el estado general antes de entrar al detalle tecnico.</p>
-        </section>
-      </div>
-
       <div class="device-card-grid" aria-label="Tarjetas de dispositivos">
         {% for device in devices %}
           <a class="device-card {{ device.alert_level }}{% if not device.online %} offline{% endif %}" href="{% url 'device-detail' device.server.id %}">
