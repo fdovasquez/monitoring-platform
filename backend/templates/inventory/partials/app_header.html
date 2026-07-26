@@ -32,6 +32,7 @@
         <a class="{% if active_menu == 'devices' %}active{% endif %}" href="{% url 'device-list' %}">
           Dispositivos{% if total_devices %} <span class="nav-count">{{ total_devices }}</span>{% endif %}
         </a>
+        <a class="{% if active_menu == 'operations' %}active{% endif %}" href="{% url 'operational-history' %}">Historial operativo</a>
         {% if can_manage_devices %}
           <a class="{% if active_menu == 'cmdb' %}active{% endif %}" href="{% url 'cmdb' %}">CMDB</a>
           <a class="{% if active_menu == 'incidents' %}active{% endif %}" href="{% url 'incidents' %}">Incidentes</a>

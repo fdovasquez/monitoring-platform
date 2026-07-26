@@ -355,6 +355,143 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
         return f"{minutes}m"
 
 
+class OperationalHistoryView(LoginRequiredMixin, TemplateView):
+    template_name = "inventory/operational_history.html"
+
+    PRIORITY_LABELS = {
+        AlertRule.PRIORITY_CRITICAL: "Critico",
+        AlertRule.PRIORITY_WARNING: "Advertencia",
+        AlertRule.PRIORITY_INFO: "Informativo",
+    }
+    PRIORITY_TONES = {
+        AlertRule.PRIORITY_CRITICAL: "critical",
+        AlertRule.PRIORITY_WARNING: "warning",
+        AlertRule.PRIORITY_INFO: "info",
+    }
+    PRIORITY_RANK = {
+        AlertRule.PRIORITY_CRITICAL: 3,
+        AlertRule.PRIORITY_WARNING: 2,
+        AlertRule.PRIORITY_INFO: 1,
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        now = timezone.now()
+        active_events = list(
+            AlertEvent.objects.select_related("server", "server__group", "rule")
+            .filter(is_resolved=False)
+            .order_by("created_at")
+        )
+        server_alerts = self.group_active_alerts(active_events, now)
+        max_duration = max([item["duration_minutes"] for item in server_alerts] or [1])
+        for item in server_alerts:
+            item["bar_width"] = max(8, int((item["duration_minutes"] / max_duration) * 100))
+
+        recent_resolved = [
+            self.resolved_event_context(event)
+            for event in AlertEvent.objects.select_related("server", "rule")
+            .filter(is_resolved=True, resolved_at__gte=now - timedelta(days=30))
+            .order_by("-resolved_at")[:80]
+        ]
+        critical_count = sum(1 for item in server_alerts if item["tone"] == "critical")
+        warning_count = sum(1 for item in server_alerts if item["tone"] == "warning")
+        durations = [item["duration_minutes"] for item in server_alerts]
+        average_minutes = int(sum(durations) / len(durations)) if durations else 0
+
+        context.update(sidebar_context())
+        context.update(
+            {
+                "active_menu": "operations",
+                "server_alerts": server_alerts,
+                "recent_resolved": recent_resolved,
+                "active_servers_count": len(server_alerts),
+                "critical_servers_count": critical_count,
+                "warning_servers_count": warning_count,
+                "oldest_alert_label": self.duration_label_from_minutes(max(durations)) if durations else "Sin alertas",
+                "average_alert_label": self.duration_label_from_minutes(average_minutes),
+            }
+        )
+        return context
+
+    def group_active_alerts(self, events, now):
+        grouped = {}
+        for event in events:
+            server = event.server
+            item = grouped.setdefault(
+                server.id,
+                {
+                    "server": server,
+                    "server_name": server.name or server.hostname,
+                    "server_ip": server.ip_address or "Sin IP",
+                    "events": [],
+                    "oldest_started_at": event.created_at,
+                    "highest_priority": event.rule.priority,
+                    "tone": self.PRIORITY_TONES.get(event.rule.priority, "info"),
+                    "priority_label": self.PRIORITY_LABELS.get(event.rule.priority, "Informativo"),
+                    "reason": event.rule.name,
+                    "message": event.message,
+                },
+            )
+            item["events"].append(event)
+            if event.created_at < item["oldest_started_at"]:
+                item["oldest_started_at"] = event.created_at
+            if self.PRIORITY_RANK.get(event.rule.priority, 1) > self.PRIORITY_RANK.get(
+                item["highest_priority"], 1
+            ):
+                item["highest_priority"] = event.rule.priority
+                item["tone"] = self.PRIORITY_TONES.get(event.rule.priority, "info")
+                item["priority_label"] = self.PRIORITY_LABELS.get(event.rule.priority, "Informativo")
+                item["reason"] = event.rule.name
+                item["message"] = event.message
+
+        server_alerts = []
+        for item in grouped.values():
+            duration_minutes = max(0, int((now - item["oldest_started_at"]).total_seconds() // 60))
+            item["duration_minutes"] = duration_minutes
+            item["duration_label"] = self.duration_label_from_minutes(duration_minutes)
+            item["started_at_label"] = timezone.localtime(item["oldest_started_at"]).strftime("%d/%m/%Y %H:%M")
+            item["event_count"] = len(item["events"])
+            server_alerts.append(item)
+
+        return sorted(
+            server_alerts,
+            key=lambda item: (
+                self.PRIORITY_RANK.get(item["highest_priority"], 1),
+                item["duration_minutes"],
+            ),
+            reverse=True,
+        )
+
+    def resolved_event_context(self, event):
+        resolved_at = event.resolved_at or event.created_at
+        duration = max(0, int((resolved_at - event.created_at).total_seconds() // 60))
+        return {
+            "event": event,
+            "server": event.server,
+            "server_name": event.server.name or event.server.hostname,
+            "priority_label": self.PRIORITY_LABELS.get(event.rule.priority, "Informativo"),
+            "tone": self.PRIORITY_TONES.get(event.rule.priority, "info"),
+            "duration_label": self.duration_label_from_minutes(duration),
+            "resolved_at_label": timezone.localtime(resolved_at).strftime("%d/%m/%Y %H:%M"),
+        }
+
+    @staticmethod
+    def duration_label_from_minutes(total_minutes):
+        total_minutes = max(0, int(total_minutes))
+        if total_minutes < 1:
+            return "Menos de 1 min"
+        days, remainder = divmod(total_minutes, 1440)
+        hours, minutes = divmod(remainder, 60)
+        parts = []
+        if days:
+            parts.append(f"{days}d")
+        if hours:
+            parts.append(f"{hours}h")
+        if minutes and not days:
+            parts.append(f"{minutes}min")
+        return " ".join(parts) or "Menos de 1 min"
+
+
 class DeviceDetailView(LoginRequiredMixin, TemplateView):
     template_name = "inventory/device_detail.html"
 

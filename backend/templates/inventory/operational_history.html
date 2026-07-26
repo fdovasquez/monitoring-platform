@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Historial operativo</title>
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/layout_width.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/operational_history.css' %}">
+</head>
+<body>
+  {% include "inventory/partials/app_header.html" %}
+  <main class="content content-shell operational-shell">
+    <section class="operation-hero">
+      <div>
+        <p class="eyebrow">Trazabilidad de alertas</p>
+        <h1>Historial operativo</h1>
+        <p>Duracion, causa y severidad de los servidores que requieren atencion.</p>
+      </div>
+      <a class="secondary-action" href="{% url 'alert-settings' %}?tab=history">Ver historial completo</a>
+    </section>
+
+    <section class="operation-kpi-grid" aria-label="Resumen operativo">
+      <article class="operation-kpi critical">
+        <span class="severity-dot"></span>
+        <p>Servidores criticos</p>
+        <strong>{{ critical_servers_count }}</strong>
+        <small>Requieren atencion inmediata</small>
+      </article>
+      <article class="operation-kpi warning">
+        <span class="severity-dot"></span>
+        <p>Servidores en advertencia</p>
+        <strong>{{ warning_servers_count }}</strong>
+        <small>Requieren revision preventiva</small>
+      </article>
+      <article class="operation-kpi neutral">
+        <span class="severity-dot"></span>
+        <p>Total alertados</p>
+        <strong>{{ active_servers_count }}</strong>
+        <small>Con alertas activas</small>
+      </article>
+      <article class="operation-kpi neutral">
+        <span class="severity-dot"></span>
+        <p>Mayor antiguedad</p>
+        <strong>{{ oldest_alert_label }}</strong>
+        <small>Alerta activa mas antigua</small>
+      </article>
+      <article class="operation-kpi neutral">
+        <span class="severity-dot"></span>
+        <p>Promedio activo</p>
+        <strong>{{ average_alert_label }}</strong>
+        <small>Tiempo promedio alertado</small>
+      </article>
+    </section>
+
+    <section class="operation-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Duracion por servidor</p>
+          <h2>Mapa de alertamiento activo</h2>
+          <p>Cada barra representa cuanto tiempo lleva alertado un servidor. Al seleccionarla se muestra el detalle.</p>
+        </div>
+      </div>
+
+      {% if server_alerts %}
+        <div class="operational-chart">
+          {% for item in server_alerts %}
+            <a class="op-bar-row {{ item.tone }}" href="#server-alert-{{ item.server.id }}">
+              <span class="op-bar-meta">
+                <strong>{{ item.server_name }}</strong>
+                <small>{{ item.priority_label }} / {{ item.event_count }} alerta{% if item.event_count != 1 %}s{% endif %}</small>
+              </span>
+              <span class="op-bar-track">
+                <span class="op-bar-fill" style="--bar-width: {{ item.bar_width }}%;"></span>
+              </span>
+              <span class="op-bar-time">{{ item.duration_label }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="op-empty">
+          <strong>Sin servidores alertados.</strong>
+          <span>No existen alertas activas en este momento.</span>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="operation-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Evidencia operacional</p>
+          <h2>Servidores con alertas activas</h2>
+        </div>
+      </div>
+
+      {% if server_alerts %}
+        <div class="op-detail-grid">
+          {% for item in server_alerts %}
+            <article class="op-alert-card {{ item.tone }}" id="server-alert-{{ item.server.id }}">
+              <div class="op-card-top">
+                <div>
+                  <span class="severity-badge">{{ item.priority_label }}</span>
+                  <h3>{{ item.server_name }}</h3>
+                  <p>{{ item.server_ip }}</p>
+                </div>
+                <a href="{% url 'device-detail' item.server.id %}">Ver servidor</a>
+              </div>
+              <div class="op-card-metrics">
+                <span><small>Alertado desde</small><strong>{{ item.started_at_label }}</strong></span>
+                <span><small>Duracion</small><strong>{{ item.duration_label }}</strong></span>
+                <span><small>Alertas activas</small><strong>{{ item.event_count }}</strong></span>
+              </div>
+              <div class="op-reason">
+                <small>Motivo principal</small>
+                <strong>{{ item.reason }}</strong>
+                <p>{{ item.message }}</p>
+              </div>
+              <ul class="op-event-list">
+                {% for event in item.events %}
+                  <li>
+                    <span>{{ event.rule.name }}</span>
+                    <small>{{ event.message }}</small>
+                  </li>
+                {% endfor %}
+              </ul>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="op-empty">
+          <strong>Operacion sin alertas activas.</strong>
+          <span>El historial resuelto de los ultimos 30 dias queda disponible como referencia.</span>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="operation-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Ultimos 30 dias</p>
+          <h2>Alertas resueltas recientemente</h2>
+        </div>
+      </div>
+      {% if recent_resolved %}
+        <div class="op-recent-table">
+          <div class="op-recent-head">
+            <span>Servidor</span>
+            <span>Evento</span>
+            <span>Duracion</span>
+            <span>Resuelto</span>
+          </div>
+          {% for item in recent_resolved %}
+            <a class="op-recent-row" href="{% url 'device-detail' item.server.id %}">
+              <span>
+                <strong>{{ item.server_name }}</strong>
+                <small>{{ item.priority_label }}</small>
+              </span>
+              <span>{{ item.event.rule.name }}</span>
+              <span>{{ item.duration_label }}</span>
+              <span>{{ item.resolved_at_label }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="op-empty compact">
+          <span>No hay alertas resueltas registradas en los ultimos 30 dias.</span>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
