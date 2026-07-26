@@ -141,34 +141,11 @@
       </div>
     </section>
 
-    <section class="ops-visual-board" aria-label="Vista visual de dispositivos">
-      <div class="device-card-grid" aria-label="Tarjetas de dispositivos">
-        {% for device in devices %}
-          <a class="device-card {{ device.alert_level }}{% if not device.online %} offline{% endif %}" href="{% url 'device-detail' device.server.id %}">
-            <header>
-              <span class="device-card-icon {{ device.server.os_type }}">{{ device.server.os_type|slice:":1"|upper }}</span>
-              <div>
-                <strong>{{ device.server.name|default:device.server.hostname }}</strong>
-                <small>{{ device.server.ip_address|default:device.server.hostname }}</small>
-              </div>
-              <em>{% if not device.online %}Sin reporte{% else %}{{ device.alert_label }}{% endif %}</em>
-            </header>
-            <div class="device-card-metrics">
-              <span><small>CPU</small><strong>{{ device.sample.cpu_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
-              <span><small>RAM</small><strong>{{ device.sample.memory_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
-              <span><small>Disco</small><strong>{{ device.sample.disk_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
-            </div>
-            <footer>
-              <span>Agente {{ device.agent_version|default:"sin reporte" }}</span>
-              <span>{{ device.uptime }}</span>
-            </footer>
-          </a>
-        {% endfor %}
-      </div>
-    </section>
-
     <section class="group-strip" aria-label="Grupos de dispositivos">
       <span>Grupos</span>
+      <a class="{% if not selected_group %}active{% endif %}" href="{% url 'device-list' %}">
+        Todos los servidores <strong>{{ total_devices }}</strong>
+      </a>
       {% for group in device_groups %}
         <a class="{% if selected_group == group.id|stringformat:'s' %}active{% endif %}" href="{% url 'device-list' %}?group={{ group.id }}">
           {{ group.name }} <strong>{{ group.server_count }}</strong>
