@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
+from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpResponse
 from django.db.models import Count, OuterRef, Subquery
 from django.shortcuts import get_object_or_404, redirect
@@ -387,12 +388,14 @@ class OperationalHistoryView(LoginRequiredMixin, TemplateView):
         for item in server_alerts:
             item["bar_width"] = max(8, int((item["duration_minutes"] / max_duration) * 100))
 
-        recent_resolved = [
-            self.resolved_event_context(event)
-            for event in AlertEvent.objects.select_related("server", "rule")
+        resolved_queryset = (
+            AlertEvent.objects.select_related("server", "rule")
             .filter(is_resolved=True, resolved_at__gte=now - timedelta(days=30))
-            .order_by("-resolved_at")[:80]
-        ]
+            .order_by("-resolved_at")
+        )
+        resolved_paginator = Paginator(resolved_queryset, 12)
+        resolved_page_obj = resolved_paginator.get_page(self.request.GET.get("resolved_page"))
+        recent_resolved = [self.resolved_event_context(event) for event in resolved_page_obj.object_list]
         critical_count = sum(1 for item in server_alerts if item["tone"] == "critical")
         warning_count = sum(1 for item in server_alerts if item["tone"] == "warning")
         durations = [item["duration_minutes"] for item in server_alerts]
@@ -404,6 +407,7 @@ class OperationalHistoryView(LoginRequiredMixin, TemplateView):
                 "active_menu": "operations",
                 "server_alerts": server_alerts,
                 "recent_resolved": recent_resolved,
+                "resolved_page_obj": resolved_page_obj,
                 "active_servers_count": len(server_alerts),
                 "critical_servers_count": critical_count,
                 "warning_servers_count": warning_count,

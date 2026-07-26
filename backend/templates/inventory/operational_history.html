@@ -54,7 +54,7 @@
       </article>
     </section>
 
-    <section class="operation-panel">
+    <section class="operation-panel" id="resolved-alerts">
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Duracion por servidor</p>
@@ -162,6 +162,26 @@
             </a>
           {% endfor %}
         </div>
+        {% if resolved_page_obj.paginator.num_pages > 1 %}
+          <nav class="op-pagination" aria-label="Paginacion de alertas resueltas">
+            <div>
+              <span>Pagina {{ resolved_page_obj.number }} de {{ resolved_page_obj.paginator.num_pages }}</span>
+              <small>{{ resolved_page_obj.paginator.count }} alertas resueltas</small>
+            </div>
+            <div class="op-pagination-actions">
+              {% if resolved_page_obj.has_previous %}
+                <a href="?resolved_page={{ resolved_page_obj.previous_page_number }}#resolved-alerts">Anterior</a>
+              {% else %}
+                <span class="disabled">Anterior</span>
+              {% endif %}
+              {% if resolved_page_obj.has_next %}
+                <a href="?resolved_page={{ resolved_page_obj.next_page_number }}#resolved-alerts">Siguiente</a>
+              {% else %}
+                <span class="disabled">Siguiente</span>
+              {% endif %}
+            </div>
+          </nav>
+        {% endif %}
       {% else %}
         <div class="op-empty compact">
           <span>No hay alertas resueltas registradas en los ultimos 30 dias.</span>
