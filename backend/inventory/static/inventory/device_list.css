@@ -549,11 +549,14 @@ h1 {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 16px;
   padding: 10px 16px;
   background: var(--surface);
+  border-top: 1px solid var(--line);
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   border-left: 1px solid var(--line);
+  border-radius: 8px;
   overflow-x: auto;
 }
 
@@ -1697,7 +1700,7 @@ pre {
 .device-card-metrics span {
   display: grid;
   align-content: start;
-  min-height: 74px;
+  min-height: 82px;
   padding: 10px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -1714,14 +1717,14 @@ pre {
 .device-card-metrics i {
   display: -webkit-box;
   margin-top: 4px;
-  min-height: 28px;
+  min-height: 34px;
   overflow: hidden;
   color: #64748b;
   font-size: 11px;
   font-style: normal;
   line-height: 1.25;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   white-space: normal;
 }
 

@@ -260,18 +260,19 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
 
         disk = DeviceListView.primary_disk(sample)
         if disk and disk.get("total_gb") is not None and disk.get("free_gb") is not None:
-            disk_value = (
-                f"{DeviceListView.gb_display(disk['free_gb'])} / "
-                f"{DeviceListView.gb_display(disk['total_gb'])}"
-            )
             disk_label = disk.get("label") or disk.get("mountpoint") or "Disco principal"
             disk_percent = DeviceListView.percent_display(disk.get("percent"))
-            disk_detail = f"Libre en {disk_label}"
-            if disk_percent != "-":
-                disk_detail = f"{disk_detail} / {disk_percent} usado"
+            disk_value = disk_percent
+            if disk.get("used_gb") is not None:
+                disk_detail = (
+                    f"{DeviceListView.gb_display(disk['used_gb'])} usados de "
+                    f"{DeviceListView.gb_display(disk['total_gb'])} en {disk_label}"
+                )
+            else:
+                disk_detail = f"Uso del disco del SO en {disk_label}"
         else:
             disk_value = DeviceListView.percent_display(sample.disk_percent)
-            disk_detail = "Uso principal"
+            disk_detail = "Uso del disco del SO"
 
         return [
             {"label": "CPU", "value": cpu_value, "detail": cpu_detail},
