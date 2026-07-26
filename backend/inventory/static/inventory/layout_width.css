@@ -15,6 +15,7 @@ body {
 .app-header {
   height: 74px !important;
   min-height: 74px !important;
+  padding: 0 !important;
 }
 
 .app-header-inner,
@@ -27,6 +28,7 @@ body {
 
 .app-header-inner {
   align-items: stretch !important;
+  gap: 0 !important;
 }
 
 .app-brand,
@@ -35,12 +37,51 @@ body {
   align-items: center !important;
 }
 
-.app-nav a {
-  justify-content: center !important;
-  height: 74px !important;
-  min-height: 74px !important;
+.app-brand {
+  flex: 0 0 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  background: #ffffff !important;
+}
+
+.app-nav {
+  align-self: stretch !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+}
+
+.app-nav a {
+  position: relative !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  height: 74px !important;
+  min-height: 74px !important;
+  min-width: 126px !important;
+  padding-top: 0 !important;
+  padding-right: 16px !important;
+  padding-bottom: 0 !important;
+  padding-left: 16px !important;
+  border-radius: 0 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+
+.app-nav a.active,
+.app-nav a:hover {
+  background: #f5f9ff !important;
+}
+
+.app-nav a.active::after {
+  position: absolute !important;
+  right: 14px !important;
+  bottom: 0 !important;
+  left: 14px !important;
+  height: 2px !important;
+  content: "" !important;
+  background: var(--corp-blue, #2563eb) !important;
+  border-radius: 999px 999px 0 0 !important;
 }
 
 .content,
