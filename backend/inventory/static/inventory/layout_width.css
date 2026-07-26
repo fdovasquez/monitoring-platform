@@ -12,6 +12,37 @@ body {
   overflow-x: hidden;
 }
 
+.app-header {
+  height: 74px !important;
+  min-height: 74px !important;
+}
+
+.app-header-inner,
+.app-brand,
+.app-nav,
+.app-actions {
+  height: 74px !important;
+  min-height: 74px !important;
+}
+
+.app-header-inner {
+  align-items: stretch !important;
+}
+
+.app-brand,
+.app-nav a,
+.app-actions {
+  align-items: center !important;
+}
+
+.app-nav a {
+  justify-content: center !important;
+  height: 74px !important;
+  min-height: 74px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
 .content,
 .content-shell,
 .app-main,
