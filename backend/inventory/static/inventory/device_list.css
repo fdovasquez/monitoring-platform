@@ -1651,9 +1651,21 @@ pre {
 
 .device-card header {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 14px;
   align-items: center;
+}
+
+.device-card header > div {
+  min-width: 0;
+}
+
+.device-card header strong,
+.device-card header small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .device-card em {
@@ -1764,7 +1776,7 @@ pre {
 
   .device-card header,
   .ops-priority-row {
-    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-columns: 54px minmax(0, 1fr);
   }
 
   .device-card em,
