@@ -155,98 +155,35 @@
       {% endfor %}
     </section>
 
-    <section class="device-panel">
-      <table>
-        <thead>
-          <tr>
-            <th>Dispositivo</th>
-            <th>Conectividad</th>
-            <th>Condicion</th>
-            <th>Agente</th>
-            <th>CPU</th>
-            <th>Memoria</th>
-            <th>Disco</th>
-            <th>Seguridad</th>
-            <th>IP</th>
-            <th>Uptime</th>
-            <th>Etiquetas</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for device in devices %}
-            <tr>
-              <td>
-                <a class="device-cell" href="{% url 'device-detail' device.server.id %}">
-                  <div class="os-icon {{ device.server.os_type }}">{{ device.server.os_type|slice:":1"|upper }}</div>
-                  <div>
-                    <strong>{{ device.server.name|default:device.server.hostname }}</strong>
-                    <span>{{ device.server.hostname }}</span>
-                  </div>
-                </a>
-              </td>
-              <td>
-                {% if device.online %}
-                  <span class="status online">En linea</span>
-                {% else %}
-                  <span class="status offline">Fuera de linea</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if device.alert_level == "critical" %}
-                  <span class="condition-semaphore critical" title="{{ device.alert_title }}: {{ device.alert_message }}">
-                    <span class="semaphore-lights" aria-hidden="true"><i></i><i></i><i></i></span>
-                    <span>Critico</span>
-                  </span>
-                {% elif device.alert_level == "warning" %}
-                  <span class="condition-semaphore warning" title="{{ device.alert_title }}: {{ device.alert_message }}">
-                    <span class="semaphore-lights" aria-hidden="true"><i></i><i></i><i></i></span>
-                    <span>Advertencia</span>
-                  </span>
-                {% else %}
-                  <span class="condition-semaphore ok">
-                    <span class="semaphore-lights" aria-hidden="true"><i></i><i></i><i></i></span>
-                    <span>Normal</span>
-                  </span>
-                {% endif %}
-              </td>
-              <td>
-                {% if device.agent_version %}
-                  <span class="agent-version">{{ device.agent_version }}</span>
-                {% else %}
-                  <span class="agent-version muted">Sin reporte</span>
-                {% endif %}
-              </td>
-              <td>{{ device.sample.cpu_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
-              <td>{{ device.sample.memory_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
-              <td>{{ device.sample.disk_percent|default:"-" }}{% if device.sample %}%{% endif %}</td>
-              <td>
-                <div class="score {{ device.security_tone }}">
-                  <span style="--score: {{ device.security_score }}%"></span>
-                  <strong>{{ device.security_score }} / 100</strong>
-                </div>
-              </td>
-              <td>{{ device.server.ip_address|default:"-" }}</td>
-              <td>{{ device.uptime }}</td>
-              <td>
-                <div class="tags">
-                  <span>{{ device.server.get_os_type_display }}</span>
-                  {% if device.server.group %}<span>{{ device.server.group.name }}</span>{% endif %}
-                  {% if device.server.environment %}<span>{{ device.server.environment }}</span>{% endif %}
-                </div>
-              </td>
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="11">
-                <div class="empty-state">
-                  <strong>No hay dispositivos</strong>
-                  <span>Usa "Instalar nuevo agente" para crear un servidor, generar token y copiar el instalador.</span>
-                </div>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <section class="ops-visual-board" aria-label="Vista visual de dispositivos">
+      <div class="device-card-grid" aria-label="Tarjetas de dispositivos">
+        {% for device in devices %}
+          <a class="device-card {{ device.alert_level }}{% if not device.online %} offline{% endif %}" href="{% url 'device-detail' device.server.id %}">
+            <header>
+              <span class="device-card-icon {{ device.server.os_type }}">{{ device.server.os_type|slice:":1"|upper }}</span>
+              <div>
+                <strong>{{ device.server.name|default:device.server.hostname }}</strong>
+                <small>{{ device.server.ip_address|default:device.server.hostname }}</small>
+              </div>
+              <em>{% if not device.online %}Sin reporte{% else %}{{ device.alert_label }}{% endif %}</em>
+            </header>
+            <div class="device-card-metrics">
+              <span><small>CPU</small><strong>{{ device.sample.cpu_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
+              <span><small>RAM</small><strong>{{ device.sample.memory_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
+              <span><small>Disco</small><strong>{{ device.sample.disk_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
+            </div>
+            <footer>
+              <span>Agente {{ device.agent_version|default:"sin reporte" }}</span>
+              <span>{{ device.uptime }}</span>
+            </footer>
+          </a>
+        {% empty %}
+          <div class="empty-state">
+            <strong>No hay dispositivos</strong>
+            <span>Usa "Instalar agente" para registrar servidores en la plataforma.</span>
+          </div>
+        {% endfor %}
+      </div>
     </section>
   </main>
   <script>
