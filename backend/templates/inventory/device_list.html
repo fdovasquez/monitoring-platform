@@ -162,30 +162,9 @@
             <header>
               <span class="device-card-icon {{ device.server.os_type }}" aria-hidden="true">
                 {% if device.server.os_type == "windows" %}
-                  <svg viewBox="0 0 48 48" role="img" focusable="false">
-                    <path class="server-side" d="M8 10.5 17 6h20l-9 4.5H8Z"></path>
-                    <rect class="server-front" x="8" y="10" width="31" height="32" rx="5"></rect>
-                    <rect class="windows-pane" x="17" y="15" width="7" height="7" rx="1"></rect>
-                    <rect class="windows-pane" x="25.5" y="15" width="7" height="7" rx="1"></rect>
-                    <rect class="windows-pane" x="17" y="23.5" width="7" height="7" rx="1"></rect>
-                    <rect class="windows-pane" x="25.5" y="23.5" width="7" height="7" rx="1"></rect>
-                    <path class="server-vent" d="M15 33.5h16M15 37h16"></path>
-                    <circle class="server-led amber" cx="33.8" cy="37" r="1.7"></circle>
-                  </svg>
+                  <img src="{% static 'inventory/images/server-windows.png' %}" alt="">
                 {% elif device.server.os_type == "linux" %}
-                  <svg viewBox="0 0 48 48" role="img" focusable="false">
-                    <path class="server-side" d="M8 10.5 17 6h20l-9 4.5H8Z"></path>
-                    <rect class="server-front" x="8" y="10" width="31" height="32" rx="5"></rect>
-                    <ellipse class="tux-body" cx="23.5" cy="22" rx="8.2" ry="10.5"></ellipse>
-                    <ellipse class="tux-belly" cx="23.5" cy="24" rx="5.2" ry="6.9"></ellipse>
-                    <circle class="tux-eye" cx="21" cy="17.6" r="1"></circle>
-                    <circle class="tux-eye" cx="26" cy="17.6" r="1"></circle>
-                    <path class="tux-beak" d="M21.2 20.2h4.6l-2.3 2.1-2.3-2.1Z"></path>
-                    <path class="tux-foot" d="M16.5 31.8c2.4-1 4.6-.4 5.2 1.1-1.8 1.4-4.5 1.5-6.1.6-.8-.5-.4-1.3.9-1.7Z"></path>
-                    <path class="tux-foot" d="M30.5 31.8c-2.4-1-4.6-.4-5.2 1.1 1.8 1.4 4.5 1.5 6.1.6.8-.5.4-1.3-.9-1.7Z"></path>
-                    <path class="server-vent" d="M15 34.8h17M15 38h17"></path>
-                    <circle class="server-led green" cx="15" cy="38" r="1.5"></circle>
-                  </svg>
+                  <img src="{% static 'inventory/images/server-linux.png' %}" alt="">
                 {% else %}
                   <span>{{ device.server.os_type|slice:":1"|upper }}</span>
                 {% endif %}
