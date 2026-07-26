@@ -1475,6 +1475,20 @@ pre {
   font-weight: 500;
 }
 
+.device-card-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.device-card-icon.windows {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+}
+
+.device-card-icon.linux {
+  background: linear-gradient(135deg, #0f766e, #22c55e);
+}
+
 .ops-priority-state {
   padding: 6px 10px;
   border-radius: 999px;
@@ -1625,9 +1639,11 @@ pre {
 }
 
 .device-card em {
+  align-self: start;
   color: #166534;
   font-size: 12px;
   font-style: normal;
+  white-space: nowrap;
 }
 
 .device-card.warning em {
@@ -1649,6 +1665,9 @@ pre {
 }
 
 .device-card-metrics span {
+  display: grid;
+  align-content: start;
+  min-height: 74px;
   padding: 10px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -1657,7 +1676,21 @@ pre {
 
 .device-card-metrics strong {
   margin-top: 4px;
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.device-card-metrics i {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .device-card footer {
@@ -1666,6 +1699,17 @@ pre {
   gap: 12px;
   padding-top: 8px;
   border-top: 1px solid #edf2f7;
+}
+
+.device-card footer span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-card footer span:last-child {
+  flex: 0 0 auto;
+  color: #0f766e;
 }
 
 .device-panel {

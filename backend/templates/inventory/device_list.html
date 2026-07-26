@@ -160,7 +160,19 @@
         {% for device in devices %}
           <a class="device-card {{ device.alert_level }}{% if not device.online %} offline{% endif %}" href="{% url 'device-detail' device.server.id %}">
             <header>
-              <span class="device-card-icon {{ device.server.os_type }}">{{ device.server.os_type|slice:":1"|upper }}</span>
+              <span class="device-card-icon {{ device.server.os_type }}" aria-hidden="true">
+                {% if device.server.os_type == "windows" %}
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path d="M3 5.3 10.8 4v7.3H3V5.3Zm8.8-1.5L21 2.4v8.9h-9.2V3.8ZM3 12.7h7.8V20L3 18.7v-6Zm8.8 0H21v8.9l-9.2-1.4v-7.5Z"/>
+                  </svg>
+                {% elif device.server.os_type == "linux" %}
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path d="M12 2.6c-2.5 0-4.2 2.2-4.2 5.1 0 1.4-.4 2.4-1.1 3.6-.8 1.3-1.7 2.7-1.7 5.2 0 2.9 2.8 4.9 7 4.9s7-2 7-4.9c0-2.5-.9-3.9-1.7-5.2-.7-1.2-1.1-2.2-1.1-3.6 0-2.9-1.7-5.1-4.2-5.1Zm-1.5 4.6c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9Zm3 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9Zm-1.5 4c1.4 0 2.4.8 2.4 1.8 0 .9-.8 1.5-2.4 1.5s-2.4-.6-2.4-1.5c0-1 1-1.8 2.4-1.8Zm-4.1 5.2c.8.5 2.1.9 4.1.9s3.3-.4 4.1-.9c-.3 1.4-1.8 2.5-4.1 2.5s-3.8-1.1-4.1-2.5Z"/>
+                  </svg>
+                {% else %}
+                  <span>{{ device.server.os_type|slice:":1"|upper }}</span>
+                {% endif %}
+              </span>
               <div>
                 <strong>{{ device.server.name|default:device.server.hostname }}</strong>
                 <small>{{ device.server.ip_address|default:device.server.hostname }}</small>
@@ -168,13 +180,17 @@
               <em>{% if not device.online %}Sin reporte{% else %}{{ device.alert_label }}{% endif %}</em>
             </header>
             <div class="device-card-metrics">
-              <span><small>CPU</small><strong>{{ device.sample.cpu_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
-              <span><small>RAM</small><strong>{{ device.sample.memory_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
-              <span><small>Disco</small><strong>{{ device.sample.disk_percent|default:"-" }}{% if device.sample %}%{% endif %}</strong></span>
+              {% for metric in device.resource_cards %}
+                <span>
+                  <small>{{ metric.label }}</small>
+                  <strong>{{ metric.value }}</strong>
+                  <i>{{ metric.detail }}</i>
+                </span>
+              {% endfor %}
             </div>
             <footer>
               <span>Agente {{ device.agent_version|default:"sin reporte" }}</span>
-              <span>{{ device.uptime }}</span>
+              <span>{{ device.last_report }}</span>
             </footer>
           </a>
         {% empty %}

@@ -113,14 +113,17 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
             sample = samples_by_id.get(server.latest_sample_id)
             online = bool(server.last_seen and server.last_seen >= now - timedelta(minutes=1))
             security = self.security_assessment(sample)
+            resource_cards = self.resource_cards(sample)
             devices.append(
                 {
                     "server": server,
                     "sample": sample,
                     "agent_version": sample.agent_version if sample and sample.agent_version else "",
+                    "last_report": self.format_since(server.last_seen or (sample.timestamp if sample else None), now),
                     "online": online,
                     "security_score": security["score"],
                     "security_tone": security["tone"],
+                    "resource_cards": resource_cards,
                     "uptime": self.format_uptime(sample.uptime_seconds if sample else None),
                 }
             )
@@ -213,6 +216,123 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
     @staticmethod
     def synthetic_latency(server_id):
         return 6 + (server_id % 9)
+
+    @staticmethod
+    def resource_cards(sample):
+        if not sample:
+            return [
+                {"label": "CPU", "value": "-", "detail": "Sin reporte"},
+                {"label": "RAM", "value": "-", "detail": "Sin reporte"},
+                {"label": "Disco", "value": "-", "detail": "Sin reporte"},
+            ]
+
+        metrics = sample.payload.get("metrics", {}) if isinstance(sample.payload, dict) else {}
+        load_1m = DeviceListView.to_float(metrics.get("load_1m"))
+        cpu_percent = DeviceListView.to_float(sample.cpu_percent)
+        if load_1m is not None:
+            cpu_value = f"{load_1m:.2f}".rstrip("0").rstrip(".")
+            cpu_detail = f"Uso {DeviceListView.percent_display(cpu_percent)}"
+        else:
+            cpu_value = DeviceListView.percent_display(cpu_percent)
+            cpu_detail = "Uso actual"
+
+        memory_total = DeviceListView.first_number(
+            metrics,
+            "memory_total_gb",
+            "mem_total_gb",
+            "ram_total_gb",
+            "memory_total",
+        )
+        memory_used = DeviceListView.first_number(
+            metrics,
+            "memory_used_gb",
+            "mem_used_gb",
+            "ram_used_gb",
+            "memory_used",
+        )
+        if memory_total and memory_used is not None:
+            memory_value = f"{DeviceListView.gb_display(memory_used)} usados"
+            memory_detail = f"Total {DeviceListView.gb_display(memory_total)}"
+        else:
+            memory_value = DeviceListView.percent_display(sample.memory_percent)
+            memory_detail = "Uso actual"
+
+        disk = DeviceListView.primary_disk(sample)
+        if disk and disk.get("total_gb") is not None and disk.get("free_gb") is not None:
+            disk_value = f"{DeviceListView.gb_display(disk['free_gb'])} libres"
+            disk_detail = disk.get("label") or "Disco principal"
+        else:
+            disk_value = DeviceListView.percent_display(sample.disk_percent)
+            disk_detail = "Uso principal"
+
+        return [
+            {"label": "CPU", "value": cpu_value, "detail": cpu_detail},
+            {"label": "RAM", "value": memory_value, "detail": memory_detail},
+            {"label": "Disco", "value": disk_value, "detail": disk_detail},
+        ]
+
+    @staticmethod
+    def primary_disk(sample):
+        disks = DeviceDetailView.disk_details(sample)
+        if not disks:
+            return None
+        preferred = ("/", "C:", "C:\\", "Principal")
+        for disk in disks:
+            if disk.get("mountpoint") in preferred or disk.get("label") in preferred:
+                return disk
+        return max(disks, key=lambda disk: disk.get("percent") or 0)
+
+    @staticmethod
+    def first_number(mapping, *keys):
+        for key in keys:
+            value = DeviceListView.to_float(mapping.get(key))
+            if value is not None:
+                return value
+        return None
+
+    @staticmethod
+    def to_float(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def gb_display(value):
+        number = DeviceListView.to_float(value)
+        if number is None:
+            return "-"
+        if number >= 100:
+            return f"{number:.0f} GB"
+        if number >= 10:
+            return f"{number:.1f} GB"
+        return f"{number:.2f} GB"
+
+    @staticmethod
+    def percent_display(value):
+        number = DeviceListView.to_float(value)
+        if number is None:
+            return "-"
+        if number.is_integer():
+            return f"{int(number)}%"
+        return f"{number:.1f}%"
+
+    @staticmethod
+    def format_since(moment, now=None):
+        if not moment:
+            return "Sin reporte"
+        now = now or timezone.now()
+        seconds = max(0, int((now - moment).total_seconds()))
+        minutes = seconds // 60
+        if minutes < 1:
+            return "Hace menos de 1 min"
+        if minutes < 60:
+            return f"Hace {minutes} min"
+        hours = minutes // 60
+        if hours < 24:
+            return f"Hace {hours} h"
+        days = hours // 24
+        return f"Hace {days} d"
 
     @staticmethod
     def format_uptime(seconds):
