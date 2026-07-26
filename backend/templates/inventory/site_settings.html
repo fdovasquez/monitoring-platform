@@ -363,34 +363,32 @@
                 <p>Edita nombres y descripciones. Para eliminar, el grupo debe estar vacio.</p>
               </div>
             </div>
+            <div class="group-list-toolbar">
+              <span>{{ device_groups|length }} grupos registrados</span>
+              <small>Los grupos con servidores asociados quedan protegidos contra eliminacion.</small>
+            </div>
             <div class="group-management-list">
               {% for group in device_groups %}
                 <article class="group-management-row">
-                  <form method="post" data-loading-form>
+                  <form class="group-edit-form" method="post" data-loading-form>
                     {% csrf_token %}
-                    <input type="hidden" name="action" value="save_group">
                     <input type="hidden" name="group_id" value="{{ group.id }}">
                     <div class="group-row-meta">
                       <span>{{ group.server_count }}</span>
                       <small>servidor{% if group.server_count != 1 %}es{% endif %}</small>
                     </div>
-                    <div class="field">
+                    <div class="group-form-field">
                       <label for="group-name-{{ group.id }}">Nombre</label>
                       <input class="profile-input" id="group-name-{{ group.id }}" name="name" value="{{ group.name }}" maxlength="120" required>
                     </div>
-                    <div class="field">
+                    <div class="group-form-field">
                       <label for="group-description-{{ group.id }}">Descripcion</label>
                       <input class="profile-input" id="group-description-{{ group.id }}" name="description" value="{{ group.description }}" maxlength="500">
                     </div>
-                    <div class="group-row-actions">
-                      <button class="submit-button" type="submit" data-loading-label="Guardando...">Guardar</button>
+                    <div class="group-action-set">
+                      <button class="submit-button group-save-button" type="submit" name="action" value="save_group" data-loading-label="Guardando...">Guardar</button>
+                      <button class="danger-button group-delete-button" type="submit" name="action" value="delete_group" onclick="return confirm('Eliminar este grupo? Solo se permite si no tiene servidores asociados.');" {% if group.server_count %}disabled title="Reasigna los servidores antes de eliminar"{% endif %}>Eliminar</button>
                     </div>
-                  </form>
-                  <form method="post" class="group-delete-form" onsubmit="return confirm('Eliminar este grupo? Solo se permite si no tiene servidores asociados.');">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="delete_group">
-                    <input type="hidden" name="group_id" value="{{ group.id }}">
-                    <button class="danger-button" type="submit" {% if group.server_count %}disabled title="Reasigna los servidores antes de eliminar"{% endif %}>Eliminar</button>
                   </form>
                 </article>
               {% empty %}
