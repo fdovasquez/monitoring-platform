@@ -41,38 +41,38 @@
       </div>
 
       <div class="ops-summary-grid executive">
-        <article class="ops-summary-card total">
+        <a class="ops-summary-card total {% if not selected_status %}active{% endif %}" href="{% url 'device-list' %}{% if selected_group %}?group={{ selected_group }}{% endif %}">
           <div>
             <span class="ops-dot"></span>
             <p>Total monitoreado</p>
           </div>
           <strong>{{ total_devices }}</strong>
           <small>{{ online_devices }} en linea / {{ offline_devices }} fuera de linea</small>
-        </article>
-        <article class="ops-summary-card critical">
+        </a>
+        <a class="ops-summary-card critical {% if selected_status == 'critical' %}active{% endif %}" href="{% url 'device-list' %}?status=critical{% if selected_group %}&group={{ selected_group }}{% endif %}">
           <div>
             <span class="ops-dot"></span>
             <p>Critico</p>
           </div>
           <strong>{{ alert_dashboard.critical_count }}</strong>
           <small>Requieren atencion inmediata</small>
-        </article>
-        <article class="ops-summary-card warning">
+        </a>
+        <a class="ops-summary-card warning {% if selected_status == 'warning' %}active{% endif %}" href="{% url 'device-list' %}?status=warning{% if selected_group %}&group={{ selected_group }}{% endif %}">
           <div>
             <span class="ops-dot"></span>
             <p>Advertencia</p>
           </div>
           <strong>{{ alert_dashboard.warning_count }}</strong>
           <small>Requieren revision preventiva</small>
-        </article>
-        <article class="ops-summary-card ok">
+        </a>
+        <a class="ops-summary-card ok {% if selected_status == 'ok' %}active{% endif %}" href="{% url 'device-list' %}?status=ok{% if selected_group %}&group={{ selected_group }}{% endif %}">
           <div>
             <span class="ops-dot"></span>
             <p>Normal</p>
           </div>
           <strong>{{ alert_dashboard.ok_count }}</strong>
           <small>Sin alertas activas</small>
-        </article>
+        </a>
       </div>
 
       <div class="ops-lanes">
@@ -143,16 +143,19 @@
 
     <section class="group-strip" aria-label="Filtros de dispositivos">
       <span>Filtros</span>
-      <a class="{% if not selected_group %}active{% endif %}" href="{% url 'device-list' %}">
+      <a class="{% if not selected_group %}active{% endif %}" href="{% url 'device-list' %}{% if selected_status %}?status={{ selected_status }}{% endif %}">
         Todos los servidores <strong>{{ total_devices }}</strong>
       </a>
       {% for group in device_groups %}
-        <a class="{% if selected_group == group.id|stringformat:'s' %}active{% endif %}" href="{% url 'device-list' %}?group={{ group.id }}">
+        <a class="{% if selected_group == group.id|stringformat:'s' %}active{% endif %}" href="{% url 'device-list' %}?group={{ group.id }}{% if selected_status %}&status={{ selected_status }}{% endif %}">
           {{ group.name }} <strong>{{ group.server_count }}</strong>
         </a>
       {% empty %}
         <em>Sin grupos creados</em>
       {% endfor %}
+      {% if selected_status %}
+        <a class="clear-filter" href="{% url 'device-list' %}{% if selected_group %}?group={{ selected_group }}{% endif %}">Quitar filtro de estado</a>
+      {% endif %}
     </section>
 
     <section class="ops-visual-board" aria-label="Vista visual de dispositivos">

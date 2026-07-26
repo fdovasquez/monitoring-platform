@@ -94,6 +94,9 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         group_id = self.request.GET.get("group")
+        selected_status = self.request.GET.get("status", "").strip().lower()
+        if selected_status not in {"critical", "warning", "ok"}:
+            selected_status = ""
         latest_sample_id = MetricSample.objects.filter(server=OuterRef("pk")).order_by("-timestamp").values("id")[:1]
         servers = (
             Server.objects.select_related("agent_token", "group")
@@ -129,14 +132,21 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
                 }
             )
 
-        context["devices"] = devices
-        context["alert_dashboard"] = self.alert_dashboard(devices)
+        alert_dashboard = self.alert_dashboard(devices)
+        visible_devices = devices
+        if selected_status:
+            visible_devices = [device for device in devices if device.get("alert_level") == selected_status]
+
+        context["devices"] = visible_devices
+        context["alert_dashboard"] = alert_dashboard
         context["total_devices"] = len(devices)
+        context["displayed_devices_count"] = len(visible_devices)
         context["online_devices"] = sum(1 for device in devices if device["online"])
         context["offline_devices"] = sum(1 for device in devices if not device["online"])
         context["windows_devices"] = sum(1 for device in devices if device["server"].os_type == Server.OS_WINDOWS)
         context["linux_devices"] = sum(1 for device in devices if device["server"].os_type == Server.OS_LINUX)
         context["selected_group"] = group_id
+        context["selected_status"] = selected_status
         context["can_manage_devices"] = user_can_manage_devices(self.request.user)
         context.update(sidebar_context())
         return context
