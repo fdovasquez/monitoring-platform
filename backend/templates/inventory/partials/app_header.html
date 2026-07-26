@@ -4,77 +4,113 @@
 </script>
 <link rel="stylesheet" href="{% static 'inventory/theme.css' %}">
 <header class="app-header">
-  <div class="app-header-inner">
-    <a class="app-brand" href="{% if central_portal_enabled %}{% url 'hub-dashboard' %}{% else %}{% url 'executive-dashboard' %}{% endif %}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">
-      {% if site_settings.logo %}
-        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+  <div class="app-header-main">
+    <div class="app-header-inner">
+      <a class="app-brand" href="{% if central_portal_enabled %}{% url 'hub-dashboard' %}{% else %}{% url 'executive-dashboard' %}{% endif %}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">
+        {% if site_settings.logo %}
+          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+        {% else %}
+          <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}">
+        {% endif %}
+        <span>{{ site_settings.subtitle }}</span>
+      </a>
+      <nav class="app-nav" aria-label="Menu principal">
+        {% if central_portal_enabled %}
+          <a class="{% if active_menu == 'hub' %}active{% endif %}" href="{% url 'hub-dashboard' %}">Dashboard</a>
+          {% if can_manage_users %}
+            <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
+          {% endif %}
+          {% if can_manage_alerts or can_view_alert_history %}
+            <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}{% if not can_manage_alerts %}?tab=history{% endif %}">Alertas</a>
+          {% endif %}
+          {% if can_manage_site_settings %}
+            <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
+          {% endif %}
+        {% else %}
+          {% if can_manage_devices %}
+            <a class="{% if active_menu == 'executive' %}active{% endif %}" href="{% url 'executive-dashboard' %}">Dashboard</a>
+          {% endif %}
+          <a class="{% if active_menu == 'devices' %}active{% endif %}" href="{% url 'device-list' %}">
+            Dispositivos{% if total_devices %} <span class="nav-count">{{ total_devices }}</span>{% endif %}
+          </a>
+          <a class="{% if active_menu == 'operations' %}active{% endif %}" href="{% url 'operational-history' %}">Historial operativo</a>
+          {% if can_manage_devices %}
+            <a class="{% if active_menu == 'cmdb' %}active{% endif %}" href="{% url 'cmdb' %}">CMDB</a>
+            <a class="{% if active_menu == 'incidents' %}active{% endif %}" href="{% url 'incidents' %}">Incidentes</a>
+            <a class="{% if active_menu == 'compliance' %}active{% endif %}" href="{% url 'compliance' %}">Cumplimiento</a>
+            <a class="{% if active_menu == 'reports' %}active{% endif %}" href="{% url 'reports' %}">Reportes</a>
+            <a class="{% if active_menu == 'hub' %}active{% endif %}" href="{% url 'hub-dashboard' %}">Central</a>
+          {% endif %}
+          {% if can_manage_devices %}
+            <a class="{% if active_menu == 'agents' %}active{% endif %}" href="{% url 'agent-install' %}">Instalar agente</a>
+          {% endif %}
+          {% if can_manage_users %}
+            <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
+          {% endif %}
+          {% if can_manage_site_settings %}
+            <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
+          {% endif %}
+          {% if can_manage_alerts or can_view_alert_history %}
+            <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}{% if not can_manage_alerts %}?tab=history{% endif %}">Alertas</a>
+          {% endif %}
+        {% endif %}
+      </nav>
+      <div class="app-actions">
+        <details class="account-menu">
+          <summary>
+            <span class="user-avatar">
+              {% if request.user.profile.photo %}
+                <img src="{{ request.user.profile.photo.url }}" alt="Foto de {{ request.user.username }}">
+              {% else %}
+                <span>{{ request.user.username|slice:":1"|upper }}</span>
+              {% endif %}
+            </span>
+            <span class="user-name">{{ request.user.username }}</span>
+          </summary>
+          <div class="account-dropdown">
+            <a href="{% url 'profile' %}">Editar perfil</a>
+            <a href="{% url 'password-change' %}">Cambiar contrase&ntilde;a</a>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit">Cerrar sesion</button>
+            </form>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-breadcrumb-bar">
+    <nav class="app-breadcrumb" aria-label="Ruta de navegacion">
+      <a href="{% if central_portal_enabled %}{% url 'hub-dashboard' %}{% else %}{% url 'executive-dashboard' %}{% endif %}">Inicio</a>
+      <span aria-hidden="true">/</span>
+      {% if active_menu == 'executive' %}
+        <span>Dashboard</span>
+      {% elif active_menu == 'devices' %}
+        <span>Dispositivos</span>
+      {% elif active_menu == 'operations' %}
+        <span>Historial operativo</span>
+      {% elif active_menu == 'alerts' %}
+        <span>Alertas</span>
+      {% elif active_menu == 'cmdb' %}
+        <span>CMDB</span>
+      {% elif active_menu == 'incidents' %}
+        <span>Incidentes</span>
+      {% elif active_menu == 'compliance' %}
+        <span>Cumplimiento</span>
+      {% elif active_menu == 'reports' %}
+        <span>Reportes</span>
+      {% elif active_menu == 'agents' %}
+        <span>Instalar agente</span>
+      {% elif active_menu == 'users' %}
+        <span>Usuarios</span>
+      {% elif active_menu == 'settings' %}
+        <span>Configuracion</span>
+      {% elif active_menu == 'hub' %}
+        <span>Central</span>
       {% else %}
-        <img src="{% static 'inventory/logo.png' %}" alt="{{ site_settings.site_name }}">
-      {% endif %}
-      <span>{{ site_settings.subtitle }}</span>
-    </a>
-    <nav class="app-nav" aria-label="Menu principal">
-      {% if central_portal_enabled %}
-        <a class="{% if active_menu == 'hub' %}active{% endif %}" href="{% url 'hub-dashboard' %}">Dashboard</a>
-        {% if can_manage_users %}
-          <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
-        {% endif %}
-        {% if can_manage_alerts or can_view_alert_history %}
-          <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}{% if not can_manage_alerts %}?tab=history{% endif %}">Alertas</a>
-        {% endif %}
-        {% if can_manage_site_settings %}
-          <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
-        {% endif %}
-      {% else %}
-        {% if can_manage_devices %}
-          <a class="{% if active_menu == 'executive' %}active{% endif %}" href="{% url 'executive-dashboard' %}">Dashboard</a>
-        {% endif %}
-        <a class="{% if active_menu == 'devices' %}active{% endif %}" href="{% url 'device-list' %}">
-          Dispositivos{% if total_devices %} <span class="nav-count">{{ total_devices }}</span>{% endif %}
-        </a>
-        <a class="{% if active_menu == 'operations' %}active{% endif %}" href="{% url 'operational-history' %}">Historial operativo</a>
-        {% if can_manage_devices %}
-          <a class="{% if active_menu == 'cmdb' %}active{% endif %}" href="{% url 'cmdb' %}">CMDB</a>
-          <a class="{% if active_menu == 'incidents' %}active{% endif %}" href="{% url 'incidents' %}">Incidentes</a>
-          <a class="{% if active_menu == 'compliance' %}active{% endif %}" href="{% url 'compliance' %}">Cumplimiento</a>
-          <a class="{% if active_menu == 'reports' %}active{% endif %}" href="{% url 'reports' %}">Reportes</a>
-          <a class="{% if active_menu == 'hub' %}active{% endif %}" href="{% url 'hub-dashboard' %}">Central</a>
-        {% endif %}
-        {% if can_manage_devices %}
-          <a class="{% if active_menu == 'agents' %}active{% endif %}" href="{% url 'agent-install' %}">Instalar agente</a>
-        {% endif %}
-        {% if can_manage_users %}
-          <a class="{% if active_menu == 'users' %}active{% endif %}" href="{% url 'user-list' %}">Usuarios</a>
-        {% endif %}
-        {% if can_manage_site_settings %}
-          <a class="{% if active_menu == 'settings' %}active{% endif %}" href="{% url 'site-settings' %}">Configuracion</a>
-        {% endif %}
-        {% if can_manage_alerts or can_view_alert_history %}
-          <a class="{% if active_menu == 'alerts' %}active{% endif %}" href="{% url 'alert-settings' %}{% if not can_manage_alerts %}?tab=history{% endif %}">Alertas</a>
-        {% endif %}
+        <span>Mi cuenta</span>
       {% endif %}
     </nav>
-    <div class="app-actions">
-      <details class="account-menu">
-        <summary>
-          <span class="user-avatar">
-            {% if request.user.profile.photo %}
-              <img src="{{ request.user.profile.photo.url }}" alt="Foto de {{ request.user.username }}">
-            {% else %}
-              <span>{{ request.user.username|slice:":1"|upper }}</span>
-            {% endif %}
-          </span>
-          <span class="user-name">{{ request.user.username }}</span>
-        </summary>
-        <div class="account-dropdown">
-          <a href="{% url 'profile' %}">Editar perfil</a>
-          <a href="{% url 'password-change' %}">Cambiar contrase&ntilde;a</a>
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit">Cerrar sesion</button>
-          </form>
-        </div>
-      </details>
-    </div>
   </div>
 </header>

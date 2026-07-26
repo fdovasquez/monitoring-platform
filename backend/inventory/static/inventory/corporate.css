@@ -65,11 +65,8 @@ a {
 .app-header {
   position: relative !important;
   z-index: 1000 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0 !important;
-  min-height: 72px !important;
+  display: block !important;
+  min-height: 112px !important;
   padding: 0 !important;
   background: rgba(255, 255, 255, .97) !important;
   border-bottom: 1px solid var(--corp-line) !important;
@@ -77,13 +74,20 @@ a {
   backdrop-filter: blur(14px);
 }
 
+.app-header-main {
+  display: flex !important;
+  justify-content: center !important;
+  min-height: 74px !important;
+  border-bottom: 1px solid var(--corp-soft-line) !important;
+}
+
 .app-header-inner {
   display: flex !important;
   align-items: center !important;
-  gap: 18px !important;
+  gap: 0 !important;
   width: 100% !important;
   max-width: var(--app-max-width) !important;
-  min-height: 72px !important;
+  min-height: 74px !important;
   margin: 0 auto !important;
   padding: 0 var(--app-page-padding) !important;
 }
@@ -94,10 +98,12 @@ a {
   justify-content: center !important;
   align-items: center !important;
   gap: 2px !important;
-  min-width: max(200px, calc(var(--brand-logo-width, 120px) + 48px)) !important;
-  min-height: 72px !important;
+  flex: 0 0 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  min-height: 74px !important;
   height: auto !important;
-  padding: 6px 10px !important;
+  padding: 0 10px !important;
   box-sizing: border-box !important;
   text-decoration: none !important;
 }
@@ -155,11 +161,15 @@ a {
 }
 
 .app-nav a {
+  position: relative !important;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 7px !important;
   flex: 0 0 auto !important;
-  padding: 0 14px !important;
+  min-width: 126px !important;
+  min-height: 74px !important;
+  padding: 0 16px !important;
   color: #374151 !important;
   border-radius: 0 !important;
   text-decoration: none !important;
@@ -191,7 +201,37 @@ a {
   align-items: center !important;
   justify-content: flex-end !important;
   min-width: 176px !important;
+  min-height: 74px !important;
   margin-left: auto !important;
+}
+
+.app-breadcrumb-bar {
+  display: flex !important;
+  justify-content: center !important;
+  min-height: 38px !important;
+  background: #ffffff !important;
+}
+
+.app-breadcrumb {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: var(--app-max-width) !important;
+  min-height: 38px !important;
+  margin: 0 auto !important;
+  padding: 0 var(--app-page-padding) !important;
+  color: var(--corp-muted) !important;
+  font-size: 12px !important;
+}
+
+.app-breadcrumb a {
+  color: var(--corp-blue) !important;
+  text-decoration: none !important;
+}
+
+.app-breadcrumb span:last-child {
+  color: var(--corp-ink) !important;
 }
 
 .account-menu {

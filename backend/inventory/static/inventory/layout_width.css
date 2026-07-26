@@ -13,11 +13,12 @@ body {
 }
 
 .app-header {
-  height: 74px !important;
-  min-height: 74px !important;
+  height: auto !important;
+  min-height: 112px !important;
   padding: 0 !important;
 }
 
+.app-header-main,
 .app-header-inner,
 .app-brand,
 .app-nav,
@@ -82,6 +83,20 @@ body {
   content: "" !important;
   background: var(--corp-blue, #2563eb) !important;
   border-radius: 999px 999px 0 0 !important;
+}
+
+.app-breadcrumb-bar {
+  min-height: 38px !important;
+}
+
+.app-breadcrumb {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: var(--app-max-width) !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  padding-right: var(--app-page-padding) !important;
+  padding-left: var(--app-page-padding) !important;
 }
 
 .content,
@@ -165,7 +180,9 @@ body.agent-modal-body {
 
   .app-header-inner {
     flex-wrap: wrap !important;
-    padding-bottom: 10px !important;
+    height: auto !important;
+    min-height: 74px !important;
+    padding-bottom: 0 !important;
   }
 
   .content,

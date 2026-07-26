@@ -28,6 +28,8 @@ body.theme-dark {
 }
 
 body.theme-gray .app-header,
+body.theme-gray .app-header-main,
+body.theme-gray .app-breadcrumb-bar,
 body.theme-gray .app-brand,
 body.theme-gray .app-nav a.active,
 body.theme-gray .account-menu summary,
@@ -44,6 +46,8 @@ body.theme-gray :where(.hub-metric, .site-scoreline > div, .site-alert-summary, 
 }
 
 body.theme-dark .app-header,
+body.theme-dark .app-header-main,
+body.theme-dark .app-breadcrumb-bar,
 body.theme-dark .app-brand,
 body.theme-dark .account-menu summary,
 body.theme-dark .account-dropdown,
@@ -56,6 +60,12 @@ body.theme-dark :where(.profile-hero, .profile-card, .wizard-card, .device-panel
 body.theme-dark .app-header {
   background: #111a2a !important;
   border-bottom-color: #31425c !important;
+}
+
+body.theme-dark .app-header-main,
+body.theme-dark .app-breadcrumb-bar {
+  background: #111a2a !important;
+  border-color: #31425c !important;
 }
 
 body.theme-dark .app-brand {
@@ -80,6 +90,15 @@ body.theme-dark :where(h1, h2, h3, h4, h5, h6, p, span, small, td, th, label, st
 
 body.theme-dark :where(.app-nav a, .user-name, .account-dropdown a, .account-dropdown button, .profile-card-head p, .hub-board p, .hub-panel-head small, .site-card p, .site-card small, .server-row small, .alert-item small, .field-help, .muted, .hint) {
   color: var(--corp-muted) !important;
+}
+
+body.theme-dark .app-breadcrumb,
+body.theme-dark .app-breadcrumb span {
+  color: var(--corp-muted) !important;
+}
+
+body.theme-dark .app-breadcrumb span:last-child {
+  color: var(--corp-ink) !important;
 }
 
 body.theme-dark :where(.app-nav a:hover, .app-nav a.active, .account-dropdown a:hover, .account-dropdown button:hover) {
