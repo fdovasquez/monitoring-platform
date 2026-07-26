@@ -67,7 +67,7 @@ a {
   position: relative !important;
   z-index: 1000 !important;
   display: block !important;
-  min-height: 112px !important;
+  min-height: 74px !important;
   padding: 0 !important;
   background: rgba(255, 255, 255, .97) !important;
   border-bottom: 1px solid var(--corp-line) !important;
@@ -206,11 +206,12 @@ a {
   margin-left: auto !important;
 }
 
-.app-breadcrumb-bar {
-  display: flex !important;
-  justify-content: center !important;
-  min-height: 38px !important;
-  background: #ffffff !important;
+.app-breadcrumb-shell {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: var(--app-content-width) !important;
+  margin: 14px auto 0 !important;
+  padding: 0 var(--app-page-padding) !important;
 }
 
 .app-breadcrumb {
@@ -218,10 +219,13 @@ a {
   align-items: center !important;
   gap: 8px !important;
   width: 100% !important;
-  max-width: var(--app-max-width) !important;
-  min-height: 38px !important;
+  min-height: 48px !important;
   margin: 0 auto !important;
-  padding: 0 var(--app-page-padding) !important;
+  padding: 0 18px !important;
+  background: #ffffff !important;
+  border: 1px solid var(--corp-line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04) !important;
   color: var(--corp-muted) !important;
   font-size: 12px !important;
 }

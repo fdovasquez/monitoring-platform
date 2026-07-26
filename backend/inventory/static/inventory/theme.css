@@ -29,7 +29,7 @@ body.theme-dark {
 
 body.theme-gray .app-header,
 body.theme-gray .app-header-main,
-body.theme-gray .app-breadcrumb-bar,
+body.theme-gray .app-breadcrumb,
 body.theme-gray .app-brand,
 body.theme-gray .app-nav a.active,
 body.theme-gray .account-menu summary,
@@ -47,7 +47,7 @@ body.theme-gray :where(.hub-metric, .site-scoreline > div, .site-alert-summary, 
 
 body.theme-dark .app-header,
 body.theme-dark .app-header-main,
-body.theme-dark .app-breadcrumb-bar,
+body.theme-dark .app-breadcrumb,
 body.theme-dark .app-brand,
 body.theme-dark .account-menu summary,
 body.theme-dark .account-dropdown,
@@ -63,7 +63,7 @@ body.theme-dark .app-header {
 }
 
 body.theme-dark .app-header-main,
-body.theme-dark .app-breadcrumb-bar {
+body.theme-dark .app-breadcrumb {
   background: #111a2a !important;
   border-color: #31425c !important;
 }
