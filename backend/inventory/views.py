@@ -127,6 +127,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
 
         context["devices"] = devices
         context["alert_dashboard"] = self.alert_dashboard(devices)
+        context["priority_devices"] = self.priority_devices(devices)
         context["total_devices"] = len(devices)
         context["online_devices"] = sum(1 for device in devices if device["online"])
         context["offline_devices"] = sum(1 for device in devices if not device["online"])
@@ -200,7 +201,34 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
             "warning_count": len(buckets["warning"]),
             "ok_count": len(buckets["ok"]),
             "total_count": len(devices),
+            "attention_count": len(buckets["critical"]) + len(buckets["warning"]),
+            "critical_percent": round((len(buckets["critical"]) / (len(devices) or 1)) * 100),
+            "warning_percent": round((len(buckets["warning"]) / (len(devices) or 1)) * 100),
+            "ok_percent": round((len(buckets["ok"]) / (len(devices) or 1)) * 100),
         }
+
+    @staticmethod
+    def priority_devices(devices):
+        def disk_value(device):
+            sample = device.get("sample")
+            if not sample or sample.disk_percent is None:
+                return -1
+            try:
+                return float(sample.disk_percent)
+            except (TypeError, ValueError):
+                return -1
+
+        severity_weight = {"critical": 0, "warning": 1, "ok": 2}
+
+        def sort_key(device):
+            return (
+                severity_weight.get(device.get("alert_level"), 3),
+                0 if device.get("online") else -1,
+                -disk_value(device),
+                device["server"].hostname,
+            )
+
+        return sorted(devices, key=sort_key)[:8]
 
     @staticmethod
     def security_score(sample):
