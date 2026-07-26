@@ -1478,40 +1478,75 @@ pre {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border: 1px solid #d8e3f2;
-  border-radius: 10px;
+  border-radius: 12px;
   color: #2563eb;
-  background: #f8fbff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.78), 0 8px 18px rgba(15, 23, 42, 0.08);
   font-weight: 500;
+  flex: 0 0 auto;
 }
 
 .device-card-icon svg {
-  width: 23px;
-  height: 23px;
-  fill: currentColor;
+  width: 40px;
+  height: 40px;
 }
 
 .device-card-icon.windows {
-  color: #2563eb;
-  background: #eff6ff;
-  border-color: #bfdbfe;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+  border-color: #bdd7ff;
 }
 
 .device-card-icon.linux {
-  color: #0f766e;
-  background: #ecfdf5;
-  border-color: #99f6e4;
+  background: linear-gradient(180deg, #f8fbff 0%, #eefaf5 100%);
+  border-color: #a7e5d0;
 }
 
-.device-card-icon.linux svg {
+.device-card-icon .server-side {
+  fill: #7b8da0;
+}
+
+.device-card-icon .server-front {
+  fill: #334155;
+}
+
+.device-card-icon .server-vent {
   fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
+  stroke: #111827;
+  stroke-width: 2;
   stroke-linecap: round;
-  stroke-linejoin: round;
+  opacity: 0.72;
+}
+
+.device-card-icon .server-led.amber {
+  fill: #f59e0b;
+}
+
+.device-card-icon .server-led.green {
+  fill: #22c55e;
+}
+
+.device-card-icon .windows-pane {
+  fill: #38bdf8;
+}
+
+.device-card-icon .tux-body {
+  fill: #111827;
+}
+
+.device-card-icon .tux-belly {
+  fill: #f8fafc;
+}
+
+.device-card-icon .tux-eye {
+  fill: #f8fafc;
+}
+
+.device-card-icon .tux-beak,
+.device-card-icon .tux-foot {
+  fill: #fbbf24;
 }
 
 .ops-priority-state {

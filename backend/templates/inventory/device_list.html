@@ -162,19 +162,29 @@
             <header>
               <span class="device-card-icon {{ device.server.os_type }}" aria-hidden="true">
                 {% if device.server.os_type == "windows" %}
-                  <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <rect x="3" y="4" width="8" height="7" rx="1.2"></rect>
-                    <rect x="13" y="4" width="8" height="7" rx="1.2"></rect>
-                    <rect x="3" y="13" width="8" height="7" rx="1.2"></rect>
-                    <rect x="13" y="13" width="8" height="7" rx="1.2"></rect>
+                  <svg viewBox="0 0 48 48" role="img" focusable="false">
+                    <path class="server-side" d="M8 10.5 17 6h20l-9 4.5H8Z"></path>
+                    <rect class="server-front" x="8" y="10" width="31" height="32" rx="5"></rect>
+                    <rect class="windows-pane" x="17" y="15" width="7" height="7" rx="1"></rect>
+                    <rect class="windows-pane" x="25.5" y="15" width="7" height="7" rx="1"></rect>
+                    <rect class="windows-pane" x="17" y="23.5" width="7" height="7" rx="1"></rect>
+                    <rect class="windows-pane" x="25.5" y="23.5" width="7" height="7" rx="1"></rect>
+                    <path class="server-vent" d="M15 33.5h16M15 37h16"></path>
+                    <circle class="server-led amber" cx="33.8" cy="37" r="1.7"></circle>
                   </svg>
                 {% elif device.server.os_type == "linux" %}
-                  <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path d="M12 3.2c-2 0-3.3 1.8-3.3 4.3 0 1.5-.5 2.6-1.3 3.8-.8 1.2-1.6 2.6-1.6 4.6 0 3 2.5 4.9 6.2 4.9s6.2-1.9 6.2-4.9c0-2-.8-3.4-1.6-4.6-.8-1.2-1.3-2.3-1.3-3.8 0-2.5-1.3-4.3-3.3-4.3Z"></path>
-                    <circle cx="10.7" cy="7.9" r=".7"></circle>
-                    <circle cx="13.3" cy="7.9" r=".7"></circle>
-                    <path d="M9.4 13.1c.7.5 1.6.8 2.6.8s1.9-.3 2.6-.8"></path>
-                    <path d="M8.6 17.1c.8.7 1.9 1.1 3.4 1.1s2.6-.4 3.4-1.1"></path>
+                  <svg viewBox="0 0 48 48" role="img" focusable="false">
+                    <path class="server-side" d="M8 10.5 17 6h20l-9 4.5H8Z"></path>
+                    <rect class="server-front" x="8" y="10" width="31" height="32" rx="5"></rect>
+                    <ellipse class="tux-body" cx="23.5" cy="22" rx="8.2" ry="10.5"></ellipse>
+                    <ellipse class="tux-belly" cx="23.5" cy="24" rx="5.2" ry="6.9"></ellipse>
+                    <circle class="tux-eye" cx="21" cy="17.6" r="1"></circle>
+                    <circle class="tux-eye" cx="26" cy="17.6" r="1"></circle>
+                    <path class="tux-beak" d="M21.2 20.2h4.6l-2.3 2.1-2.3-2.1Z"></path>
+                    <path class="tux-foot" d="M16.5 31.8c2.4-1 4.6-.4 5.2 1.1-1.8 1.4-4.5 1.5-6.1.6-.8-.5-.4-1.3.9-1.7Z"></path>
+                    <path class="tux-foot" d="M30.5 31.8c-2.4-1-4.6-.4-5.2 1.1 1.8 1.4 4.5 1.5 6.1.6.8-.5.4-1.3-.9-1.7Z"></path>
+                    <path class="server-vent" d="M15 34.8h17M15 38h17"></path>
+                    <circle class="server-led green" cx="15" cy="38" r="1.5"></circle>
                   </svg>
                 {% else %}
                   <span>{{ device.server.os_type|slice:":1"|upper }}</span>
