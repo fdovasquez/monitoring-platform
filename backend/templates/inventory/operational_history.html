@@ -188,69 +188,6 @@
         </div>
       {% endif %}
     </section>
-
-    <section class="operation-panel" id="notification-history">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Trazabilidad de notificaciones</p>
-          <h2>Notificaciones emitidas</h2>
-          <p>Registro de correos generados por la plataforma, incluyendo envios correctos y errores de entrega.</p>
-        </div>
-      </div>
-      {% if recent_logs %}
-        <div class="op-recent-table">
-          <div class="op-recent-head">
-            <span>Servidor</span>
-            <span>Evento</span>
-            <span>Estado</span>
-            <span>Fecha</span>
-          </div>
-          {% for item in recent_logs %}
-            {% if item.server %}
-              <a class="op-recent-row {{ item.tone }}" href="{% url 'device-detail' item.server.id %}">
-            {% else %}
-              <div class="op-recent-row {{ item.tone }}">
-            {% endif %}
-                <span>
-                  <strong>{{ item.server_name }}</strong>
-                  <small>{{ item.priority_label }}</small>
-                </span>
-                <span>{{ item.log.subject }}</span>
-                <span>{{ item.status_label }}</span>
-                <span>{{ item.created_at_label }}</span>
-            {% if item.server %}
-              </a>
-            {% else %}
-              </div>
-            {% endif %}
-          {% endfor %}
-        </div>
-        {% if log_page_obj.paginator.num_pages > 1 %}
-          <nav class="op-pagination" aria-label="Paginacion de notificaciones">
-            <div>
-              <span>Pagina {{ log_page_obj.number }} de {{ log_page_obj.paginator.num_pages }}</span>
-              <small>{{ log_page_obj.paginator.count }} notificaciones</small>
-            </div>
-            <div class="op-pagination-actions">
-              {% if log_page_obj.has_previous %}
-                <a href="?log_page={{ log_page_obj.previous_page_number }}#notification-history">Anterior</a>
-              {% else %}
-                <span class="disabled">Anterior</span>
-              {% endif %}
-              {% if log_page_obj.has_next %}
-                <a href="?log_page={{ log_page_obj.next_page_number }}#notification-history">Siguiente</a>
-              {% else %}
-                <span class="disabled">Siguiente</span>
-              {% endif %}
-            </div>
-          </nav>
-        {% endif %}
-      {% else %}
-        <div class="op-empty compact">
-          <span>No hay notificaciones registradas en los ultimos 30 dias.</span>
-        </div>
-      {% endif %}
-    </section>
   </main>
   {% include 'inventory/partials/app_footer.html' %}
 </body>
