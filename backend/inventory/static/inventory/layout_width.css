@@ -62,11 +62,11 @@ body {
   flex: 0 0 auto !important;
   height: 74px !important;
   min-height: 74px !important;
-  min-width: 126px !important;
+  min-width: 0 !important;
   padding-top: 0 !important;
-  padding-right: 16px !important;
+  padding-right: 14px !important;
   padding-bottom: 0 !important;
-  padding-left: 16px !important;
+  padding-left: 14px !important;
   border-radius: 0 !important;
   text-decoration: none !important;
   white-space: nowrap !important;

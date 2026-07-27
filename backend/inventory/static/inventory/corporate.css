@@ -172,9 +172,9 @@ a {
   justify-content: center !important;
   gap: 7px !important;
   flex: 0 0 auto !important;
-  min-width: 126px !important;
+  min-width: 0 !important;
   min-height: 74px !important;
-  padding: 0 16px !important;
+  padding: 0 14px !important;
   color: #374151 !important;
   border-radius: 0 !important;
   text-decoration: none !important;
@@ -205,7 +205,8 @@ a {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  min-width: 176px !important;
+  flex: 0 0 auto !important;
+  min-width: 154px !important;
   min-height: 74px !important;
   margin-left: auto !important;
 }
