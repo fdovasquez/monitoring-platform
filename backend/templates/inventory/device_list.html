@@ -5,9 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dispositivos</title>
-  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}">
-  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}">
-  <link rel="stylesheet" href="{% static 'inventory/layout_width.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/corporate.css' %}?v={{ app_version }}">
+  <link rel="stylesheet" href="{% static 'inventory/layout_width.css' %}?v={{ app_version }}">
+  <link rel="stylesheet" href="{% static 'inventory/device_list.css' %}?v={{ app_version }}">
 </head>
 <body>
   {% include "inventory/partials/app_header.html" with active_menu="devices" %}
