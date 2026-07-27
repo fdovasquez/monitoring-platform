@@ -36,9 +36,6 @@
           <a class="{% if active_menu == 'operations' %}active{% endif %}" href="{% url 'operational-history' %}">Historial operativo</a>
           {% if can_manage_devices %}
             <a class="{% if active_menu == 'cmdb' %}active{% endif %}" href="{% url 'cmdb' %}">CMDB</a>
-            <a class="{% if active_menu == 'incidents' %}active{% endif %}" href="{% url 'incidents' %}">Incidentes</a>
-            <a class="{% if active_menu == 'compliance' %}active{% endif %}" href="{% url 'compliance' %}">Cumplimiento</a>
-            <a class="{% if active_menu == 'reports' %}active{% endif %}" href="{% url 'reports' %}">Reportes</a>
             <a class="{% if active_menu == 'hub' %}active{% endif %}" href="{% url 'hub-dashboard' %}">Central</a>
           {% endif %}
           {% if can_manage_devices %}
@@ -94,12 +91,6 @@
       <span>Alertas</span>
     {% elif active_menu == 'cmdb' %}
       <span>CMDB</span>
-    {% elif active_menu == 'incidents' %}
-      <span>Incidentes</span>
-    {% elif active_menu == 'compliance' %}
-      <span>Cumplimiento</span>
-    {% elif active_menu == 'reports' %}
-      <span>Reportes</span>
     {% elif active_menu == 'agents' %}
       <span>Instalar agente</span>
     {% elif active_menu == 'users' %}
