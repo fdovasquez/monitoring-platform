@@ -18,12 +18,9 @@
   <main class="content alerts-shell monitors-shell">
     <header class="monitor-hero">
       <div class="monitor-identity">
-        <div class="monitor-icon">AL</div>
         <div>
-          <div class="monitor-title-line">
-            <h1>Alertas</h1>
-            <span class="status online">En linea</span>
-          </div>
+          <p class="monitor-eyebrow">GESTION OPERACIONAL</p>
+          <h1>Alertas</h1>
           <p class="monitor-subtitle">
             {% if can_manage_alert_settings %}
               Gestiona reglas, asignaciones por servidor, destinatarios e historial operativo.
@@ -31,7 +28,6 @@
               Consulta el historial operativo de alertas enviadas por la plataforma.
             {% endif %}
           </p>
-          <span class="monitor-kind">MONITOREO GLOBAL</span>
         </div>
       </div>
       {% if can_manage_alert_settings %}
