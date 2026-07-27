@@ -1515,6 +1515,12 @@ pre {
   object-fit: contain;
 }
 
+.device-card-icon svg {
+  display: block;
+  width: 42px;
+  height: 42px;
+}
+
 .device-card-icon.windows {
   background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
   border-color: #bdd7ff;

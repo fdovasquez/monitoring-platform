@@ -165,9 +165,24 @@
             <header>
               <span class="device-card-icon {{ device.server.os_type }}" aria-hidden="true">
                 {% if device.server.os_type == "windows" %}
-                  <img src="{% static 'inventory/images/server-windows.png' %}?v={{ app_version }}" alt="">
+                  <svg viewBox="0 0 48 48" role="img" aria-label="Windows">
+                    <rect x="6" y="7" width="16" height="16" fill="#1f7ae0"/>
+                    <rect x="26" y="7" width="16" height="16" fill="#1f7ae0"/>
+                    <rect x="6" y="27" width="16" height="16" fill="#1f7ae0"/>
+                    <rect x="26" y="27" width="16" height="16" fill="#1f7ae0"/>
+                  </svg>
                 {% elif device.server.os_type == "linux" %}
-                  <img src="{% static 'inventory/images/server-linux.png' %}?v={{ app_version }}" alt="">
+                  <svg viewBox="0 0 48 48" role="img" aria-label="Linux">
+                    <ellipse cx="24" cy="23" rx="12" ry="17" fill="#111827"/>
+                    <ellipse cx="24" cy="27" rx="9" ry="11" fill="#f8fafc"/>
+                    <circle cx="19" cy="15" r="2.1" fill="#ffffff"/>
+                    <circle cx="29" cy="15" r="2.1" fill="#ffffff"/>
+                    <circle cx="19.5" cy="15.4" r="0.8" fill="#111827"/>
+                    <circle cx="28.5" cy="15.4" r="0.8" fill="#111827"/>
+                    <path d="M20 20h8l-4 4z" fill="#fbbf24"/>
+                    <ellipse cx="15" cy="38" rx="7" ry="4" fill="#fbbf24" transform="rotate(-18 15 38)"/>
+                    <ellipse cx="33" cy="38" rx="7" ry="4" fill="#fbbf24" transform="rotate(18 33 38)"/>
+                  </svg>
                 {% else %}
                   <span>{{ device.server.os_type|slice:":1"|upper }}</span>
                 {% endif %}
