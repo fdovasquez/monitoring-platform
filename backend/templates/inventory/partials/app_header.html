@@ -6,7 +6,7 @@
 <header class="app-header">
   <div class="app-header-main">
     <div class="app-header-inner">
-      <a class="app-brand" href="{% if central_portal_enabled %}{% url 'hub-dashboard' %}{% else %}{% url 'executive-dashboard' %}{% endif %}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">
+      <a class="app-brand" href="{% if central_portal_enabled %}{% url 'hub-dashboard' %}{% elif can_manage_devices %}{% url 'executive-dashboard' %}{% else %}{% url 'device-list' %}{% endif %}" style="--brand-logo-width: {{ site_settings.logo_width }}px; --brand-logo-height: {{ site_settings.logo_height }}px;">
         {% if site_settings.logo %}
           <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
         {% else %}
@@ -83,7 +83,7 @@
 </header>
 <div class="app-breadcrumb-shell">
   <nav class="app-breadcrumb" aria-label="Ruta de navegacion">
-    <a href="{% if central_portal_enabled %}{% url 'hub-dashboard' %}{% else %}{% url 'executive-dashboard' %}{% endif %}">Inicio</a>
+    <a href="{% if central_portal_enabled %}{% url 'hub-dashboard' %}{% elif can_manage_devices %}{% url 'executive-dashboard' %}{% else %}{% url 'device-list' %}{% endif %}">Inicio</a>
     <span aria-hidden="true">/</span>
     {% if active_menu == 'executive' %}
       <span>Dashboard</span>
