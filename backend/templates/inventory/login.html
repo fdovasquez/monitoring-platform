@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ingreso seguro</title>
-  <link rel="stylesheet" href="{% static 'inventory/login.css' %}">
+  <link rel="stylesheet" href="{% static 'inventory/login.css' %}?v={{ app_version }}">
 </head>
 <body>
   <main class="login-shell">
@@ -76,7 +76,7 @@
     <section
       class="visual-panel"
       aria-hidden="true"
-      data-visuals="{% static 'inventory/images/login-healthcare-operations-01.jpg' %}|{% static 'inventory/images/login-healthcare-operations-02.jpg' %}|{% static 'inventory/images/login-healthcare-operations-03.jpg' %}"
+      data-visuals="{% static 'inventory/images/login-healthcare-operations-01.jpg' %}?v={{ app_version }}|{% static 'inventory/images/login-healthcare-operations-02.jpg' %}?v={{ app_version }}|{% static 'inventory/images/login-healthcare-operations-03.jpg' %}?v={{ app_version }}"
     ></section>
   </main>
   <script>
