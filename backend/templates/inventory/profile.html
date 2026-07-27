@@ -17,10 +17,9 @@
     <header class="profile-hero">
       <div class="profile-identity">
         <div class="avatar-preview" data-avatar-preview>
+          <span class="avatar-fallback">{{ avatar_initials }}</span>
           {% if account_profile.photo %}
-            <img src="{{ account_profile.photo.url }}" alt="Foto de perfil de {{ request.user.username }}">
-          {% else %}
-            <span>{{ avatar_initials }}</span>
+            <img src="{{ account_profile.photo.url }}" alt="" onerror="this.hidden=true">
           {% endif %}
         </div>
         <div>
@@ -52,10 +51,9 @@
 
         <div class="avatar-editor">
           <div class="avatar-preview avatar-preview-large" data-avatar-preview-secondary>
+            <span class="avatar-fallback">{{ avatar_initials }}</span>
             {% if account_profile.photo %}
-              <img src="{{ account_profile.photo.url }}" alt="Foto actual">
-            {% else %}
-              <span>{{ avatar_initials }}</span>
+              <img src="{{ account_profile.photo.url }}" alt="" onerror="this.hidden=true">
             {% endif %}
           </div>
           <div class="avatar-actions">
@@ -188,9 +186,14 @@
         const url = URL.createObjectURL(file);
         avatarTargets.forEach((target) => {
           target.innerHTML = "";
+          const fallback = document.createElement("span");
+          fallback.className = "avatar-fallback";
+          fallback.textContent = "{{ avatar_initials }}";
           const image = document.createElement("img");
           image.src = url;
-          image.alt = "Vista previa";
+          image.alt = "";
+          image.onerror = () => { image.hidden = true; };
+          target.appendChild(fallback);
           target.appendChild(image);
         });
       });

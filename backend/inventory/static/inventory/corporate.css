@@ -278,6 +278,7 @@ a {
 }
 
 .user-avatar {
+  position: relative !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -291,12 +292,20 @@ a {
 }
 
 .user-avatar img {
+  position: absolute !important;
+  inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
+  color: transparent !important;
+  font-size: 0 !important;
   object-fit: cover !important;
 }
 
-.user-avatar span {
+.user-avatar .avatar-fallback {
+  position: absolute !important;
+  inset: 0 !important;
+  display: grid !important;
+  place-items: center !important;
   color: #ffffff !important;
   font-size: 12px !important;
   line-height: 1 !important;

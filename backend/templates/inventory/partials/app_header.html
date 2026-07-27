@@ -59,10 +59,9 @@
         <details class="account-menu">
           <summary>
             <span class="user-avatar">
+              <span class="avatar-fallback">{{ request.user.username|slice:":1"|upper }}</span>
               {% if request.user.profile.photo %}
-                <img src="{{ request.user.profile.photo.url }}" alt="Foto de {{ request.user.username }}">
-              {% else %}
-                <span>{{ request.user.username|slice:":1"|upper }}</span>
+                <img src="{{ request.user.profile.photo.url }}" alt="" onerror="this.hidden=true">
               {% endif %}
             </span>
             <span class="user-name">{{ request.user.username }}</span>
