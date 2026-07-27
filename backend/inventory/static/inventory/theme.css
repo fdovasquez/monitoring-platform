@@ -45,6 +45,11 @@ body.theme-gray :where(.hub-metric, .site-scoreline > div, .site-alert-summary, 
   border-color: var(--corp-line) !important;
 }
 
+body.theme-gray .app-footer span {
+  background: var(--corp-surface) !important;
+  border-color: var(--corp-line) !important;
+}
+
 body.theme-dark .app-header,
 body.theme-dark .app-header-main,
 body.theme-dark .app-breadcrumb,
@@ -99,6 +104,11 @@ body.theme-dark .app-breadcrumb span {
 
 body.theme-dark .app-breadcrumb span:last-child {
   color: var(--corp-ink) !important;
+}
+
+body.theme-dark .app-footer span {
+  background: #111a2a !important;
+  border-color: #31425c !important;
 }
 
 body.theme-dark :where(.app-nav a:hover, .app-nav a.active, .account-dropdown a:hover, .account-dropdown button:hover) {

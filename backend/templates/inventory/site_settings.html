@@ -583,6 +583,7 @@ sudo nginx -t && sudo systemctl reload nginx</pre>
       </section>
     {% endif %}
   </main>
+  {% include 'inventory/partials/app_footer.html' %}
 
   <script>
     const logoInput = document.getElementById("{{ settings_form.logo.id_for_label }}");
