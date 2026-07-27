@@ -91,13 +91,11 @@
                   <small>Alertas abiertas</small>
                 </div>
                 <div>
-                  <strong>
-                    {% if item.minutes_since_report is not None %}
-                      {{ item.minutes_since_report }} min
-                    {% else %}
-                      -
-                    {% endif %}
-                  </strong>
+                  <strong>{{ item.report_count }}</strong>
+                  <small>Actualizaciones</small>
+                </div>
+                <div>
+                  <strong>{{ item.report_age_label }}</strong>
                   <small>Ultimo reporte</small>
                 </div>
               </div>
@@ -153,6 +151,10 @@
           applyFilters();
         });
       });
+
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 30000);
     })();
   </script>
 </body>

@@ -318,7 +318,7 @@
 }
 
 .site-card.status-offline {
-  border-color: #cbd5e1;
+  border-color: #fecaca;
 }
 
 .site-card.status-critical::after {
@@ -330,7 +330,11 @@
 }
 
 .site-card.status-offline::after {
-  background: rgba(100, 116, 139, .13);
+  background: rgba(239, 68, 68, .14);
+}
+
+.site-card.status-offline .site-topline {
+  color: #b91c1c;
 }
 
 .site-topline,
@@ -374,7 +378,7 @@
 }
 
 .site-status-dot.offline {
-  background: #64748b;
+  background: #ef4444;
 }
 
 .site-title-row {
@@ -410,7 +414,7 @@
 
 .site-scoreline {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 7px;
   position: relative;
   z-index: 1;

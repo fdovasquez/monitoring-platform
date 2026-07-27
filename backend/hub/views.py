@@ -16,7 +16,7 @@ from .serializers import SatelliteReportSerializer
 from .services import store_report
 
 
-SATELLITE_STALE_MINUTES = 15
+SATELLITE_STALE_MINUTES = 2
 
 
 def number_or_none(value):
@@ -106,6 +106,22 @@ def minutes_since(value, now):
     return int((now - value).total_seconds() / 60)
 
 
+def report_age_label(minutes):
+    if minutes is None:
+        return "-"
+    if minutes < 60:
+        return f"{minutes} min"
+    hours, remaining_minutes = divmod(minutes, 60)
+    if hours < 24:
+        if remaining_minutes:
+            return f"{hours} h {remaining_minutes} min"
+        return f"{hours} h"
+    days, remaining_hours = divmod(hours, 24)
+    if remaining_hours:
+        return f"{days} d {remaining_hours} h"
+    return f"{days} d"
+
+
 def server_snapshot_online(server, now):
     satellite = getattr(server, "satellite", None)
     if satellite and (minutes_since(satellite.last_report_at, now) is None or minutes_since(satellite.last_report_at, now) > SATELLITE_STALE_MINUTES):
@@ -169,7 +185,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        satellites = list(Satellite.objects.all())
+        satellites = list(Satellite.objects.annotate(report_count=Count("reports")))
         servers = list(SatelliteServerSnapshot.objects.select_related("satellite").all())
         active_servers = [server for server in servers if server.is_active]
         total_servers = len(active_servers)
@@ -259,7 +275,9 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                 {
                     "satellite": satellite,
                     "minutes_since_report": minutes_since_report,
+                    "report_age_label": report_age_label(minutes_since_report),
                     "last_report_label": relative_report_label(satellite.last_report_at, now),
+                    "report_count": satellite.report_count,
                     "is_stale": is_stale,
                     "operational_status": operational_status,
                     "status_label": status_labels.get(operational_status, "Normal"),
