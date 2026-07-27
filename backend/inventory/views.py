@@ -18,7 +18,7 @@ from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.generic import TemplateView
 
-from alerts.models import AlertEvent, AlertRule
+from alerts.models import AlertEmailLog, AlertEvent, AlertRule
 from metrics.models import MetricSample
 
 from .forms import (
@@ -407,6 +407,14 @@ class OperationalHistoryView(LoginRequiredMixin, TemplateView):
         resolved_paginator = Paginator(resolved_queryset, 12)
         resolved_page_obj = resolved_paginator.get_page(self.request.GET.get("resolved_page"))
         recent_resolved = [self.resolved_event_context(event) for event in resolved_page_obj.object_list]
+        log_queryset = (
+            AlertEmailLog.objects.select_related("server")
+            .filter(created_at__gte=now - timedelta(days=30))
+            .order_by("-created_at")
+        )
+        log_paginator = Paginator(log_queryset, 12)
+        log_page_obj = log_paginator.get_page(self.request.GET.get("log_page"))
+        recent_logs = [self.email_log_context(log) for log in log_page_obj.object_list]
         critical_count = sum(1 for item in server_alerts if item["tone"] == "critical")
         warning_count = sum(1 for item in server_alerts if item["tone"] == "warning")
         durations = [item["duration_minutes"] for item in server_alerts]
@@ -419,6 +427,8 @@ class OperationalHistoryView(LoginRequiredMixin, TemplateView):
                 "server_alerts": server_alerts,
                 "recent_resolved": recent_resolved,
                 "resolved_page_obj": resolved_page_obj,
+                "recent_logs": recent_logs,
+                "log_page_obj": log_page_obj,
                 "active_servers_count": len(server_alerts),
                 "critical_servers_count": critical_count,
                 "warning_servers_count": warning_count,
@@ -488,6 +498,18 @@ class OperationalHistoryView(LoginRequiredMixin, TemplateView):
             "tone": self.PRIORITY_TONES.get(event.rule.priority, "info"),
             "duration_label": self.duration_label_from_minutes(duration),
             "resolved_at_label": timezone.localtime(resolved_at).strftime("%d/%m/%Y %H:%M"),
+        }
+
+    def email_log_context(self, log):
+        return {
+            "log": log,
+            "server": log.server,
+            "server_name": (log.server.name or log.server.hostname) if log.server else "Sin servidor",
+            "priority_label": self.PRIORITY_LABELS.get(log.severity, "Informativo"),
+            "tone": self.PRIORITY_TONES.get(log.severity, "info"),
+            "status_label": "Enviado" if log.status == AlertEmailLog.STATUS_SENT else "Error",
+            "created_at_label": timezone.localtime(log.created_at).strftime("%d/%m/%Y %H:%M"),
+            "message": log.message or log.error_message or log.subject,
         }
 
     @staticmethod
