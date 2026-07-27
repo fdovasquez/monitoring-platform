@@ -202,7 +202,7 @@ button:active {
   min-height: calc(100vh - 56px);
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(2, 21, 46, .28), rgba(2, 21, 46, .06) 46%, rgba(2, 21, 46, .18)),
+    linear-gradient(90deg, rgba(2, 21, 46, .10), rgba(2, 21, 46, .02) 48%, rgba(2, 21, 46, .14)),
     var(--login-visual-image),
     radial-gradient(circle at 18px 18px, rgba(96, 165, 250, .25) 1px, transparent 1.5px),
     linear-gradient(135deg, var(--navy), #02152e 62%, var(--navy-soft));
@@ -217,7 +217,7 @@ button:active {
   inset: 0;
   content: "";
   background:
-    linear-gradient(to top, rgba(2, 6, 23, .70), rgba(2, 6, 23, .06) 54%, rgba(2, 6, 23, .12)),
+    linear-gradient(to top, rgba(2, 6, 23, .20), rgba(2, 6, 23, .02) 54%, rgba(2, 6, 23, .08)),
     linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
   background-size: auto, 22px 22px, 22px 22px;
@@ -236,28 +236,6 @@ button:active {
   object-fit: contain;
   object-position: left center;
   filter: brightness(0) invert(1);
-}
-
-.visual-copy {
-  position: absolute;
-  z-index: 1;
-  left: 80px;
-  bottom: 140px;
-  width: min(460px, 55%);
-  color: #ffffff;
-}
-
-.visual-copy p {
-  margin: 0 0 22px;
-  font-size: 34px;
-  line-height: 1.18;
-}
-
-.visual-copy span {
-  display: block;
-  color: rgba(255, 255, 255, .84);
-  font-size: 16px;
-  line-height: 1.55;
 }
 
 @media (max-width: 980px) {
