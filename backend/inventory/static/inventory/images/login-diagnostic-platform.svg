@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Diagnostic imaging platform">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset=".5" stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#001525" flood-opacity=".30"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <circle cx="910" cy="240" r="290" fill="#ffffff" opacity=".08"/>
+  <circle cx="980" cy="700" r="230" fill="#38bdf8" opacity=".15"/>
+  <g filter="url(#shadow)">
+    <rect x="145" y="135" width="720" height="520" rx="34" fill="#f8fafc" opacity=".95"/>
+    <rect x="190" y="190" width="630" height="360" rx="18" fill="#0f172a"/>
+  </g>
+  <g stroke="#60a5fa" stroke-width="3" opacity=".58">
+    <path d="M230 250h550M230 310h550M230 370h550M230 430h550M230 490h550"/>
+    <path d="M290 220v300M365 220v300M440 220v300M515 220v300M590 220v300M665 220v300M740 220v300"/>
+  </g>
+  <g fill="none" stroke="#22c55e" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M280 435c55-105 112-158 170-158 85 0 121 112 192 112 39 0 79-30 120-90"/>
+    <path d="M285 455c96 34 180 44 252 30 74-14 144-58 210-132" opacity=".55"/>
+  </g>
+  <g fill="#e0f2fe">
+    <rect x="230" y="585" width="135" height="22" rx="11"/>
+    <rect x="395" y="585" width="95" height="22" rx="11"/>
+    <rect x="520" y="585" width="180" height="22" rx="11"/>
+  </g>
+  <g fill="#ffffff" opacity=".96">
+    <rect x="895" y="405" width="180" height="230" rx="28"/>
+    <rect x="935" y="450" width="100" height="20" rx="10" fill="#2563eb"/>
+    <rect x="935" y="500" width="100" height="20" rx="10" fill="#22c55e"/>
+    <rect x="935" y="550" width="100" height="20" rx="10" fill="#f59e0b"/>
+  </g>
+</svg>
