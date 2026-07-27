@@ -165,9 +165,9 @@
             <header>
               <span class="device-card-icon {{ device.server.os_type }}" aria-hidden="true">
                 {% if device.server.os_type == "windows" %}
-                  <img src="{% static 'inventory/images/server-windows.png' %}" alt="">
+                  <img src="{% static 'inventory/images/server-windows.png' %}?v={{ app_version }}" alt="">
                 {% elif device.server.os_type == "linux" %}
-                  <img src="{% static 'inventory/images/server-linux.png' %}" alt="">
+                  <img src="{% static 'inventory/images/server-linux.png' %}?v={{ app_version }}" alt="">
                 {% else %}
                   <span>{{ device.server.os_type|slice:":1"|upper }}</span>
                 {% endif %}
