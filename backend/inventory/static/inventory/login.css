@@ -52,8 +52,8 @@ body * {
 }
 
 .brand-lockup img {
-  width: 128px;
-  max-height: 46px;
+  width: 210px;
+  max-height: 92px;
   object-fit: contain;
   object-position: left center;
 }
