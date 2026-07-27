@@ -165,24 +165,9 @@
             <header>
               <span class="device-card-icon {{ device.server.os_type }}" aria-hidden="true">
                 {% if device.server.os_type == "windows" %}
-                  <svg viewBox="0 0 48 48" role="img" aria-label="Windows">
-                    <rect x="6" y="7" width="16" height="16" fill="#1f7ae0"/>
-                    <rect x="26" y="7" width="16" height="16" fill="#1f7ae0"/>
-                    <rect x="6" y="27" width="16" height="16" fill="#1f7ae0"/>
-                    <rect x="26" y="27" width="16" height="16" fill="#1f7ae0"/>
-                  </svg>
+                  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC8AAAAvCAIAAAD8RQT7AAAA1klEQVR4AeyWsQoCMRBEJYgI/oGlnYjfZ2FhZeH3HbaW/obusrCFzBRrkQvchMmyZLNh7l2KtM9Io61GGnLD/8bwbPaXqar42sP1+V9jtFscno15nEtiw8mLjdhwAryieyM2nACv6N4skc1u07brmn4wgXvzfpyrikOn2/F1P5UUjRmBm6z1T4Cb6mvS9odvS6qKxozATdb6J3LDmc/FBjuSG8zFV8XGKeApNpiLr4qNU8BTbDAXXxUbp4AnYFN9htr+ONuSqqIxI3CTtf6J3HDmYsPZfAEAAP//D2i1HgAAAAZJREFUAwDmmFjhExmZcAAAAABJRU5ErkJggg==" alt="Windows">
                 {% elif device.server.os_type == "linux" %}
-                  <svg viewBox="0 0 48 48" role="img" aria-label="Linux">
-                    <ellipse cx="24" cy="23" rx="12" ry="17" fill="#111827"/>
-                    <ellipse cx="24" cy="27" rx="9" ry="11" fill="#f8fafc"/>
-                    <circle cx="19" cy="15" r="2.1" fill="#ffffff"/>
-                    <circle cx="29" cy="15" r="2.1" fill="#ffffff"/>
-                    <circle cx="19.5" cy="15.4" r="0.8" fill="#111827"/>
-                    <circle cx="28.5" cy="15.4" r="0.8" fill="#111827"/>
-                    <path d="M20 20h8l-4 4z" fill="#fbbf24"/>
-                    <ellipse cx="15" cy="38" rx="7" ry="4" fill="#fbbf24" transform="rotate(-18 15 38)"/>
-                    <ellipse cx="33" cy="38" rx="7" ry="4" fill="#fbbf24" transform="rotate(18 33 38)"/>
-                  </svg>
+                  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADEAAAA1CAIAAABnb5RdAAAGnklEQVR4AeyYaVBTVxSATx4JEAiBaJUALhgIiFWHgCAilEUFFRc6xa3LWG3HIhVtHXSsClpF61ZF7YyjdrSitYMtimUvVJRdaYUMiKggFSkE2cOikIWe8KIIZH32hz/InJyce865937v3vfuvS9E39v3IeDt+4ww6TYnI+M0Mk7Q09srlUp1GwgtWW96Pz2srNq8PUrg7T99lo+Ll/+asPAb2bm45GnpVmP4jZhS/sgM/vDT5PSM7u7nANAjkeTf/mv911u2Ru2RyeXooSbUmTq7uiL3HpDJVMzX7ylpcfHXqAFhLepMeYV3Oru7sAmVcubcRcozSJ2ptq5uCI0BQTAYDNJZ/6yhpPQeaeurqTNJpbJRnFHbIzY78u2x19GjRsfFnk+5euVdp8lYRLl3vwI1BaHOJJPJPl65rPpRRehna7DjJQsDc25lpSQlfrRiGRZROjo7UVMQ6kx0usEoDudS7IXGBhF2zGKxfjhx/OTxGHM2G4soJkwmagpCnQn7vlsijI7w9TbdXnxA6G0auTt0wtIl83ILbpMcdSIFK2nrpakzWZibj33x0wqnn205IhMjuZNl03Lnm1+6neHLjpEEwrIy0tBXU2fiWJgHu4h6pX1Efxvirr70QnlHp+w9Z1MSQlha3tjURNp66f729KrxMplGI+LLZ1c8NSwok+cK5bWNEDCTsJ8iYAnOci0tMUsul19NTEFDX6HOdCsvv7zRwTbgmrsrb7aAOXW6c6ftuXb7dLmJc9D8AJLjx9hL4g69nz6KTP88qblwOc52wkSpiVub452WqU/b+Rm95osAaAAQND+Q6J9Rsbhj35Gj6NFLqDDhjrthyze9vb0ebm4qO+OOHePu6kKGEpJS0//MIm0dNRWmfd8fe1T1eML4cW6uAnXdLF4w/1UoMvqgXje73kz5t4virydhf5vCviAnCO3h4uXpgTsP6W8Xt+87rFwgSI9mrR8TPkoHY05iiz5es2e5u6OhTnAzXhXyvrUV14rLxZzUzBt4MWjoIvoxpWXeEDU0jrO22hQWqrX1JYuCWlpa7e14lv1Lw4nTZ7VWIRP0YMLz0KlzF7w93Tw9ZnItx5L1NWgzluksD/f8gsJPVip25WJhqbBMp9OLHkx/lwirKqusudYLA5XLjwYgMjTZgY+HYKYx09jICD2JqWmotYoeTFcTkx0c7HskUnveJK3tkgnjbWzQYDDoDEMGGoVFd1FrFV2ZcOJu5RZaca34vEk0mmJh1No0JrDNzAwIgm9v19XVjcXKx9VSHd63dGVqaW1ram4SiUT4kGPrOoqhkeG8Of6ihmf4wGIVGk2ni9GViS3JSd1ZLRiTp+M9gQQoFmzzDaHrEhIV6xkWHfl2dDodDc2iG1PXPUblGt7otqgPaity9l6+8qvmRjFK9NZwyqewnu3fGBX9pLljqsuMVfPM9q5W3OkY1SxameQgLoCyxSBTvjbtCqmNjzt1KOaE5juD0VVASJt4xBW5XNbX1zf5nZpdC7KnMS9CR5FmIIxqZKreAXk2UOIHPQOvTWym9NvlNQmJyeER29ra2kHNh9b3AiN4/+ycmxPhm787IBNt9IC4UKE1fjUytWaCrHV4dR8ncaBzm7C0dN3Gr7qfK97Kh+fQXo6rN+9JgGMVw0CmzKk/D9IWpa3mRyOTuY+aWrAzuJZlLKurF4kaGlTmyCVilX7oLodiX2jNUB3t92pkMlKseP1pQ9VYc8m2pf9uXL+OZ2s7NAaQmXWz+kHucL/S8/whPFirtFX9aGRqSVZVRekLmdlcnHXkUMzxigcPJRIJeltb25LS0teGhUdFf2fFVjHpmKMQ4wngeF5hqPmqZ5K2Qlu2mloKN40Gn/vVJySmIMScRcF+CxYHhazYf/goImLYjNGMepgYwvitMKMEOHOHhQYc6pnoFsBdDTT6QO4wi2+DOwfBZrNMTIxHczjjrW1w07W2ssSzHh2Ua8dAJVMBzCiESXuAMBlwqrLUM+Fp3+E0eDbAtBSYuAPMPKBvaDLHctr9oryirAyUrJSEzMTfrv8Sm5WUUFaYTWPyB3VnvR5cssFkyiCnmsLQboamGZgCxx8mRoLgJng8ArvDgJdLJhFmYLuDNIdoAwMDgn8EjPlAGAGTB04Xwf4Y0BRHgyGZKovamF6vhI+hTTi4FoBHNbgUgGcNWPi9Hh9kW/iCeyl4tYNbOYxRnOkGRTUW9GF61ZChFbAEQFD82+RVM+oMSkzqGvuf/CNMug3kyDiNjJNuI6Bb1n8AAAD//9ymmggAAAAGSURBVAMAulm59sYZkncAAAAASUVORK5CYII=" alt="Linux">
                 {% else %}
                   <span>{{ device.server.os_type|slice:":1"|upper }}</span>
                 {% endif %}
