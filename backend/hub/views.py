@@ -92,6 +92,14 @@ def percent_label(value):
     return f"{value:.1f}%"
 
 
+def priority_count(priority_counts, terms):
+    return sum(
+        total
+        for priority, total in priority_counts.items()
+        if (priority or "").lower() in terms
+    )
+
+
 def minutes_since(value, now):
     if not value:
         return None
@@ -171,6 +179,7 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             for item in unresolved_alerts.values("priority").annotate(total=Count("id"))
         }
         critical_terms = {"critical", "critica", "critico"}
+        warning_terms = {"warning", "advertencia"}
         alert_lookup = {}
         for alert in unresolved_alerts:
             alert_lookup.setdefault((alert.satellite_id, alert.server_hostname), []).append(alert)
@@ -232,12 +241,14 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             worst_disk = max(disk_risks, key=lambda item: item["percent"]) if disk_risks else None
             disk_status = disk_status_for(worst_disk)
             is_stale = minutes_since_report is None or minutes_since_report > SATELLITE_STALE_MINUTES
-            operational_status = "offline" if is_stale or satellite.status == Satellite.STATUS_OFFLINE else satellite.status
-            if operational_status != "offline":
-                if satellite.status == Satellite.STATUS_CRITICAL:
-                    operational_status = Satellite.STATUS_CRITICAL
-                elif satellite.status == Satellite.STATUS_WARNING:
-                    operational_status = Satellite.STATUS_WARNING
+            if is_stale or satellite.status == Satellite.STATUS_OFFLINE:
+                operational_status = "offline"
+            elif critical_server_count:
+                operational_status = Satellite.STATUS_CRITICAL
+            elif warning_server_count:
+                operational_status = Satellite.STATUS_WARNING
+            else:
+                operational_status = Satellite.STATUS_OK
             status_labels = {
                 "ok": "Normal",
                 "warning": "Advertencia",
@@ -294,8 +305,8 @@ class HubDashboardView(HubAccessMixin, TemplateView):
             1 for item in site_cards if item["disk_status"] in {"critical", "warning"}
         )
         stale_sites = site_status_counts["offline"]
-        critical_total = priority_counts.get("critical", 0) + priority_counts.get("critica", 0)
-        warning_total = priority_counts.get("warning", 0) + priority_counts.get("advertencia", 0)
+        critical_total = priority_count(priority_counts, critical_terms)
+        warning_total = priority_count(priority_counts, warning_terms)
         avg_cpu = average_metric([item["cpu"] for item in server_cards])
         avg_memory = average_metric([item["memory"] for item in server_cards])
         avg_disk = average_metric([item["disk"] for item in server_cards])
@@ -318,10 +329,10 @@ class HubDashboardView(HubAccessMixin, TemplateView):
                     "servers": total_servers,
                     "servers_online": online_servers,
                     "unresolved_alerts": unresolved_alerts.count(),
-                    "critical": priority_counts.get("critical", 0),
-                    "critica": priority_counts.get("critica", 0),
-                    "warning": priority_counts.get("warning", 0),
-                    "advertencia": priority_counts.get("advertencia", 0),
+                    "critical": critical_total,
+                    "critica": 0,
+                    "warning": warning_total,
+                    "advertencia": 0,
                     "critical_total": critical_total,
                     "warning_total": warning_total,
                     "critical_servers": critical_servers,

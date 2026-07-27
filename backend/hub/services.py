@@ -11,8 +11,14 @@ def clean_text(value, max_length=255):
 
 def alert_status(status_summary):
     alerts_by_priority = status_summary.get("alerts_by_priority", {})
-    critical = int(alerts_by_priority.get("critical") or alerts_by_priority.get("critica") or 0)
-    warning = int(alerts_by_priority.get("warning") or alerts_by_priority.get("advertencia") or 0)
+    critical = sum(
+        int(alerts_by_priority.get(key) or 0)
+        for key in ("critical", "critica", "critico")
+    )
+    warning = sum(
+        int(alerts_by_priority.get(key) or 0)
+        for key in ("warning", "advertencia")
+    )
     unresolved = int(status_summary.get("alerts_unresolved") or 0)
     if critical:
         return Satellite.STATUS_CRITICAL, critical, warning
