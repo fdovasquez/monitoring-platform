@@ -42,9 +42,12 @@ body {
   flex: 0 0 220px !important;
   min-width: 220px !important;
   max-width: 220px !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 3px !important;
+  padding: 7px 18px 6px !important;
   background: #ffffff !important;
+  text-align: center !important;
 }
 
 .app-nav {
