@@ -1,0 +1,15 @@
+Codigo de verificacion para {{ site_name }}
+
+Hola {{ username }},
+
+Se solicito el ingreso a la plataforma de monitoreo.
+
+Codigo de verificacion: {{ code }}
+
+Este codigo expira en {{ expires_minutes }} minutos.
+Para continuar, abre el portal e ingresa el codigo:
+{{ login_url }}
+
+Si no solicitaste este acceso, ignora este mensaje o informa al administrador de la plataforma.
+
+{{ site_name }} - {{ site_subtitle }}

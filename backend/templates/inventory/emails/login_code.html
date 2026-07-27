@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Codigo de verificacion</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fb;margin:0;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="620" cellspacing="0" cellpadding="0" style="width:100%;max-width:620px;background:#ffffff;border:1px solid #d9e2ef;border-radius:12px;overflow:hidden;box-shadow:0 10px 28px rgba(15,23,42,0.08);">
+            <tr>
+              <td style="background:#0f172a;padding:24px 28px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td>
+                      <div style="font-size:20px;line-height:26px;font-weight:700;color:#ffffff;">{{ site_name }}</div>
+                      <div style="font-size:13px;line-height:20px;color:#b8c5d9;margin-top:2px;">{{ site_subtitle }}</div>
+                    </td>
+                    <td align="right" style="font-size:12px;line-height:18px;color:#c7d2e5;text-transform:uppercase;letter-spacing:0.08em;">Doble factor</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px;">
+                <div style="font-size:12px;line-height:16px;color:#2563eb;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Acceso seguro</div>
+                <h1 style="margin:8px 0 10px;font-size:24px;line-height:32px;color:#0f172a;font-weight:700;">Codigo de verificacion</h1>
+                <p style="margin:0 0 18px;font-size:15px;line-height:24px;color:#334155;">Hola {{ username }}, usa este codigo para completar el inicio de sesion en la plataforma de monitoreo.</p>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:22px 0;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;">
+                  <tr>
+                    <td style="padding:18px 20px;">
+                      <div style="font-size:12px;line-height:16px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Codigo para copiar</div>
+                      <div style="margin-top:8px;font-family:'Courier New',Courier,monospace;font-size:34px;line-height:42px;letter-spacing:0.18em;font-weight:700;color:#0f172a;user-select:all;">{{ code }}</div>
+                      <div style="margin-top:8px;font-size:12px;line-height:18px;color:#475569;">Selecciona el codigo para copiarlo. Expira en {{ expires_minutes }} minutos.</div>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:18px 0 24px;">
+                  <tr>
+                    <td bgcolor="#2563eb" style="border-radius:8px;">
+                      <a href="{{ login_url }}" style="display:inline-block;padding:13px 18px;font-size:14px;line-height:18px;color:#ffffff;text-decoration:none;font-weight:700;">Abrir portal de monitoreo</a>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-top:1px solid #e2e8f0;">
+                  <tr>
+                    <td style="padding-top:18px;font-size:13px;line-height:21px;color:#64748b;">
+                      Si no solicitaste este acceso, ignora este mensaje o informa al administrador de la plataforma. Nunca compartas este codigo por chat o telefono.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 28px;text-align:center;font-size:12px;line-height:18px;color:#94a3b8;">
+                {{ site_name }} - Sistema de monitoreo - No responder a este correo
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

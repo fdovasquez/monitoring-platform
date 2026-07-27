@@ -9,8 +9,9 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import redirect
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -18,6 +19,7 @@ from django.views.generic import TemplateView
 
 from alerts.models import SmtpSettings
 from alerts.services import sender, smtp_backend
+from .models import SiteSettings
 
 
 def default_login_redirect():
@@ -131,24 +133,42 @@ def code_hash(code):
     return hashlib.sha256(code.encode("utf-8")).hexdigest()
 
 
-def send_login_code_email(user, code):
+def login_url_for_request(request):
+    configured_url = getattr(django_settings, "MONITORING_PUBLIC_URL", "").rstrip("/")
+    if configured_url:
+        return f"{configured_url}{reverse('login-verify')}"
+    if request is not None:
+        return request.build_absolute_uri(reverse("login-verify"))
+    return reverse("login-verify")
+
+
+def send_login_code_email(user, code, request=None):
     if not user.email:
         raise ValueError("El usuario no tiene correo electronico registrado.")
-    settings = SmtpSettings.load()
-    if not settings.is_configured:
+    smtp_settings = SmtpSettings.load()
+    if not smtp_settings.is_configured:
         raise ValueError("La configuracion SMTP esta incompleta.")
-    body = (
-        "Se solicito el ingreso a la plataforma de monitoreo.\n\n"
-        f"Codigo de verificacion: {code}\n\n"
-        "Este codigo expira en 10 minutos. Si no solicitaste este acceso, ignora este mensaje."
-    )
-    message = EmailMessage(
+
+    site_settings = SiteSettings.load()
+    context = {
+        "code": code,
+        "login_url": login_url_for_request(request),
+        "site_name": site_settings.site_name,
+        "site_subtitle": site_settings.subtitle,
+        "username": user.get_full_name() or user.username,
+        "expires_minutes": 10,
+    }
+    text_body = render_to_string("inventory/emails/login_code.txt", context)
+    html_body = render_to_string("inventory/emails/login_code.html", context)
+
+    message = EmailMultiAlternatives(
         subject="Codigo de acceso - Plataforma de monitoreo",
-        body=body,
-        from_email=sender(settings),
+        body=text_body,
+        from_email=sender(smtp_settings),
         to=[user.email],
-        connection=smtp_backend(settings),
+        connection=smtp_backend(smtp_settings),
     )
+    message.attach_alternative(html_body, "text/html")
     message.send()
 
 
@@ -180,7 +200,7 @@ class CorporateLoginView(TemplateView):
 
         code = f"{secrets.randbelow(1000000):06d}"
         try:
-            send_login_code_email(user, code)
+            send_login_code_email(user, code, request)
         except Exception as exc:
             form.add_error(None, f"No se pudo enviar el codigo de verificacion: {exc}")
             return self.render_to_response(self.get_context_data(form=form))
