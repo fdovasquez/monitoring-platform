@@ -45,6 +45,7 @@ body * {
 
 .brand-lockup {
   display: grid;
+  place-items: center;
   gap: 10px;
   align-content: start;
   width: min(385px, 100%);
@@ -52,10 +53,10 @@ body * {
 }
 
 .brand-lockup img {
-  width: 210px;
-  max-height: 92px;
+  width: min(282px, 100%);
+  max-height: 128px;
   object-fit: contain;
-  object-position: left center;
+  object-position: center;
 }
 
 .brand-lockup span {
