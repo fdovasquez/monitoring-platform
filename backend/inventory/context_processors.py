@@ -1,6 +1,29 @@
+import subprocess
+from functools import lru_cache
+
 from django.conf import settings as django_settings
+from django.utils import timezone
 
 from .models import SiteSettings
+
+
+@lru_cache(maxsize=1)
+def _app_version():
+    configured_version = getattr(django_settings, "APP_VERSION", "")
+    if configured_version:
+        return configured_version
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=django_settings.BASE_DIR.parent,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        return result.stdout.strip() or "dev"
+    except Exception:
+        return "dev"
 
 
 def site_settings(request):
@@ -31,4 +54,6 @@ def site_settings(request):
         "user_theme": user_theme,
         "central_portal_enabled": django_settings.CENTRAL_PORTAL_ENABLED,
         "is_viewer_role": bool(is_authenticated and user.groups.filter(name="Visualizador").exists() and not is_admin and not is_editor),
+        "app_version": _app_version(),
+        "app_year": timezone.now().year,
     }
