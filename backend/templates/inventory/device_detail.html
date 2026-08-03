@@ -41,26 +41,28 @@
         <button class="btn secondary" type="button" onclick="window.location.reload()">
           <span class="btn-icon refresh-icon" aria-hidden="true"></span> Actualizar
         </button>
-        <div class="tool-menu" data-tool-menu>
-          <button class="btn secondary tool-menu-trigger" type="button" data-tool-menu-trigger aria-expanded="false">
-            <span class="btn-icon tools-icon" aria-hidden="true"></span> Herramientas
-            <span class="chevron-icon" aria-hidden="true"></span>
-          </button>
-          <div class="tool-menu-panel" data-tool-menu-panel hidden>
-            <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'processes' %}">
-              <span class="tool-menu-icon process-mini-icon" aria-hidden="true"></span>
-              <span>Procesos</span>
-            </a>
-            <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'services' %}">
-              <span class="tool-menu-icon service-mini-icon" aria-hidden="true"></span>
-              <span>Servicios</span>
-            </a>
-            <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'ports' %}">
-              <span class="tool-menu-icon ports-mini-icon" aria-hidden="true"></span>
-              <span>Puertos</span>
-            </a>
+        {% if not is_client_role %}
+          <div class="tool-menu" data-tool-menu>
+            <button class="btn secondary tool-menu-trigger" type="button" data-tool-menu-trigger aria-expanded="false">
+              <span class="btn-icon tools-icon" aria-hidden="true"></span> Herramientas
+              <span class="chevron-icon" aria-hidden="true"></span>
+            </button>
+            <div class="tool-menu-panel" data-tool-menu-panel hidden>
+              <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'processes' %}">
+                <span class="tool-menu-icon process-mini-icon" aria-hidden="true"></span>
+                <span>Procesos</span>
+              </a>
+              <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'services' %}">
+                <span class="tool-menu-icon service-mini-icon" aria-hidden="true"></span>
+                <span>Servicios</span>
+              </a>
+              <a class="tool-menu-item" href="{% url 'device-runtime-section' server.id 'ports' %}">
+                <span class="tool-menu-icon ports-mini-icon" aria-hidden="true"></span>
+                <span>Puertos</span>
+              </a>
+            </div>
           </div>
-        </div>
+        {% endif %}
         {% if can_manage_devices %}
           <a class="btn secondary" href="{% url 'agent-install' %}?server={{ server.id }}&platform={{ server.os_type }}">
             Copiar comando de agente
@@ -427,7 +429,9 @@
               <h2>Alertas activas</h2>
               <p>Eventos pendientes de resolucion para este servidor.</p>
             </div>
-            <a class="text-action" href="{% url 'alert-settings' %}?tab=history">Ver todas</a>
+            {% if not is_client_role %}
+              <a class="text-action" href="{% url 'alert-settings' %}?tab=history">Ver todas</a>
+            {% endif %}
           </div>
           <div class="table-wrap">
             <table class="detail-table active-alerts-table">

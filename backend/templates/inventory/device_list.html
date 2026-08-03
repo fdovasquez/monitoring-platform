@@ -33,7 +33,9 @@
           <p>Resumen ejecutivo para identificar rapidamente continuidad, alertas activas y servidores que requieren revision.</p>
         </div>
         <div class="ops-dashboard-actions">
-          <a class="ops-history-link" href="{% url 'alert-settings' %}?tab=history">Historial de alertas</a>
+          {% if can_view_alert_history %}
+            <a class="ops-history-link" href="{% url 'alert-settings' %}?tab=history">Historial de alertas</a>
+          {% endif %}
           {% if can_manage_devices %}
             <a class="ops-primary-link" href="{% url 'agent-install' %}">Instalar agente</a>
           {% endif %}

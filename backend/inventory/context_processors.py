@@ -32,6 +32,8 @@ def site_settings(request):
     is_admin = bool(is_authenticated and (user.is_superuser or user.groups.filter(name="Administrador").exists()))
     is_staff_admin = bool(is_authenticated and user.is_staff)
     is_editor = bool(is_authenticated and user.groups.filter(name="Editor").exists())
+    is_client = bool(is_authenticated and user.groups.filter(name="Cliente").exists())
+    is_client_only = bool(is_client and not is_admin and not is_editor)
     user_theme = "light"
     if is_authenticated:
         try:
@@ -50,10 +52,17 @@ def site_settings(request):
         "can_manage_users": is_admin,
         "can_manage_site_settings": is_admin,
         "can_manage_alerts": is_admin or is_staff_admin,
-        "can_view_alert_history": is_authenticated,
+        "can_view_alert_history": is_authenticated and not is_client_only,
         "user_theme": user_theme,
         "central_portal_enabled": django_settings.CENTRAL_PORTAL_ENABLED,
-        "is_viewer_role": bool(is_authenticated and user.groups.filter(name="Visualizador").exists() and not is_admin and not is_editor),
+        "is_viewer_role": bool(
+            is_authenticated
+            and user.groups.filter(name="Visualizador").exists()
+            and not is_admin
+            and not is_editor
+            and not is_client_only
+        ),
+        "is_client_role": is_client_only,
         "app_version": _app_version(),
         "app_year": timezone.now().year,
     }

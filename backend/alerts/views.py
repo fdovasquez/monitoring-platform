@@ -19,8 +19,16 @@ def user_can_manage_alerts(user):
     return user.is_superuser or user.is_staff or user.groups.filter(name="Administrador").exists()
 
 
+def user_is_client_only(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or user.groups.filter(name__in=["Administrador", "Editor"]).exists():
+        return False
+    return user.groups.filter(name="Cliente").exists()
+
+
 def user_can_view_alert_history(user):
-    return bool(user and user.is_authenticated)
+    return bool(user and user.is_authenticated and not user_is_client_only(user))
 
 
 MONITOR_CATEGORY_DEFINITIONS = [

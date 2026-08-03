@@ -104,9 +104,42 @@ def is_viewer_only(user):
     return user.groups.filter(name="Visualizador").exists()
 
 
+def is_client_only(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or user.groups.filter(name__in=["Administrador", "Editor"]).exists():
+        return False
+    return user.groups.filter(name="Cliente").exists()
+
+
+def client_safe_next_url(next_url):
+    path = urlparse(next_url).path or next_url
+    device_list_path = reverse("device-list")
+    device_base_path = device_list_path.rstrip("/")
+    account_paths = (reverse("profile"), reverse("password-change"), reverse("password-change-done"))
+    blocked_fragments = (
+        "/operational-history/",
+        "/runtime/",
+        "/console/",
+        "/edit/",
+        "/delete/",
+        "/credentials/",
+    )
+    if path == device_list_path:
+        return next_url
+    if path.startswith(f"{device_base_path}/") and not any(fragment in path for fragment in blocked_fragments):
+        return next_url
+    for account_path in account_paths:
+        if path == account_path or path.startswith(f"{account_path.rstrip('/')}/"):
+            return next_url
+    return default_login_redirect()
+
+
 def role_safe_next_url(user, next_url):
     if not next_url:
         return default_login_redirect()
+    if is_client_only(user) and not django_settings.CENTRAL_PORTAL_ENABLED:
+        return client_safe_next_url(next_url)
     if not is_viewer_only(user):
         return next_url
 

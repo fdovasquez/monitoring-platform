@@ -1,12 +1,12 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 
 from .models import Server, ServerRuntimeSnapshot
-from .views import sidebar_context
+from .views import sidebar_context, user_can_view_operations
 
 
-class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
+class DeviceRuntimeView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "inventory/device_runtime.html"
     section_options = {
         "services": {
@@ -25,6 +25,9 @@ class DeviceRuntimeView(LoginRequiredMixin, TemplateView):
             "empty": "Aun no hay puertos reportados por el agente.",
         },
     }
+
+    def test_func(self):
+        return user_can_view_operations(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

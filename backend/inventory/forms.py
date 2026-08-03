@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from .models import DeviceGroup, MachineCredential, Server, UserProfile
 
 
-ROLE_NAMES = ["Administrador", "Editor", "Visualizador"]
+ROLE_NAMES = ["Administrador", "Editor", "Visualizador", "Cliente"]
 
 
 def ensure_base_roles():

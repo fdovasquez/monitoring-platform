@@ -57,6 +57,18 @@ def user_can_manage_devices(user):
     return user.is_superuser or user.groups.filter(name__in=["Administrador", "Editor"]).exists()
 
 
+def user_is_client_only(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or user.groups.filter(name__in=["Administrador", "Editor"]).exists():
+        return False
+    return user.groups.filter(name="Cliente").exists()
+
+
+def user_can_view_operations(user):
+    return bool(user and user.is_authenticated and not user_is_client_only(user))
+
+
 def agent_download(request, platform, filename):
     allowed_files = {
         ("linux", "agent.py"): settings.BASE_DIR.parent / "agents" / "linux" / "agent.py",
@@ -367,7 +379,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
         return f"{minutes}m"
 
 
-class OperationalHistoryView(LoginRequiredMixin, TemplateView):
+class OperationalHistoryView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "inventory/operational_history.html"
 
     PRIORITY_LABELS = {
@@ -385,6 +397,9 @@ class OperationalHistoryView(LoginRequiredMixin, TemplateView):
         AlertRule.PRIORITY_WARNING: 2,
         AlertRule.PRIORITY_INFO: 1,
     }
+
+    def test_func(self):
+        return user_can_view_operations(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -33,7 +33,9 @@
           <a class="{% if active_menu == 'devices' %}active{% endif %}" href="{% url 'device-list' %}">
             Dispositivos{% if total_devices %} <span class="nav-count">{{ total_devices }}</span>{% endif %}
           </a>
-          <a class="{% if active_menu == 'operations' %}active{% endif %}" href="{% url 'operational-history' %}">Historial operativo</a>
+          {% if not is_client_role %}
+            <a class="{% if active_menu == 'operations' %}active{% endif %}" href="{% url 'operational-history' %}">Historial operativo</a>
+          {% endif %}
           {% if can_manage_devices %}
             <a class="{% if active_menu == 'cmdb' %}active{% endif %}" href="{% url 'cmdb' %}">CMDB</a>
             <a class="{% if active_menu == 'hub' %}active{% endif %}" href="{% url 'hub-dashboard' %}">Central</a>
