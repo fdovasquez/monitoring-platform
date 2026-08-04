@@ -1837,6 +1837,11 @@
   font-weight: 600;
 }
 
+.oracle-storage-value.muted strong,
+.oracle-storage-value.muted small {
+  color: var(--detail-muted);
+}
+
 .oracle-progress-row.filesystem-row {
   background: #f8fafc;
   border: 1px solid #e2e8f0;

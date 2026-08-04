@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/oracle-monitoring-agent.env"
-AGENT_VERSION = "1.0.6-oracle"
+AGENT_VERSION = "1.0.7-oracle"
 
 
 def load_env_file(path):
@@ -249,6 +249,22 @@ def collect_filesystem_usage(path):
     }
 
 
+def collect_fra_filesystem_usage(fra_name):
+    candidates = []
+    for path in [FRA_FILESYSTEM_PATH, fra_name]:
+        clean_path = (path or "").strip()
+        if clean_path and clean_path not in candidates:
+            candidates.append(clean_path)
+    last_result = None
+    for path in candidates:
+        result = collect_filesystem_usage(path)
+        if result and result.get("ok"):
+            return result
+        if result:
+            last_result = result
+    return last_result
+
+
 def collect_fra():
     output, error = sql_query(
         """
@@ -272,7 +288,7 @@ from v$recovery_file_dest;
                     "used_gb": float(parts[1]),
                     "limit_gb": float(parts[2]),
                     "used_percent": float(parts[3]),
-                    "filesystem_usage": collect_filesystem_usage(FRA_FILESYSTEM_PATH or fra_name),
+                    "filesystem_usage": collect_fra_filesystem_usage(fra_name),
                 }
             )
         except ValueError:

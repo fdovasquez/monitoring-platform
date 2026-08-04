@@ -319,7 +319,7 @@
                           {% if fra.filesystem_usage.ok %}
                             <small>{{ fra.filesystem_usage.mount|default:fra.filesystem_usage.path }}</small>
                           {% else %}
-                            <small>{{ fra.filesystem_usage.path }} - no fue posible consultar df</small>
+                            <small>{{ fra.filesystem_usage.path }}</small>
                           {% endif %}
                         </div>
                         {% if fra.filesystem_usage.ok %}
@@ -328,6 +328,11 @@
                             <small>{{ fra.filesystem_usage.used_gb }} GB de {{ fra.filesystem_usage.total_gb }} GB</small>
                           </div>
                           <div class="storage-progress filesystem-progress" style="--value: {{ fra.filesystem_usage.used_percent_css|default:'0' }}%;"><span></span></div>
+                        {% else %}
+                          <div class="oracle-storage-value muted">
+                            <strong>Sin lectura</strong>
+                            <small>No fue posible consultar df</small>
+                          </div>
                         {% endif %}
                       </div>
                     {% endif %}
