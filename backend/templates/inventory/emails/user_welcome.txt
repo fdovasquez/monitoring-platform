@@ -1,0 +1,25 @@
+Hola {{ username }},
+
+Se ha creado una cuenta para acceder a {{ site_name }}.
+
+Datos de acceso:
+- Usuario: {{ account_username }}
+- Portal: {{ login_url }}
+
+Para ingresar desde una red donde el nombre del sitio no resuelve por DNS, agrega esta linea al archivo hosts de tu equipo:
+
+{{ hosts_line }}
+
+Windows:
+1. Abre Bloc de notas como administrador.
+2. Abre el archivo C:\Windows\System32\drivers\etc\hosts.
+3. Agrega la linea indicada al final del archivo y guarda.
+
+Linux o macOS:
+1. Edita /etc/hosts con permisos de administrador.
+2. Agrega la linea indicada al final del archivo y guarda.
+
+La contrasena sera entregada por el administrador mediante un canal separado.
+
+{{ site_name }} - {{ site_subtitle }}
+No responder a este correo.

@@ -1,7 +1,9 @@
 from collections import defaultdict
 from datetime import timedelta
+import ipaddress
 import json
 import shlex
+import socket
 import uuid
 
 from django.conf import settings
@@ -9,16 +11,20 @@ from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
+from django.core.mail import EmailMultiAlternatives
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpResponse
 from django.db.models import Count, OuterRef, Subquery
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.generic import TemplateView
 
-from alerts.models import AlertEvent, AlertRule
+from alerts.models import AlertEvent, AlertRule, SmtpSettings
+from alerts.services import sender, smtp_backend
 from metrics.models import MetricSample
 
 from .forms import (
@@ -38,6 +44,7 @@ from .models import (
     Server,
     ServerInventory,
     ServerRuntimeSnapshot,
+    SiteSettings,
     UserProfile,
 )
 from .templatetags.security_tags import security_assessment as standard_security_assessment
@@ -47,6 +54,71 @@ def sidebar_context():
     return {
         "device_groups": DeviceGroup.objects.annotate(server_count=Count("servers")).order_by("name"),
     }
+
+
+def host_without_port(value):
+    host = (value or "").strip()
+    if not host:
+        return ""
+    if host.startswith("[") and "]" in host:
+        return host[1:host.index("]")]
+    return host.split(":", 1)[0]
+
+
+def is_hosts_entry_ip(value):
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        return False
+    return not (address.is_loopback or address.is_unspecified)
+
+
+def monitor_hosts_entry_ip(hostname):
+    configured_ip = getattr(settings, "MONITOR_HOSTS_ENTRY_IP", "").strip()
+    if configured_ip:
+        return configured_ip
+    for allowed_host in getattr(settings, "ALLOWED_HOSTS", []):
+        candidate = host_without_port(allowed_host)
+        if is_hosts_entry_ip(candidate):
+            return candidate
+    try:
+        resolved_ip = socket.gethostbyname(hostname)
+    except OSError:
+        return ""
+    return resolved_ip if is_hosts_entry_ip(resolved_ip) else ""
+
+
+def send_user_welcome_email(user, request):
+    if not user.email:
+        raise ValueError("El usuario no tiene correo electronico registrado.")
+    smtp_settings = SmtpSettings.load()
+    if not smtp_settings.is_configured:
+        raise ValueError("La configuracion SMTP esta incompleta.")
+
+    site_settings = SiteSettings.load()
+    hostname = host_without_port(request.get_host())
+    monitor_ip = monitor_hosts_entry_ip(hostname)
+    context = {
+        "site_name": site_settings.site_name,
+        "site_subtitle": site_settings.subtitle,
+        "username": user.get_full_name() or user.username,
+        "account_username": user.username,
+        "login_url": request.build_absolute_uri(reverse("login")),
+        "hostname": hostname,
+        "monitor_ip": monitor_ip,
+        "hosts_line": f"{monitor_ip} {hostname}" if monitor_ip else f"IP_DEL_MONITOR {hostname}",
+    }
+    text_body = render_to_string("inventory/emails/user_welcome.txt", context)
+    html_body = render_to_string("inventory/emails/user_welcome.html", context)
+    message = EmailMultiAlternatives(
+        subject=f"Acceso a {site_settings.site_name}",
+        body=text_body,
+        from_email=sender(smtp_settings),
+        to=[user.email],
+        connection=smtp_backend(smtp_settings),
+    )
+    message.attach_alternative(html_body, "text/html")
+    message.send()
 
 
 def user_can_manage_credentials(user):
@@ -1656,8 +1728,12 @@ class UserCreateView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
     def post(self, request):
         form = UserCreateForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Usuario creado correctamente.")
+            user = form.save()
+            try:
+                send_user_welcome_email(user, request)
+                messages.success(request, "Usuario creado correctamente. Se enviaron las instrucciones de acceso por correo.")
+            except Exception as exc:
+                messages.warning(request, f"Usuario creado correctamente, pero no se pudo enviar el correo de instrucciones: {exc}")
             return redirect("user-list")
         return self.render_to_response(self.get_context_data(form=form))
 
