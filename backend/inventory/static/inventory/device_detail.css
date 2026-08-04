@@ -1802,6 +1802,17 @@
   background: #2563eb;
 }
 
+.oracle-progress-row.filesystem-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.oracle-progress-row.filesystem-row .storage-progress span {
+  background: #0f766e;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --detail-bg: #020617;

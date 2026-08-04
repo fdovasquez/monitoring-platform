@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/oracle-monitoring-agent.env"
-AGENT_VERSION = "1.0.5-oracle"
+AGENT_VERSION = "1.0.6-oracle"
 
 
 def load_env_file(path):
@@ -48,6 +48,7 @@ TABLESPACE_WARNING_PERCENT = float(os.environ.get("ORACLE_TABLESPACE_WARNING_PER
 TABLESPACE_CRITICAL_PERCENT = float(os.environ.get("ORACLE_TABLESPACE_CRITICAL_PERCENT", "95"))
 FRA_WARNING_PERCENT = float(os.environ.get("ORACLE_FRA_WARNING_PERCENT", "80"))
 FRA_CRITICAL_PERCENT = float(os.environ.get("ORACLE_FRA_CRITICAL_PERCENT", "90"))
+FRA_FILESYSTEM_PATH = os.environ.get("ORACLE_FRA_FILESYSTEM_PATH", "")
 
 
 def run_command(command, timeout=25, as_oracle=True):
@@ -205,6 +206,49 @@ order by used_percent desc;
     return {"items": tablespaces, "error": error}
 
 
+def collect_filesystem_usage(path):
+    if not path:
+        return None
+    target = path.strip()
+    if not target.startswith("/"):
+        return None
+    try:
+        result = subprocess.run(
+            ["df", "-P", "-B1", target],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            timeout=10,
+        )
+    except Exception as exc:
+        return {"path": target, "ok": False, "error": str(exc)}
+    if result.returncode != 0:
+        return {"path": target, "ok": False, "error": (result.stderr or result.stdout)[-500:]}
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
+    if len(lines) < 2:
+        return {"path": target, "ok": False, "error": "Salida df sin datos."}
+    parts = lines[-1].split()
+    if len(parts) < 6:
+        return {"path": target, "ok": False, "error": "Salida df no reconocida."}
+    try:
+        total_bytes = int(parts[1])
+        used_bytes = int(parts[2])
+        available_bytes = int(parts[3])
+        used_percent = round((used_bytes / total_bytes) * 100, 2) if total_bytes > 0 else 0
+    except ValueError:
+        return {"path": target, "ok": False, "error": "Valores df no numericos."}
+    return {
+        "path": target,
+        "mount": parts[5],
+        "filesystem": parts[0],
+        "ok": True,
+        "total_gb": round(total_bytes / 1024 / 1024 / 1024, 2),
+        "used_gb": round(used_bytes / 1024 / 1024 / 1024, 2),
+        "available_gb": round(available_bytes / 1024 / 1024 / 1024, 2),
+        "used_percent": used_percent,
+    }
+
+
 def collect_fra():
     output, error = sql_query(
         """
@@ -221,12 +265,14 @@ from v$recovery_file_dest;
         if len(parts) != 4:
             continue
         try:
+            fra_name = parts[0]
             items.append(
                 {
-                    "name": parts[0],
+                    "name": fra_name,
                     "used_gb": float(parts[1]),
                     "limit_gb": float(parts[2]),
                     "used_percent": float(parts[3]),
+                    "filesystem_usage": collect_filesystem_usage(FRA_FILESYSTEM_PATH or fra_name),
                 }
             )
         except ValueError:
@@ -428,6 +474,12 @@ def evaluate_status(database, listener, tablespaces, fra, backups, blocking, ale
             critical.append(f"FRA {fra_item.get('name')} en {percent}%.")
         elif percent >= FRA_WARNING_PERCENT:
             warnings.append(f"FRA {fra_item.get('name')} en {percent}%.")
+        filesystem_usage = fra_item.get("filesystem_usage") or {}
+        filesystem_percent = filesystem_usage.get("used_percent", 0) if filesystem_usage.get("ok") else 0
+        if filesystem_percent >= FRA_CRITICAL_PERCENT:
+            critical.append(f"Filesystem FRA {filesystem_usage.get('mount') or filesystem_usage.get('path')} en {filesystem_percent}%.")
+        elif filesystem_percent >= FRA_WARNING_PERCENT:
+            warnings.append(f"Filesystem FRA {filesystem_usage.get('mount') or filesystem_usage.get('path')} en {filesystem_percent}%.")
     latest_backup = backups.get("latest") or {}
     age_hours = latest_backup.get("age_hours")
     if not backups.get("ok"):

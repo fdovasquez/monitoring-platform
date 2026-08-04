@@ -296,15 +296,33 @@
                   <span class="oracle-panel-icon fra">FRA</span>
                   <div>
                     <h3>FRA</h3>
-                    <p>Area de recuperacion rapida.</p>
+                    <p>Capacidad logica de Oracle y uso real del filesystem asociado.</p>
                   </div>
                 </div>
                 {% if oracle.fra %}
                   {% for fra in oracle.fra|slice:":2" %}
                     <div class="oracle-progress-row">
-                      <div><span>{{ fra.name|default:"FRA" }}</span><small>{{ fra.used_gb }} GB de {{ fra.limit_gb }} GB</small></div>
+                      <div>
+                        <span>FRA Oracle</span>
+                        <small>{{ fra.name|default:"FRA" }} - {{ fra.used_gb }} GB de {{ fra.limit_gb }} GB</small>
+                      </div>
                       <div class="storage-progress" style="--value: {{ fra.used_percent|default:'0' }}%;"><span></span></div>
                     </div>
+                    {% if fra.filesystem_usage %}
+                      <div class="oracle-progress-row filesystem-row">
+                        <div>
+                          <span>Disco del sistema operativo</span>
+                          {% if fra.filesystem_usage.ok %}
+                            <small>{{ fra.filesystem_usage.mount|default:fra.filesystem_usage.path }} - {{ fra.filesystem_usage.used_gb }} GB usados de {{ fra.filesystem_usage.total_gb }} GB</small>
+                          {% else %}
+                            <small>{{ fra.filesystem_usage.path }} - no fue posible consultar df</small>
+                          {% endif %}
+                        </div>
+                        {% if fra.filesystem_usage.ok %}
+                          <div class="storage-progress filesystem-progress" style="--value: {{ fra.filesystem_usage.used_percent|default:'0' }}%;"><span></span></div>
+                        {% endif %}
+                      </div>
+                    {% endif %}
                   {% endfor %}
                 {% else %}
                   <p>Sin FRA reportada.</p>
