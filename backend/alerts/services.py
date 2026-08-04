@@ -186,14 +186,27 @@ def send_email(
 
 
 def value_for_rule(sample, rule):
+    def valid_percent(value):
+        if value is None:
+            return None
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        if numeric < 0 or numeric > 100:
+            return None
+        return numeric
+
     if rule.event_type == AlertRule.EVENT_CPU:
-        return sample.cpu_percent
+        return valid_percent(sample.cpu_percent)
     if rule.event_type == AlertRule.EVENT_MEMORY:
-        return sample.memory_percent
+        return valid_percent(sample.memory_percent)
     if rule.event_type == AlertRule.EVENT_DISK:
-        return sample.disk_percent
-    if rule.event_type == AlertRule.EVENT_FREE_SPACE and sample.disk_percent is not None:
-        return 100 - sample.disk_percent
+        return valid_percent(sample.disk_percent)
+    if rule.event_type == AlertRule.EVENT_FREE_SPACE:
+        disk_percent = valid_percent(sample.disk_percent)
+        if disk_percent is not None:
+            return 100 - disk_percent
     return None
 
 

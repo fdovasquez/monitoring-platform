@@ -342,7 +342,7 @@ class DeviceListView(LoginRequiredMixin, TemplateView):
     @staticmethod
     def percent_display(value):
         number = DeviceListView.to_float(value)
-        if number is None:
+        if number is None or number < 0 or number > 100:
             return "-"
         if number.is_integer():
             return f"{int(number)}%"
@@ -756,9 +756,12 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             if value is None:
                 continue
             try:
-                values.append((sample, float(value)))
+                numeric = float(value)
             except (TypeError, ValueError):
                 continue
+            if numeric < 0 or numeric > 100:
+                continue
+            values.append((sample, numeric))
         if not values:
             return []
         if len(values) == 1:
@@ -822,6 +825,8 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             percent_value = float(percent) if percent is not None else None
         except (TypeError, ValueError):
             percent_value = None
+        if percent_value is not None and (percent_value < 0 or percent_value > 100):
+            percent_value = None
         try:
             total_value = float(total_gb) if total_gb is not None else None
         except (TypeError, ValueError):
@@ -866,6 +871,8 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             numeric = float(value)
         except (TypeError, ValueError):
             return "-"
+        if numeric < 0 or numeric > 100:
+            return "-"
         if numeric.is_integer():
             return f"{int(numeric)}%"
         return f"{numeric:.1f}%"
@@ -877,6 +884,8 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
         try:
             numeric = float(value)
         except (TypeError, ValueError):
+            return "neutral"
+        if numeric < 0 or numeric > 100:
             return "neutral"
         if numeric >= 90:
             return "danger"
@@ -920,7 +929,13 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             for label, value in threshold_map:
                 if value is None:
                     continue
-                if value >= 90:
+                try:
+                    numeric_value = float(value)
+                except (TypeError, ValueError):
+                    continue
+                if numeric_value < 0 or numeric_value > 100:
+                    continue
+                if numeric_value >= 90:
                     events.append(
                         {
                             "date": latest.timestamp,
@@ -930,7 +945,7 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
                             "icon": "alert",
                         }
                     )
-                elif value >= 80:
+                elif numeric_value >= 80:
                     events.append(
                         {
                             "date": latest.timestamp,

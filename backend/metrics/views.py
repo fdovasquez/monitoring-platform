@@ -19,6 +19,18 @@ def bearer_token(request):
     return header[len(prefix) :].strip()
 
 
+def clean_percent(value):
+    if value is None:
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    if numeric < 0 or numeric > 100:
+        return None
+    return numeric
+
+
 class MetricIngestView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -41,6 +53,9 @@ class MetricIngestView(APIView):
         disk_percent = metrics.get("disk_root_percent")
         if disk_percent is None:
             disk_percent = metrics.get("disk_c_percent")
+        cpu_percent = clean_percent(metrics.get("cpu_percent"))
+        memory_percent = clean_percent(metrics.get("memory_percent"))
+        disk_percent = clean_percent(disk_percent)
 
         with transaction.atomic():
             server = resolve_server_for_token(agent_token, data)
@@ -52,8 +67,8 @@ class MetricIngestView(APIView):
                 server=server,
                 timestamp=data["timestamp"],
                 agent_version=data.get("agent_version", ""),
-                cpu_percent=metrics.get("cpu_percent"),
-                memory_percent=metrics.get("memory_percent"),
+                cpu_percent=cpu_percent,
+                memory_percent=memory_percent,
                 disk_percent=disk_percent,
                 uptime_seconds=metrics.get("uptime_seconds"),
                 payload=request.data,
