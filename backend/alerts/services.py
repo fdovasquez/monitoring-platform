@@ -371,11 +371,15 @@ def oracle_database_problem(report):
 def oracle_backup_problem(report):
     backups = report.get("backups") if isinstance(report.get("backups"), dict) else {}
     problems = []
+    latest = backups.get("latest") if isinstance(backups.get("latest"), dict) else {}
+    latest_status = str(latest.get("status") or "").upper()
     if not backups.get("ok"):
-        problems.append("No se detectaron respaldos RMAN")
+        if latest and latest_status and latest_status != "COMPLETED":
+            problems.append(f"Ultimo respaldo RMAN en estado {latest_status}")
+        else:
+            problems.append("No se detectaron respaldos RMAN")
     if backups.get("error"):
         problems.append(f"RMAN: {str(backups.get('error'))[:180]}")
-    latest = backups.get("latest") if isinstance(backups.get("latest"), dict) else {}
     age_hours = latest.get("age_hours")
     try:
         age_value = float(age_hours)

@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/oracle-monitoring-agent.env"
-AGENT_VERSION = "1.0.3-oracle"
+AGENT_VERSION = "1.0.4-oracle"
 
 
 def load_env_file(path):
@@ -244,6 +244,62 @@ def collect_blocking_sessions():
 
 
 def collect_rman_backups():
+    output, error = sql_query(
+        """
+select status || '|' ||
+       input_type || '|' ||
+       to_char(start_time,'YYYY-MM-DD HH24:MI:SS') || '|' ||
+       to_char(end_time,'YYYY-MM-DD HH24:MI:SS') || '|' ||
+       round(elapsed_seconds, 2)
+from (
+  select status, input_type, start_time, end_time, elapsed_seconds
+  from v$rman_backup_job_details
+  where end_time is not null
+  order by end_time desc
+)
+where rownum <= 10;
+""",
+        timeout=45,
+    )
+    entries = []
+    for line in clean_lines(output):
+        parts = [part.strip() for part in line.split("|")]
+        if len(parts) < 5:
+            continue
+        entry = {
+            "status": parts[0],
+            "input_type": parts[1],
+            "start_time": parts[2],
+            "completion_time": parts[3],
+            "elapsed_seconds": parts[4],
+            "source": "v$rman_backup_job_details",
+        }
+        parsed_completion = parse_oracle_datetime(parts[3])
+        if parsed_completion:
+            entry["completion_iso"] = parsed_completion.isoformat()
+            entry["age_hours"] = round((datetime.now(timezone.utc) - parsed_completion).total_seconds() / 3600, 2)
+        entries.append(entry)
+    if entries:
+        latest = entries[0]
+        latest_status = str(latest.get("status", "")).upper()
+        return {
+            "ok": latest_status == "COMPLETED",
+            "latest": latest,
+            "recent": entries,
+            "count": len(entries),
+            "source": "v$rman_backup_job_details",
+            "error": "",
+        }
+    if not error:
+        return {
+            "ok": False,
+            "latest": None,
+            "recent": [],
+            "count": 0,
+            "source": "v$rman_backup_job_details",
+            "error": "",
+        }
+
     script_path = write_temp_script("LIST BACKUP SUMMARY;\nEXIT;\n", suffix=".rman")
     try:
         stdout, stderr, code = run_command(f"{shell_quote(RMAN)} target / cmdfile {shell_quote(script_path)}", timeout=60)
@@ -282,8 +338,16 @@ def collect_rman_backups():
         "latest": latest,
         "recent": entries[-10:],
         "count": len(entries),
+        "source": "rman list backup summary",
         "error": "" if code == 0 else (stderr or stdout)[-500:],
     }
+
+
+def parse_oracle_datetime(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
 
 
 def parse_rman_date(value):
@@ -370,7 +434,11 @@ def evaluate_status(database, listener, tablespaces, fra, backups, blocking, ale
     latest_backup = backups.get("latest") or {}
     age_hours = latest_backup.get("age_hours")
     if not backups.get("ok"):
-        critical.append("No se detectaron respaldos RMAN.")
+        latest_status = str(latest_backup.get("status", "")).upper()
+        if latest_backup and latest_status and latest_status != "COMPLETED":
+            critical.append(f"Ultimo respaldo RMAN en estado {latest_status}.")
+        else:
+            critical.append("No se detectaron respaldos RMAN.")
     elif age_hours is not None and age_hours > BACKUP_CRITICAL_HOURS:
         critical.append(f"Ultimo respaldo RMAN hace {age_hours} horas.")
     elif age_hours is not None and age_hours > BACKUP_WARNING_HOURS:
