@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 
 CONFIG_PATH = "/etc/oracle-monitoring-agent.env"
-AGENT_VERSION = "1.0.4-oracle"
+AGENT_VERSION = "1.0.5-oracle"
 
 
 def load_env_file(path):
@@ -290,16 +290,8 @@ where rownum <= 10;
             "source": "v$rman_backup_job_details",
             "error": "",
         }
-    if not error:
-        return {
-            "ok": False,
-            "latest": None,
-            "recent": [],
-            "count": 0,
-            "source": "v$rman_backup_job_details",
-            "error": "",
-        }
 
+    job_details_error = error
     script_path = write_temp_script("LIST BACKUP SUMMARY;\nEXIT;\n", suffix=".rman")
     try:
         stdout, stderr, code = run_command(f"{shell_quote(RMAN)} target / cmdfile {shell_quote(script_path)}", timeout=60)
@@ -322,10 +314,12 @@ where rownum <= 10;
             "status": parts[3],
             "device_type": parts[4],
             "completion_time": completion,
+            "input_type": "RMAN",
             "pieces": parts[6],
             "copies": parts[7],
             "compressed": parts[8],
             "tag": " ".join(parts[9:]),
+            "source": "rman list backup summary",
         }
         parsed_completion = parse_rman_date(completion)
         if parsed_completion:
@@ -333,13 +327,16 @@ where rownum <= 10;
             entry["age_hours"] = round((datetime.now(timezone.utc) - parsed_completion).total_seconds() / 3600, 2)
         entries.append(entry)
     latest = entries[-1] if entries else None
+    fallback_error = "" if code == 0 else (stderr or stdout)[-500:]
+    if not fallback_error and not entries:
+        fallback_error = job_details_error or "No se encontraron filas en v$rman_backup_job_details ni en RMAN LIST BACKUP SUMMARY."
     return {
         "ok": code == 0 and bool(entries),
         "latest": latest,
         "recent": entries[-10:],
         "count": len(entries),
         "source": "rman list backup summary",
-        "error": "" if code == 0 else (stderr or stdout)[-500:],
+        "error": fallback_error,
     }
 
 
