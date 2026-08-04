@@ -1664,6 +1664,34 @@ if [ -z "$SQLPLUS_VALUE" ]; then SQLPLUS_VALUE="$ORACLE_HOME_VALUE/bin/sqlplus";
 if [ -z "$LSNRCTL_VALUE" ]; then LSNRCTL_VALUE="$ORACLE_HOME_VALUE/bin/lsnrctl"; fi
 if [ -z "$RMAN_VALUE" ]; then RMAN_VALUE="$ORACLE_HOME_VALUE/bin/rman"; fi
 
+FRA_FILESYSTEM_PATH_VALUE="$(
+  su - oracle -c "export ORACLE_HOME=\\"$ORACLE_HOME_VALUE\\"; export ORACLE_SID=\\"$ORACLE_SID_VALUE\\"; export PATH=\\"$ORACLE_HOME_VALUE/bin:\\$PATH\\"; \\"$SQLPLUS_VALUE\\" -s / as sysdba" <<'EOSQL' 2>/dev/null | awk 'NF {{print}}' | tail -n 1
+set heading off
+set feedback off
+set pagesize 0
+set verify off
+set echo off
+select value from v\\$parameter where name = 'db_recovery_file_dest';
+exit
+EOSQL
+)"
+FRA_FILESYSTEM_PATH_VALUE="$(printf '%s' "$FRA_FILESYSTEM_PATH_VALUE" | tr -d '\\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+if [ -n "$FRA_FILESYSTEM_PATH_VALUE" ]; then
+  echo "Ruta FRA detectada desde Oracle: $FRA_FILESYSTEM_PATH_VALUE"
+fi
+if [ -r /dev/tty ]; then
+  if [ -n "$FRA_FILESYSTEM_PATH_VALUE" ]; then
+    printf "Confirma ruta filesystem FRA [%s]: " "$FRA_FILESYSTEM_PATH_VALUE" > /dev/tty
+  else
+    printf "Ruta filesystem FRA opcional, ejemplo /dbase/fra o /dbase/FRA [Enter para autodetectar]: " > /dev/tty
+  fi
+  read -r FRA_INPUT < /dev/tty || true
+  FRA_INPUT="$(printf '%s' "$FRA_INPUT" | tr -d '\\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+  if [ -n "$FRA_INPUT" ]; then
+    FRA_FILESYSTEM_PATH_VALUE="$FRA_INPUT"
+  fi
+fi
+
 download_file "$AGENT_BASE_URL/oracle-agent.py" "$AGENT_SCRIPT"
 download_file "$AGENT_BASE_URL/oracle-agent.service" "$SERVICE_FILE"
 
@@ -1683,7 +1711,7 @@ ORACLE_TABLESPACE_WARNING_PERCENT=85
 ORACLE_TABLESPACE_CRITICAL_PERCENT=95
 ORACLE_FRA_WARNING_PERCENT=80
 ORACLE_FRA_CRITICAL_PERCENT=90
-ORACLE_FRA_FILESYSTEM_PATH=
+ORACLE_FRA_FILESYSTEM_PATH=$FRA_FILESYSTEM_PATH_VALUE
 ORACLE_BACKUP_WARNING_HOURS=24
 ORACLE_BACKUP_CRITICAL_HOURS=48
 EOF
