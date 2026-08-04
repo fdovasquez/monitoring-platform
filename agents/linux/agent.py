@@ -129,10 +129,20 @@ def memory_percent():
         if number.isdigit():
             values[key] = int(number)
     total = values.get("MemTotal", 0)
-    available = values.get("MemAvailable", values.get("MemFree", 0))
     if not total:
         return 0
-    return round((total - available) / total * 100, 2)
+    available = values.get("MemAvailable", 0)
+    if available <= 0 or available > total:
+        available = (
+            values.get("MemFree", 0)
+            + values.get("Buffers", 0)
+            + values.get("Cached", 0)
+            + values.get("SReclaimable", 0)
+            - values.get("Shmem", 0)
+        )
+    available = max(0, min(available, total))
+    percent = (total - available) / total * 100
+    return round(max(0, min(percent, 100)), 2)
 
 
 def uptime_seconds():
@@ -310,7 +320,7 @@ def collect_metrics():
     disks, disk_root_percent = disk_usage()
     return {
         "hostname": HOSTNAME,
-        "agent_version": "1.2.0-stdlib",
+        "agent_version": "1.2.1-stdlib",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "metrics": {
             "cpu_percent": cpu_percent(),

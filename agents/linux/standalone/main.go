@@ -16,7 +16,7 @@ import (
     "time"
 )
 
-const agentVersion = "1.9.0-standalone"
+const agentVersion = "1.9.1-standalone"
 
 var lastPatchCheck time.Time
 var cachedPatchSecurity map[string]interface{}
@@ -64,12 +64,31 @@ func memoryPercent() float64 {
     values := map[string]float64{}
     for _, line := range strings.Split(read("/proc/meminfo"), "\n") {
         fields := strings.Fields(line)
-        if len(fields) >= 2 { values[strings.TrimSuffix(fields[0], ":")] = number(fields[1]) }
+        if len(fields) >= 2 {
+            values[strings.TrimSuffix(fields[0], ":")] = number(fields[1])
+        }
     }
-    if values["MemTotal"] == 0 { return 0 }
+    if values["MemTotal"] <= 0 {
+        return 0
+    }
     available := values["MemAvailable"]
-    if available == 0 { available = values["MemFree"] }
-    return round((values["MemTotal"]-available)/values["MemTotal"]*100, 2)
+    if available <= 0 || available > values["MemTotal"] {
+        available = values["MemFree"] + values["Buffers"] + values["Cached"] + values["SReclaimable"] - values["Shmem"]
+    }
+    if available < 0 {
+        available = 0
+    }
+    if available > values["MemTotal"] {
+        available = values["MemTotal"]
+    }
+    percent := (values["MemTotal"] - available) / values["MemTotal"] * 100
+    if percent < 0 {
+        percent = 0
+    }
+    if percent > 100 {
+        percent = 100
+    }
+    return round(percent, 2)
 }
 
 func disks() ([]map[string]interface{}, float64) {
