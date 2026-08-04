@@ -768,14 +768,43 @@ class DeviceDetailView(LoginRequiredMixin, TemplateView):
             "diagnostics": DeviceDetailView.oracle_diagnostics(oracle),
             "database": oracle.get("database") if isinstance(oracle.get("database"), dict) else {},
             "listener": oracle.get("listener") if isinstance(oracle.get("listener"), dict) else {},
-            "tablespaces": oracle.get("tablespaces", {}).get("items", []) if isinstance(oracle.get("tablespaces"), dict) else [],
-            "fra": oracle.get("fra", {}).get("items", []) if isinstance(oracle.get("fra"), dict) else [],
+            "tablespaces": DeviceDetailView.oracle_storage_items(
+                oracle.get("tablespaces", {}).get("items", []) if isinstance(oracle.get("tablespaces"), dict) else []
+            ),
+            "fra": DeviceDetailView.oracle_storage_items(
+                oracle.get("fra", {}).get("items", []) if isinstance(oracle.get("fra"), dict) else []
+            ),
             "backups": oracle.get("backups") if isinstance(oracle.get("backups"), dict) else {},
             "blocking_sessions": oracle.get("blocking_sessions") if isinstance(oracle.get("blocking_sessions"), dict) else {},
             "alert_log": oracle.get("alert_log") if isinstance(oracle.get("alert_log"), dict) else {},
             "checked_at": oracle.get("timestamp"),
             "agent_version": oracle.get("agent_version", ""),
         }
+
+    @staticmethod
+    def oracle_percent_css(value):
+        try:
+            percent = float(value)
+        except (TypeError, ValueError):
+            percent = 0
+        percent = min(max(percent, 0), 100)
+        return f"{percent:.2f}".rstrip("0").rstrip(".")
+
+    @staticmethod
+    def oracle_storage_items(items):
+        normalized = []
+        for item in items if isinstance(items, list) else []:
+            if not isinstance(item, dict):
+                continue
+            item_copy = dict(item)
+            item_copy["used_percent_css"] = DeviceDetailView.oracle_percent_css(item_copy.get("used_percent"))
+            filesystem_usage = item_copy.get("filesystem_usage")
+            if isinstance(filesystem_usage, dict):
+                filesystem_copy = dict(filesystem_usage)
+                filesystem_copy["used_percent_css"] = DeviceDetailView.oracle_percent_css(filesystem_copy.get("used_percent"))
+                item_copy["filesystem_usage"] = filesystem_copy
+            normalized.append(item_copy)
+        return normalized
 
     @staticmethod
     def oracle_diagnostics(oracle):

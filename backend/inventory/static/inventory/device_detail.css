@@ -1802,6 +1802,41 @@
   background: #2563eb;
 }
 
+.oracle-storage-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.oracle-storage-row .storage-progress {
+  grid-column: 1 / -1;
+}
+
+.oracle-storage-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.oracle-storage-copy span,
+.oracle-storage-copy small,
+.oracle-storage-value small {
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.oracle-storage-value {
+  display: grid;
+  gap: 3px;
+  justify-items: end;
+  text-align: right;
+}
+
+.oracle-storage-value strong {
+  color: var(--detail-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .oracle-progress-row.filesystem-row {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
