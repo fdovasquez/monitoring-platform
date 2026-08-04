@@ -5,101 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Acceso a la plataforma</title>
   </head>
-  <body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fb;margin:0;padding:24px 12px;">
+  <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:#111827;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;margin:0;padding:28px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;background:#ffffff;border:1px solid #d9e2ef;border-radius:12px;overflow:hidden;box-shadow:0 10px 28px rgba(15,23,42,0.08);">
+          <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #dbe3ef;border-radius:14px;overflow:hidden;">
             <tr>
-              <td style="background:#0f172a;padding:24px 28px;">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                  <tr>
-                    <td>
-                      <div style="font-size:20px;line-height:26px;font-weight:700;color:#ffffff;">{{ site_name }}</div>
-                      <div style="font-size:13px;line-height:20px;color:#b8c5d9;margin-top:2px;">{{ site_subtitle }}</div>
-                    </td>
-                    <td align="right" style="font-size:12px;line-height:18px;color:#c7d2e5;text-transform:uppercase;letter-spacing:0.08em;">Nuevo acceso</td>
-                  </tr>
-                </table>
+              <td style="padding:26px 30px 20px;border-bottom:1px solid #edf1f7;">
+                <div style="font-size:18px;line-height:24px;font-weight:700;color:#0f172a;">{{ site_name }}</div>
+                <div style="font-size:13px;line-height:20px;color:#64748b;margin-top:2px;">{{ site_subtitle }}</div>
               </td>
             </tr>
+
             <tr>
-              <td style="padding:28px;">
-                <div style="font-size:12px;line-height:16px;color:#2563eb;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Cuenta creada</div>
-                <h1 style="margin:8px 0 10px;font-size:24px;line-height:32px;color:#0f172a;font-weight:700;">Instrucciones de acceso</h1>
-                <p style="margin:0 0 18px;font-size:15px;line-height:24px;color:#334155;">Hola {{ username }}, se ha creado una cuenta para acceder al portal de monitoreo.</p>
+              <td style="padding:30px;">
+                <div style="font-size:12px;line-height:16px;color:#2563eb;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Nuevo acceso</div>
+                <h1 style="margin:8px 0 10px;font-size:24px;line-height:32px;color:#0f172a;font-weight:700;">Bienvenido a la plataforma</h1>
+                <p style="margin:0 0 22px;font-size:15px;line-height:24px;color:#475569;">Hola {{ username }}, tu cuenta fue creada correctamente. Usa estos datos para ingresar por primera vez.</p>
 
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #dbeafe;border-radius:12px;background:#f8fbff;margin:0 0 18px;">
                   <tr>
-                    <td style="padding:16px 18px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:13px;">Usuario</td>
-                    <td style="padding:16px 18px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:14px;font-weight:700;">{{ account_username }}</td>
+                    <td style="padding:18px 20px 8px;">
+                      <div style="font-size:12px;line-height:16px;color:#64748b;">Usuario</div>
+                      <div style="font-size:17px;line-height:24px;color:#0f172a;font-weight:700;">{{ account_username }}</div>
+                    </td>
                   </tr>
                   <tr>
-                    <td style="padding:16px 18px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:13px;">Contrasena temporal</td>
-                    <td style="padding:16px 18px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:16px;font-family:'Courier New',Courier,monospace;font-weight:700;user-select:all;">{{ temporary_password }}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:16px 18px;color:#64748b;font-size:13px;">Portal</td>
-                    <td style="padding:16px 18px;color:#0f172a;font-size:14px;"><a href="{{ login_url }}" style="color:#2563eb;text-decoration:none;">{{ login_url }}</a></td>
-                  </tr>
-                </table>
-
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;">
-                  <tr>
-                    <td style="padding:14px 18px;color:#9a3412;font-size:13px;line-height:20px;">
-                      <strong>Cambio obligatorio:</strong> esta contrasena es temporal. El portal solicitara cambiarla al primer ingreso antes de permitir navegar por la plataforma.
+                    <td style="padding:8px 20px 18px;">
+                      <div style="font-size:12px;line-height:16px;color:#64748b;">Contrase&ntilde;a temporal</div>
+                      <div style="font-family:'Courier New',Courier,monospace;font-size:18px;line-height:28px;color:#0f172a;font-weight:700;letter-spacing:0.02em;user-select:all;">{{ temporary_password }}</div>
                     </td>
                   </tr>
                 </table>
 
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:22px 0;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;">
-                  <tr>
-                    <td style="padding:18px 20px;">
-                      <div style="font-size:12px;line-height:16px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Linea para archivo hosts</div>
-                      <div style="margin-top:8px;font-family:'Courier New',Courier,monospace;font-size:18px;line-height:26px;font-weight:700;color:#0f172a;user-select:all;">{{ hosts_line }}</div>
-                      <div style="margin-top:8px;font-size:12px;line-height:18px;color:#475569;">Selecciona esta linea para copiarla. Permite que el equipo resuelva el sitio {{ hostname }}.</div>
-                    </td>
-                  </tr>
-                </table>
+                <p style="margin:0 0 20px;font-size:13px;line-height:21px;color:#64748b;">Por seguridad, el portal solicitar&aacute; cambiar esta contrase&ntilde;a antes de continuar navegando.</p>
 
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
-                  <tr>
-                    <td width="50%" valign="top" style="padding:0 8px 0 0;">
-                      <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;background:#ffffff;">
-                        <div style="font-size:14px;line-height:20px;font-weight:700;color:#0f172a;">Windows</div>
-                        <ol style="margin:10px 0 0;padding-left:18px;color:#475569;font-size:13px;line-height:20px;">
-                          <li>Abre Bloc de notas como administrador.</li>
-                          <li>Abre <strong>C:\Windows\System32\drivers\etc\hosts</strong>.</li>
-                          <li>Agrega la linea indicada y guarda.</li>
-                        </ol>
-                      </div>
-                    </td>
-                    <td width="50%" valign="top" style="padding:0 0 0 8px;">
-                      <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;background:#ffffff;">
-                        <div style="font-size:14px;line-height:20px;font-weight:700;color:#0f172a;">Linux o macOS</div>
-                        <ol style="margin:10px 0 0;padding-left:18px;color:#475569;font-size:13px;line-height:20px;">
-                          <li>Edita <strong>/etc/hosts</strong> con permisos de administrador.</li>
-                          <li>Agrega la linea indicada al final.</li>
-                          <li>Guarda y abre el portal.</li>
-                        </ol>
-                      </div>
-                    </td>
-                  </tr>
-                </table>
-
-                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:18px 0 24px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 26px;">
                   <tr>
                     <td bgcolor="#2563eb" style="border-radius:8px;">
-                      <a href="{{ login_url }}" style="display:inline-block;padding:13px 18px;font-size:14px;line-height:18px;color:#ffffff;text-decoration:none;font-weight:700;">Abrir portal</a>
+                      <a href="{{ login_url }}" style="display:inline-block;padding:13px 18px;font-size:14px;line-height:18px;color:#ffffff;text-decoration:none;font-weight:700;">Ingresar al portal</a>
                     </td>
                   </tr>
                 </table>
 
-                <p style="margin:0;font-size:13px;line-height:21px;color:#64748b;">No compartas esta contrasena. Si no solicitaste este acceso, informa al administrador de la plataforma.</p>
+                <div style="border-top:1px solid #edf1f7;padding-top:20px;">
+                  <h2 style="margin:0 0 8px;font-size:16px;line-height:22px;color:#0f172a;font-weight:700;">Si el sitio no abre por nombre</h2>
+                  <p style="margin:0 0 12px;font-size:13px;line-height:21px;color:#64748b;">Agrega esta l&iacute;nea al archivo <strong>hosts</strong> de tu equipo para resolver {{ hostname }}:</p>
+                  <div style="font-family:'Courier New',Courier,monospace;font-size:14px;line-height:22px;color:#0f172a;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;user-select:all;">{{ hosts_line }}</div>
+                  <p style="margin:12px 0 0;font-size:12px;line-height:19px;color:#64748b;">Windows: <strong>C:\Windows\System32\drivers\etc\hosts</strong>. Linux/macOS: <strong>/etc/hosts</strong>.</p>
+                </div>
               </td>
             </tr>
+
             <tr>
-              <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 28px;text-align:center;font-size:12px;line-height:18px;color:#94a3b8;">
+              <td style="background:#f8fafc;border-top:1px solid #edf1f7;padding:15px 28px;text-align:center;font-size:12px;line-height:18px;color:#94a3b8;">
                 {{ site_name }} - Sistema de monitoreo - No responder a este correo
               </td>
             </tr>
