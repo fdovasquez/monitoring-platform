@@ -269,9 +269,24 @@
                 </div>
                 {% with latest_backup=oracle.backups.latest %}
                   <dl>
-                    <div><dt>Ultimo respaldo</dt><dd>{{ latest_backup.completion_time|default:"Sin registro" }}</dd></div>
-                    <div><dt>Tipo</dt><dd>{{ latest_backup.input_type|default:latest_backup.tag|default:"-" }}</dd></div>
-                    <div><dt>Antiguedad</dt><dd>{% if latest_backup.age_hours != None %}{{ latest_backup.age_hours }} h{% else %}-{% endif %}</dd></div>
+                    <div><dt>Ultimo respaldo</dt><dd>{% if latest_backup %}{{ latest_backup.completion_time|default:"Sin registro" }}{% else %}Sin registro{% endif %}</dd></div>
+                    <div>
+                      <dt>Tipo</dt>
+                      <dd>
+                        {% if latest_backup %}
+                          {% if latest_backup.input_type %}
+                            {{ latest_backup.input_type }}
+                          {% elif latest_backup.tag %}
+                            {{ latest_backup.tag }}
+                          {% else %}
+                            -
+                          {% endif %}
+                        {% else %}
+                          -
+                        {% endif %}
+                      </dd>
+                    </div>
+                    <div><dt>Antiguedad</dt><dd>{% if latest_backup and latest_backup.age_hours != None %}{{ latest_backup.age_hours }} h{% else %}-{% endif %}</dd></div>
                     <div><dt>Registrados</dt><dd>{{ oracle.backups.count|default:"0" }}</dd></div>
                   </dl>
                 {% endwith %}
