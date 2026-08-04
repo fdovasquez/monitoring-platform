@@ -4,7 +4,10 @@ Se ha creado una cuenta para acceder a {{ site_name }}.
 
 Datos de acceso:
 - Usuario: {{ account_username }}
+- Contrasena temporal: {{ temporary_password }}
 - Portal: {{ login_url }}
+
+Importante: al iniciar sesion por primera vez, el portal solicitara cambiar esta contrasena antes de continuar.
 
 Para ingresar desde una red donde el nombre del sitio no resuelve por DNS, agrega esta linea al archivo hosts de tu equipo:
 
@@ -19,7 +22,7 @@ Linux o macOS:
 1. Edita /etc/hosts con permisos de administrador.
 2. Agrega la linea indicada al final del archivo y guarda.
 
-La contrasena sera entregada por el administrador mediante un canal separado.
+Esta contrasena es temporal. No la compartas y cambiala al primer ingreso.
 
 {{ site_name }} - {{ site_subtitle }}
 No responder a este correo.

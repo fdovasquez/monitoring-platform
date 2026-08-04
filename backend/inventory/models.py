@@ -45,6 +45,7 @@ class UserProfile(models.Model):
     position = models.CharField(max_length=120, blank=True)
     photo = models.ImageField(upload_to=profile_photo_path, blank=True, null=True)
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default=THEME_LIGHT)
+    must_change_password = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

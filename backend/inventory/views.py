@@ -88,7 +88,7 @@ def monitor_hosts_entry_ip(hostname):
     return resolved_ip if is_hosts_entry_ip(resolved_ip) else ""
 
 
-def send_user_welcome_email(user, request):
+def send_user_welcome_email(user, temporary_password, request):
     if not user.email:
         raise ValueError("El usuario no tiene correo electronico registrado.")
     smtp_settings = SmtpSettings.load()
@@ -103,6 +103,7 @@ def send_user_welcome_email(user, request):
         "site_subtitle": site_settings.subtitle,
         "username": user.get_full_name() or user.username,
         "account_username": user.username,
+        "temporary_password": temporary_password,
         "login_url": request.build_absolute_uri(reverse("login")),
         "hostname": hostname,
         "monitor_ip": monitor_ip,
@@ -1729,8 +1730,11 @@ class UserCreateView(LoginRequiredMixin, AdminRoleRequiredMixin, TemplateView):
         form = UserCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            profile.must_change_password = True
+            profile.save(update_fields=["must_change_password", "updated_at"])
             try:
-                send_user_welcome_email(user, request)
+                send_user_welcome_email(user, form.cleaned_data["password"], request)
                 messages.success(request, "Usuario creado correctamente. Se enviaron las instrucciones de acceso por correo.")
             except Exception as exc:
                 messages.warning(request, f"Usuario creado correctamente, pero no se pudo enviar el correo de instrucciones: {exc}")

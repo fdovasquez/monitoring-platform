@@ -39,6 +39,12 @@
       </section>
     {% endif %}
 
+    {% if account_profile.must_change_password %}
+      <section class="messages-row profile-messages">
+        <div class="message warning">Tu cuenta usa una contrase&ntilde;a temporal. Debes cambiarla para continuar usando la plataforma.</div>
+      </section>
+    {% endif %}
+
     <section class="profile-grid">
       <form class="profile-card" method="post" enctype="multipart/form-data" data-dirty-form data-loading-form>
         {% csrf_token %}

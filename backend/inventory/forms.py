@@ -188,6 +188,10 @@ class AccountPasswordChangeForm(forms.Form):
     def save(self):
         self.user.set_password(self.cleaned_data["new_password"])
         self.user.save(update_fields=["password"])
+        profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        if profile.must_change_password:
+            profile.must_change_password = False
+            profile.save(update_fields=["must_change_password", "updated_at"])
         return self.user
 
 

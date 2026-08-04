@@ -35,8 +35,20 @@
                     <td style="padding:16px 18px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:14px;font-weight:700;">{{ account_username }}</td>
                   </tr>
                   <tr>
+                    <td style="padding:16px 18px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:13px;">Contrasena temporal</td>
+                    <td style="padding:16px 18px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:16px;font-family:'Courier New',Courier,monospace;font-weight:700;user-select:all;">{{ temporary_password }}</td>
+                  </tr>
+                  <tr>
                     <td style="padding:16px 18px;color:#64748b;font-size:13px;">Portal</td>
                     <td style="padding:16px 18px;color:#0f172a;font-size:14px;"><a href="{{ login_url }}" style="color:#2563eb;text-decoration:none;">{{ login_url }}</a></td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;">
+                  <tr>
+                    <td style="padding:14px 18px;color:#9a3412;font-size:13px;line-height:20px;">
+                      <strong>Cambio obligatorio:</strong> esta contrasena es temporal. El portal solicitara cambiarla al primer ingreso antes de permitir navegar por la plataforma.
+                    </td>
                   </tr>
                 </table>
 
@@ -83,7 +95,7 @@
                   </tr>
                 </table>
 
-                <p style="margin:0;font-size:13px;line-height:21px;color:#64748b;">Por seguridad, la contrasena sera entregada por el administrador mediante un canal separado.</p>
+                <p style="margin:0;font-size:13px;line-height:21px;color:#64748b;">No compartas esta contrasena. Si no solicitaste este acceso, informa al administrador de la plataforma.</p>
               </td>
             </tr>
             <tr>
