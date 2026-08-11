@@ -408,14 +408,31 @@ class CorporatePasswordResetView(PasswordResetView):
     email_template_name = "inventory/emails/password_reset_email.txt"
     html_email_template_name = "inventory/emails/password_reset_email.html"
     subject_template_name = "inventory/emails/password_reset_subject.txt"
-    success_url = reverse_lazy("password-reset-done")
+    success_url = reverse_lazy("password-reset")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         site_settings = SiteSettings.load()
         context["site_name"] = site_settings.site_name
         context["site_subtitle"] = site_settings.subtitle
+        context["reset_link_sent"] = self.request.GET.get("sent") == "1"
         return context
+
+    def form_valid(self, form):
+        form.save(**self.get_form_kwargs_for_save())
+        return redirect(f"{reverse('password-reset')}?sent=1")
+
+    def get_form_kwargs_for_save(self):
+        return {
+            "use_https": self.request.is_secure(),
+            "token_generator": self.token_generator,
+            "from_email": self.from_email,
+            "email_template_name": self.email_template_name,
+            "subject_template_name": self.subject_template_name,
+            "request": self.request,
+            "html_email_template_name": self.html_email_template_name,
+            "extra_email_context": self.extra_email_context,
+        }
 
 
 class CorporatePasswordResetDoneView(PasswordResetDoneView):
