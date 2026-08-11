@@ -7,19 +7,26 @@ from django import forms
 from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.contrib.auth.views import (
+    PasswordResetCompleteView,
+    PasswordResetConfirmView,
+    PasswordResetDoneView,
+    PasswordResetView,
+)
 from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import TemplateView
 
 from alerts.models import SmtpSettings
 from alerts.services import sender, smtp_backend
-from .models import SiteSettings
+from .models import SiteSettings, UserProfile
 
 
 def default_login_redirect():
@@ -87,6 +94,67 @@ class LoginCodeForm(forms.Form):
         if not code.isdigit():
             raise forms.ValidationError("Ingresa el codigo numerico de 6 digitos.")
         return code
+
+
+class CorporatePasswordResetForm(PasswordResetForm):
+    email = forms.EmailField(label="Correo electronico", max_length=254)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["email"].widget.attrs.update({
+            "placeholder": "usuario@empresa.cl",
+            "autocomplete": "email",
+            "autofocus": "autofocus",
+        })
+
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        smtp_settings = SmtpSettings.load()
+        if not smtp_settings.is_configured:
+            raise ValueError("La configuracion SMTP esta incompleta.")
+
+        site_settings = SiteSettings.load()
+        context.update({
+            "display_name": context["user"].get_full_name() or context["user"].username,
+            "site_name": site_settings.site_name,
+            "site_subtitle": site_settings.subtitle,
+        })
+        subject = render_to_string(subject_template_name, context)
+        subject = "".join(subject.splitlines())
+        body = render_to_string(email_template_name, context)
+        html_body = render_to_string(html_email_template_name, context) if html_email_template_name else None
+
+        message = EmailMultiAlternatives(
+            subject=subject,
+            body=body,
+            from_email=sender(smtp_settings),
+            to=[to_email],
+            connection=smtp_backend(smtp_settings),
+        )
+        if html_body:
+            message.attach_alternative(html_body, "text/html")
+        message.send()
+
+
+class CorporateSetPasswordForm(SetPasswordForm):
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        self.fields["new_password1"].widget.attrs.update({
+            "placeholder": "Nueva contrasena",
+            "autocomplete": "new-password",
+            "autofocus": "autofocus",
+        })
+        self.fields["new_password2"].widget.attrs.update({
+            "placeholder": "Confirma la nueva contrasena",
+            "autocomplete": "new-password",
+        })
 
 
 def safe_next_url(request):
@@ -302,3 +370,62 @@ class CorporateLogoutView(LoginRequiredMixin, TemplateView):
     def post(self, request):
         logout(request)
         return redirect("login")
+
+
+class CorporatePasswordResetView(PasswordResetView):
+    form_class = CorporatePasswordResetForm
+    template_name = "inventory/password_reset.html"
+    email_template_name = "inventory/emails/password_reset_email.txt"
+    html_email_template_name = "inventory/emails/password_reset_email.html"
+    subject_template_name = "inventory/emails/password_reset_subject.txt"
+    success_url = reverse_lazy("password-reset-done")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        site_settings = SiteSettings.load()
+        context["site_name"] = site_settings.site_name
+        context["site_subtitle"] = site_settings.subtitle
+        return context
+
+
+class CorporatePasswordResetDoneView(PasswordResetDoneView):
+    template_name = "inventory/password_reset_done.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        site_settings = SiteSettings.load()
+        context["site_name"] = site_settings.site_name
+        context["site_subtitle"] = site_settings.subtitle
+        return context
+
+
+class CorporatePasswordResetConfirmView(PasswordResetConfirmView):
+    form_class = CorporateSetPasswordForm
+    template_name = "inventory/password_reset_confirm.html"
+    success_url = reverse_lazy("password-reset-complete")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        profile, _ = UserProfile.objects.get_or_create(user=form.user)
+        if profile.must_change_password:
+            profile.must_change_password = False
+            profile.save(update_fields=["must_change_password", "updated_at"])
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        site_settings = SiteSettings.load()
+        context["site_name"] = site_settings.site_name
+        context["site_subtitle"] = site_settings.subtitle
+        return context
+
+
+class CorporatePasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = "inventory/password_reset_complete.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        site_settings = SiteSettings.load()
+        context["site_name"] = site_settings.site_name
+        context["site_subtitle"] = site_settings.subtitle
+        return context

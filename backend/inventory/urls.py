@@ -1,7 +1,15 @@
 from django.urls import path
 from django.core.exceptions import PermissionDenied
 
-from .auth_views import CorporateLoginView, CorporateLogoutView, LoginCodeVerifyView
+from .auth_views import (
+    CorporateLoginView,
+    CorporateLogoutView,
+    CorporatePasswordResetCompleteView,
+    CorporatePasswordResetConfirmView,
+    CorporatePasswordResetDoneView,
+    CorporatePasswordResetView,
+    LoginCodeVerifyView,
+)
 from .views import (
     AccountPasswordChangeDoneView,
     AccountPasswordChangeView,
@@ -51,6 +59,14 @@ def device_manager_required(view_func):
 urlpatterns = [
     path("login/", CorporateLoginView.as_view(), name="login"),
     path("login/verify/", LoginCodeVerifyView.as_view(), name="login-verify"),
+    path("password/reset/", CorporatePasswordResetView.as_view(), name="password-reset"),
+    path("password/reset/done/", CorporatePasswordResetDoneView.as_view(), name="password-reset-done"),
+    path(
+        "password/reset/<uidb64>/<token>/",
+        CorporatePasswordResetConfirmView.as_view(),
+        name="password-reset-confirm",
+    ),
+    path("password/reset/complete/", CorporatePasswordResetCompleteView.as_view(), name="password-reset-complete"),
     path("dashboard/", ExecutiveDashboardView.as_view(), name="executive-dashboard"),
     path("cmdb/", CMDBView.as_view(), name="cmdb"),
     path("devices/", DeviceListView.as_view(), name="device-list"),
