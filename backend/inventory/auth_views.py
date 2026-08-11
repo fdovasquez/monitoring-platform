@@ -97,15 +97,32 @@ class LoginCodeForm(forms.Form):
 
 
 class CorporatePasswordResetForm(PasswordResetForm):
-    email = forms.EmailField(label="Correo electronico", max_length=254)
+    email = forms.CharField(label="Usuario o correo", max_length=254)
 
     def __init__(self, *args, **kwargs):
+        self.user_cache = None
         super().__init__(*args, **kwargs)
         self.fields["email"].widget.attrs.update({
-            "placeholder": "usuario@empresa.cl",
+            "placeholder": "usuario@empresa.cl o usuario",
             "autocomplete": "email",
             "autofocus": "autofocus",
         })
+
+    def clean_email(self):
+        identifier = self.cleaned_data["email"].strip()
+        user = User.objects.filter(email__iexact=identifier, is_active=True).first()
+        if not user:
+            user = User.objects.filter(username__iexact=identifier, is_active=True).first()
+        if not user or not user.has_usable_password():
+            raise forms.ValidationError("El usuario o correo no existe.")
+        if not user.email:
+            raise forms.ValidationError("El usuario existe, pero no tiene correo electronico registrado.")
+        self.user_cache = user
+        return user.email
+
+    def get_users(self, email):
+        if self.user_cache:
+            yield self.user_cache
 
     def send_mail(
         self,
