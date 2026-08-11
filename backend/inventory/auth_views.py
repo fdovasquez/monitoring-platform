@@ -173,6 +173,19 @@ class CorporateSetPasswordForm(SetPasswordForm):
             "autocomplete": "new-password",
         })
 
+    def clean_new_password1(self):
+        password = self.cleaned_data.get("new_password1", "")
+        if password:
+            if not any(character.isupper() for character in password):
+                raise forms.ValidationError("La nueva contrasena debe incluir al menos una mayuscula.")
+            if not any(character.islower() for character in password):
+                raise forms.ValidationError("La nueva contrasena debe incluir al menos una minuscula.")
+            if not any(character.isdigit() for character in password):
+                raise forms.ValidationError("La nueva contrasena debe incluir al menos un numero.")
+            if not any(not character.isalnum() for character in password):
+                raise forms.ValidationError("La nueva contrasena debe incluir al menos un caracter especial.")
+        return password
+
 
 def safe_next_url(request):
     next_url = request.POST.get("next") or request.GET.get("next") or default_login_redirect()

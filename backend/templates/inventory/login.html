@@ -61,7 +61,8 @@
             {{ form.password }}
             {% for error in form.password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             <div class="login-form-meta">
-              <a href="{% url 'password-reset' %}">Recuperar contrasena</a>
+              <span>Si tienes problemas con tu contrasena,</span>
+              <a href="{% url 'password-reset' %}">recuperala aca</a>
             </div>
 
             <button type="submit">Continuar</button>

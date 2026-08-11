@@ -107,9 +107,15 @@ h1 {
 
 .login-form-meta {
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   justify-content: flex-end;
   margin-top: -2px;
   font-size: 13px;
+}
+
+.login-form-meta span {
+  color: var(--muted);
 }
 
 .login-form-meta a,
@@ -187,6 +193,98 @@ button:active {
   color: #991b1b;
   background: #fef2f2;
   border-color: #fecaca;
+}
+
+.password-strength {
+  position: relative;
+  min-height: 34px;
+  padding: 8px 12px;
+  overflow: hidden;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+}
+
+.password-strength::before {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  content: "";
+  background: #eef2f7;
+}
+
+.password-strength span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 14%;
+  background: #ef4444;
+  transition: width .2s ease, background .2s ease;
+}
+
+.password-strength strong {
+  position: relative;
+  z-index: 1;
+  color: #0f172a;
+  font-size: 12px;
+}
+
+.password-strength[data-level="media"] span {
+  background: #f59e0b;
+}
+
+.password-strength[data-level="fuerte"] span {
+  background: #22c55e;
+}
+
+.password-checklist {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 4px;
+  padding: 12px;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  list-style: none;
+}
+
+.password-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.password-checklist li::before {
+  display: inline-grid;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  color: #94a3b8;
+  content: "!";
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  font-size: 11px;
+}
+
+.password-checklist li.valid {
+  color: #047857;
+}
+
+.password-checklist li.valid::before {
+  color: #ffffff;
+  content: "OK";
+  background: #10b981;
+  border-color: #10b981;
+  font-size: 8px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  background: #94a3b8;
 }
 
 .secondary-link {
