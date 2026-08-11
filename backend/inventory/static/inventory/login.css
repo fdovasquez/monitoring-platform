@@ -109,8 +109,8 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  justify-content: flex-end;
-  margin-top: -2px;
+  justify-content: center;
+  margin-top: 2px;
   font-size: 13px;
 }
 

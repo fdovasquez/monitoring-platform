@@ -60,12 +60,11 @@
             <label for="{{ form.password.id_for_label }}">Contraseña</label>
             {{ form.password }}
             {% for error in form.password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            <div class="login-form-meta">
-              <span>Si tienes problemas con tu contraseña,</span>
-              <a href="{% url 'password-reset' %}">recupérala acá</a>
-            </div>
 
             <button type="submit">Continuar</button>
+            <div class="login-form-meta">
+              <a href="{% url 'password-reset' %}">Recuperar contraseña</a>
+            </div>
           </form>
         {% endif %}
       </div>
