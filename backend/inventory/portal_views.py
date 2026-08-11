@@ -1,6 +1,7 @@
 import csv
 from datetime import timedelta
 
+from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, OuterRef, Subquery
 from django.http import HttpResponse
@@ -267,7 +268,8 @@ class PortalAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def handle_no_permission(self):
         if self.request.user.is_authenticated:
-            return redirect("device-list")
+            logout(self.request)
+            return redirect("login")
         return super().handle_no_permission()
 
 
