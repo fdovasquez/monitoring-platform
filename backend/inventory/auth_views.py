@@ -416,6 +416,7 @@ class CorporatePasswordResetView(PasswordResetView):
         context["site_name"] = site_settings.site_name
         context["site_subtitle"] = site_settings.subtitle
         context["reset_link_sent"] = self.request.GET.get("sent") == "1"
+        context["reset_password_complete"] = self.request.GET.get("complete") == "1"
         return context
 
     def form_valid(self, form):
@@ -449,7 +450,7 @@ class CorporatePasswordResetDoneView(PasswordResetDoneView):
 class CorporatePasswordResetConfirmView(PasswordResetConfirmView):
     form_class = CorporateSetPasswordForm
     template_name = "inventory/password_reset_confirm.html"
-    success_url = reverse_lazy("password-reset-complete")
+    success_url = reverse_lazy("password-reset")
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -458,6 +459,9 @@ class CorporatePasswordResetConfirmView(PasswordResetConfirmView):
             profile.must_change_password = False
             profile.save(update_fields=["must_change_password", "updated_at"])
         return response
+
+    def get_success_url(self):
+        return f"{reverse('password-reset')}?complete=1"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
