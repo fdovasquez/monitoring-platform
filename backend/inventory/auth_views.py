@@ -37,7 +37,7 @@ def default_login_redirect():
 
 class CorporateLoginForm(forms.Form):
     identifier = forms.CharField(label="Usuario o correo", max_length=254)
-    password = forms.CharField(label="Contrasena", widget=forms.PasswordInput)
+    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
 
     def __init__(self, request=None, *args, **kwargs):
         self.request = request
@@ -49,7 +49,7 @@ class CorporateLoginForm(forms.Form):
             "autofocus": "autofocus",
         })
         self.fields["password"].widget.attrs.update({
-            "placeholder": "Ingresa tu contrasena",
+            "placeholder": "Ingresa tu contraseña",
             "autocomplete": "current-password",
         })
 
@@ -68,7 +68,7 @@ class CorporateLoginForm(forms.Form):
 
         self.user_cache = authenticate(self.request, username=username, password=password)
         if self.user_cache is None:
-            raise forms.ValidationError("Usuario o contrasena incorrectos.")
+            raise forms.ValidationError("Usuario o contraseña incorrectos.")
         if not self.user_cache.is_active:
             raise forms.ValidationError("La cuenta esta desactivada.")
         return cleaned_data
@@ -164,12 +164,12 @@ class CorporateSetPasswordForm(SetPasswordForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         self.fields["new_password1"].widget.attrs.update({
-            "placeholder": "Nueva contrasena",
+            "placeholder": "Nueva contraseña",
             "autocomplete": "new-password",
             "autofocus": "autofocus",
         })
         self.fields["new_password2"].widget.attrs.update({
-            "placeholder": "Confirma la nueva contrasena",
+            "placeholder": "Confirma la nueva contraseña",
             "autocomplete": "new-password",
         })
 
@@ -177,13 +177,13 @@ class CorporateSetPasswordForm(SetPasswordForm):
         password = self.cleaned_data.get("new_password1", "")
         if password:
             if not any(character.isupper() for character in password):
-                raise forms.ValidationError("La nueva contrasena debe incluir al menos una mayuscula.")
+                raise forms.ValidationError("La nueva contraseña debe incluir al menos una mayúscula.")
             if not any(character.islower() for character in password):
-                raise forms.ValidationError("La nueva contrasena debe incluir al menos una minuscula.")
+                raise forms.ValidationError("La nueva contraseña debe incluir al menos una minúscula.")
             if not any(character.isdigit() for character in password):
-                raise forms.ValidationError("La nueva contrasena debe incluir al menos un numero.")
+                raise forms.ValidationError("La nueva contraseña debe incluir al menos un número.")
             if not any(not character.isalnum() for character in password):
-                raise forms.ValidationError("La nueva contrasena debe incluir al menos un caracter especial.")
+                raise forms.ValidationError("La nueva contraseña debe incluir al menos un carácter especial.")
         return password
 
 

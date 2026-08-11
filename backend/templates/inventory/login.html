@@ -57,12 +57,12 @@
             {{ form.identifier }}
             {% for error in form.identifier.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
 
-            <label for="{{ form.password.id_for_label }}">Contrasena</label>
+            <label for="{{ form.password.id_for_label }}">Contraseña</label>
             {{ form.password }}
             {% for error in form.password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             <div class="login-form-meta">
-              <span>Si tienes problemas con tu contrasena,</span>
-              <a href="{% url 'password-reset' %}">recuperala aca</a>
+              <span>Si tienes problemas con tu contraseña,</span>
+              <a href="{% url 'password-reset' %}">recupérala acá</a>
             </div>
 
             <button type="submit">Continuar</button>
