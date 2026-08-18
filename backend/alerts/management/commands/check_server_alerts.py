@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from alerts.models import AlertEvent, AlertRule, ServerMonitorAssignment, SmtpSettings
-from alerts.services import send_email
+from alerts.services import can_notify_rule, mark_rule_notified, send_email
 from inventory.models import Server
 
 
@@ -39,8 +39,6 @@ class Command(BaseCommand):
 
     def open_offline_event(self, rule, server, threshold_minutes, settings):
         event = AlertEvent.objects.filter(rule=rule, server=server, is_resolved=False).first()
-        if event and not rule.can_notify():
-            return False
 
         minutes_without_report = self.minutes_without_report(server)
         message = (
@@ -48,12 +46,14 @@ class Command(BaseCommand):
             f"Umbral configurado: {threshold_minutes} minutos."
         )
         if not event:
-            AlertEvent.objects.create(
+            event = AlertEvent.objects.create(
                 rule=rule,
                 server=server,
                 value=minutes_without_report,
                 message=message,
             )
+        elif not can_notify_rule(rule, server, rule.service_name, event):
+            return False
 
         recipients = rule.recipient_list()
         if not recipients:
@@ -88,8 +88,7 @@ class Command(BaseCommand):
                     ("Umbral configurado", f"{threshold_minutes} minutos"),
                 ],
             )
-            rule.last_notified_at = timezone.now()
-            rule.save(update_fields=["last_notified_at", "updated_at"])
+            mark_rule_notified(rule)
             return True
         except Exception:
             return False

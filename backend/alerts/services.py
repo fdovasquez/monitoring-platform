@@ -11,6 +11,13 @@ from django.utils import timezone
 from .models import AlertEmailLog, AlertEvent, AlertRule, ServerMonitorAssignment, SmtpSettings
 
 
+MIN_REMINDER_INTERVALS = {
+    AlertRule.PRIORITY_CRITICAL: 60,
+    AlertRule.PRIORITY_WARNING: 240,
+    AlertRule.PRIORITY_INFO: 1440,
+}
+
+
 def smtp_backend(settings):
     return EmailBackend(
         host=settings.host,
@@ -274,15 +281,36 @@ def threshold_triggered(rule, value):
     return value > rule.threshold
 
 
-def can_notify_rule(rule, server, service_name=""):
-    cutoff = timezone.now() - timezone.timedelta(minutes=rule.min_interval_minutes)
-    return not AlertEmailLog.objects.filter(
+def alert_reminder_interval_minutes(rule):
+    try:
+        configured = int(rule.notification_frequency_minutes or rule.min_interval_minutes or 0)
+    except (TypeError, ValueError):
+        configured = 0
+    severity_floor = MIN_REMINDER_INTERVALS.get(rule.priority, 60)
+    if configured <= 0:
+        return severity_floor
+    return max(configured, severity_floor)
+
+
+def can_notify_rule(rule, server, service_name="", event=None):
+    logs = AlertEmailLog.objects.filter(
         alert_type=rule.event_type,
         server=server,
         service_name=service_name,
         status=AlertEmailLog.STATUS_SENT,
-        created_at__gte=cutoff,
-    ).exists()
+    )
+    if event:
+        logs = logs.filter(created_at__gte=event.created_at)
+    last_sent_at = logs.order_by("-created_at").values_list("created_at", flat=True).first()
+    if not last_sent_at:
+        return True
+    wait_until = last_sent_at + timezone.timedelta(minutes=alert_reminder_interval_minutes(rule))
+    return timezone.now() >= wait_until
+
+
+def mark_rule_notified(rule):
+    rule.last_notified_at = timezone.now()
+    rule.save(update_fields=["last_notified_at", "updated_at"])
 
 
 def selected_metric_value(rule, values):
@@ -321,10 +349,11 @@ def upsert_metric_event(rule, sample, selected):
 
 def resolve_metric_event(rule, server):
     resolved_at = timezone.now()
-    AlertEvent.objects.filter(rule=rule, server=server, is_resolved=False).update(
+    count = AlertEvent.objects.filter(rule=rule, server=server, is_resolved=False).update(
         is_resolved=True,
         resolved_at=resolved_at,
     )
+    return count, resolved_at
 
 
 def upsert_application_event(rule, server, value, message):
@@ -346,10 +375,45 @@ def upsert_application_event(rule, server, value, message):
 
 def resolve_application_event(rule, server):
     resolved_at = timezone.now()
-    AlertEvent.objects.filter(rule=rule, server=server, is_resolved=False).update(
+    count = AlertEvent.objects.filter(rule=rule, server=server, is_resolved=False).update(
         is_resolved=True,
         resolved_at=resolved_at,
     )
+    return count, resolved_at
+
+
+def send_recovery_notification(settings, rule, server, resolved_at, event_label=None, value=None):
+    recipients = rule.recipient_list()
+    if not recipients:
+        return False
+    value_text = "-" if value is None else f"{value:.2f}%"
+    label = event_label or rule.get_event_type_display()
+    body = (
+        f"Servidor: {server.hostname}\n"
+        f"Evento: {label}\n"
+        f"Estado: Normalizado\n"
+        f"Valor actual: {value_text}\n"
+        f"Fecha recuperacion: {timezone.localtime(resolved_at).strftime('%Y-%m-%d %H:%M:%S')}\n"
+    )
+    send_email(
+        settings,
+        recipients,
+        f"[Recuperado] {rule.name} - {server.hostname}",
+        body,
+        f"{rule.event_type}_recovered",
+        AlertRule.PRIORITY_INFO,
+        server,
+        rule.service_name,
+        title="Alerta recuperada",
+        details=[
+            ("Servidor", server.hostname),
+            ("Evento", label),
+            ("Estado", "Normalizado"),
+            ("Valor actual", value_text),
+            ("Fecha de recuperacion", timezone.localtime(resolved_at).strftime("%Y-%m-%d %H:%M:%S")),
+        ],
+    )
+    return True
 
 
 def oracle_database_problem(report):
@@ -413,13 +477,18 @@ def evaluate_oracle_report(server, report, timestamp):
         for assignment in assignments:
             rule = assignment.rule
             if not problems:
-                resolve_application_event(rule, server)
+                resolved_count, resolved_at = resolve_application_event(rule, server)
+                if resolved_count:
+                    try:
+                        send_recovery_notification(settings, rule, server, resolved_at, label)
+                    except Exception:
+                        pass
                 continue
 
             message = f"{label}: {'; '.join(problems[:3])}"
-            upsert_application_event(rule, server, 1, message)
+            event = upsert_application_event(rule, server, 1, message)
             recipients = rule.recipient_list()
-            if not recipients or not can_notify_rule(rule, server, rule.service_name or event_type):
+            if not recipients or not can_notify_rule(rule, server, rule.service_name or event_type, event):
                 continue
 
             try:
@@ -445,8 +514,7 @@ def evaluate_oracle_report(server, report, timestamp):
                         ("Fecha", timezone.localtime(timestamp).strftime("%Y-%m-%d %H:%M:%S")),
                     ],
                 )
-                rule.last_notified_at = timezone.now()
-                rule.save(update_fields=["last_notified_at", "updated_at"])
+                mark_rule_notified(rule)
             except Exception:
                 pass
 
@@ -473,15 +541,21 @@ def evaluate_metric_sample(sample):
             if threshold_triggered(rule, item["value"])
         ]
         if not triggered_values:
-            resolve_metric_event(rule, sample.server)
+            resolved_count, resolved_at = resolve_metric_event(rule, sample.server)
+            if resolved_count:
+                value = value_for_rule(sample, rule)
+                try:
+                    send_recovery_notification(settings, rule, sample.server, resolved_at, rule.get_event_type_display(), value)
+                except Exception:
+                    pass
             continue
 
         selected_active = selected_metric_value(rule, triggered_values)
-        upsert_metric_event(rule, sample, selected_active)
+        event = upsert_metric_event(rule, sample, selected_active)
 
         notifiable_values = [
             item for item in values
-            if threshold_triggered(rule, item["value"]) and can_notify_rule(rule, sample.server, item["target"])
+            if threshold_triggered(rule, item["value"]) and can_notify_rule(rule, sample.server, item["target"], event)
         ]
         if not notifiable_values:
             continue
@@ -519,8 +593,7 @@ def evaluate_metric_sample(sample):
                     ("Fecha", timezone.localtime(sample.timestamp).strftime("%Y-%m-%d %H:%M:%S")),
                 ],
             )
-            rule.last_notified_at = timezone.now()
-            rule.save(update_fields=["last_notified_at", "updated_at"])
+            mark_rule_notified(rule)
         except Exception:
             pass
 
