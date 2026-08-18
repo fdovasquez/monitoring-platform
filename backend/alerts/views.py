@@ -471,7 +471,7 @@ def ensure_default_monitors():
         },
     ]
     for data in defaults:
-        AlertRule.objects.get_or_create(
+        rule, created = AlertRule.objects.get_or_create(
             name=data["name"],
             defaults={
                 **data,
@@ -479,6 +479,16 @@ def ensure_default_monitors():
                 "recipients": "",
             },
         )
+        if not created:
+            updates = {}
+            if rule.notification_frequency_minutes < data["notification_frequency_minutes"]:
+                updates["notification_frequency_minutes"] = data["notification_frequency_minutes"]
+            if rule.min_interval_minutes < data["min_interval_minutes"]:
+                updates["min_interval_minutes"] = data["min_interval_minutes"]
+            if updates:
+                for field, value in updates.items():
+                    setattr(rule, field, value)
+                rule.save(update_fields=[*updates, "updated_at"])
 
 
 class AlertHistoryExportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
