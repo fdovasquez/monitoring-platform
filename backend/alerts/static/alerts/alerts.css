@@ -1188,3 +1188,178 @@
 body :where(h1, h2, h3, h4, h5, h6, strong, b, th, label, button, summary, .tabs a, .submit-button, .ghost-button, .danger-button, .alert-pill, .stat-card strong) {
   font-weight: 400 !important;
 }
+
+.alert-contacts-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.contact-total {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.contact-search {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+}
+
+.contact-search label {
+  margin: 0;
+  color: #334155;
+  font-size: 13px;
+}
+
+.contact-search > div {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.contact-search input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.contact-list {
+  display: grid;
+  gap: 12px;
+}
+
+.contact-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
+}
+
+.contact-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.contact-card-head h3,
+.contact-card-head p {
+  margin: 0;
+}
+
+.contact-card-head h3 {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 500 !important;
+}
+
+.contact-card-head p {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.contact-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #2563eb;
+  font-size: 11px;
+  letter-spacing: .04em;
+}
+
+.contact-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.contact-summary span {
+  display: grid;
+  gap: 3px;
+  min-height: 58px;
+  padding: 10px 12px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.contact-summary strong {
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.contact-rule-list {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.contact-rule-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 62px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.contact-rule-row:last-child {
+  border-bottom: 0;
+}
+
+.contact-rule-row > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 9px;
+  align-items: center;
+}
+
+.contact-rule-row strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 500 !important;
+}
+
+.contact-rule-row small {
+  grid-column: 2;
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .contact-search > div,
+  .contact-card-head,
+  .contact-summary,
+  .contact-rule-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .contact-card-head form,
+  .contact-card-head .danger-button,
+  .contact-rule-row form,
+  .contact-rule-row .ghost-button {
+    width: 100%;
+  }
+}

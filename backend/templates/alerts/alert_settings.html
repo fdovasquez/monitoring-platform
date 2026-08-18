@@ -52,6 +52,7 @@
         <a class="{% if active_tab == 'monitors' %}active{% endif %}" href="?tab=monitors">Monitores</a>
         <a class="{% if active_tab == 'server_monitors' %}active{% endif %}" href="?tab=server_monitors">Monitores por servidor</a>
         <a class="{% if active_tab == 'recipients' %}active{% endif %}" href="?tab=recipients">Destinatarios globales</a>
+        <a class="{% if active_tab == 'contacts' %}active{% endif %}" href="?tab=contacts">Contactos</a>
       {% endif %}
       <a class="{% if active_tab == 'history' %}active{% endif %}" href="?tab=history">Historial de alertas</a>
     </nav>
@@ -86,6 +87,72 @@
             <button class="ghost-button" type="submit" name="action" value="bulk_remove_recipients" title="Quitar estos correos de todas las alertas">Quitar</button>
           </div>
         </form>
+      </section>
+    {% endif %}
+
+    {% if active_tab == 'contacts' %}
+      <section class="profile-card alert-contacts-panel">
+        <div class="profile-card-head">
+          <div>
+            <h2>Contactos de alerta</h2>
+            <p>Consulta que correos reciben alertas y quita destinatarios de forma individual o masiva.</p>
+          </div>
+          <span class="contact-total">{{ contact_count }} contacto(s)</span>
+        </div>
+        <form class="contact-search" method="get">
+          <input type="hidden" name="tab" value="contacts">
+          <label for="contact-search-input">Buscar correo</label>
+          <div>
+            <input id="contact-search-input" name="contact" value="{{ contact_query }}" placeholder="pablo.rivas@agfa.com">
+            <button class="submit-button" type="submit">Buscar</button>
+            <a class="ghost-button" href="{% url 'alert-settings' %}?tab=contacts">Limpiar</a>
+          </div>
+        </form>
+        <div class="contact-list">
+          {% for contact in alert_contacts %}
+            <article class="contact-card">
+              <div class="contact-card-head">
+                <div>
+                  <span class="contact-eyebrow">DESTINATARIO</span>
+                  <h3>{{ contact.email }}</h3>
+                  <p>{{ contact.rules|length }} alerta(s) asociada(s).</p>
+                </div>
+                <form method="post" data-confirm="Quitar este correo de todas las alertas?">
+                  {% csrf_token %}
+                  <input type="hidden" name="email" value="{{ contact.email }}">
+                  <button class="danger-button" type="submit" name="action" value="remove_contact_from_all">Quitar de todas</button>
+                </form>
+              </div>
+              <div class="contact-summary">
+                <span><strong>{{ contact.critical_count }}</strong> Criticas</span>
+                <span><strong>{{ contact.warning_count }}</strong> Advertencias</span>
+                <span><strong>{{ contact.info_count }}</strong> Informativas</span>
+              </div>
+              <div class="contact-rule-list">
+                {% for rule in contact.rules %}
+                  <div class="contact-rule-row">
+                    <div>
+                      <span class="severity-pill {{ rule.priority }}">{{ rule.get_priority_display }}</span>
+                      <strong>{{ rule.name }}</strong>
+                      <small>{{ rule.get_event_type_display }} · Cada {{ rule.min_interval_minutes }} min</small>
+                    </div>
+                    <form method="post" data-confirm="Quitar este correo solo de esta alerta?">
+                      {% csrf_token %}
+                      <input type="hidden" name="email" value="{{ contact.email }}">
+                      <input type="hidden" name="rule_id" value="{{ rule.id }}">
+                      <button class="ghost-button compact-action" type="submit" name="action" value="remove_contact_from_rule">Quitar</button>
+                    </form>
+                  </div>
+                {% endfor %}
+              </div>
+            </article>
+          {% empty %}
+            <div class="monitor-empty-state category-empty">
+              <strong>Sin contactos</strong>
+              <span>No hay destinatarios configurados para los filtros seleccionados.</span>
+            </div>
+          {% endfor %}
+        </div>
       </section>
     {% endif %}
 

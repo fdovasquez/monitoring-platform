@@ -1,4 +1,5 @@
 import csv
+from urllib.parse import quote
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -77,6 +78,27 @@ MONITOR_CATEGORY_DEFINITIONS = [
 ]
 
 
+def remove_recipient_from_rule(rule, email):
+    target = (email or "").strip().lower()
+    if not target:
+        return False
+    kept = []
+    seen = set()
+    removed = False
+    for address in rule.recipient_list():
+        key = address.lower()
+        if key == target:
+            removed = True
+            continue
+        if key not in seen:
+            seen.add(key)
+            kept.append(address)
+    if removed:
+        rule.recipients = ", ".join(kept)
+        rule.save(update_fields=["recipients", "updated_at"])
+    return removed
+
+
 class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "alerts/alert_settings.html"
 
@@ -118,6 +140,8 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         active_tab = kwargs.get("active_tab") or self.request.GET.get("tab", "monitors")
         if not can_manage:
             active_tab = "history"
+        contact_query = self.request.GET.get("contact", "").strip()
+        alert_contacts = self.alert_contacts(contact_query)
         context.update(
             {
                 "active_tab": active_tab,
@@ -135,6 +159,9 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 "monitor_assignments": monitor_assignments,
                 "history_filter": history_filter,
                 "logs": logs[:200],
+                "contact_query": contact_query,
+                "alert_contacts": alert_contacts,
+                "contact_count": len(alert_contacts),
                 "sent_count": AlertEmailLog.objects.filter(created_at__gte=cutoff, status=AlertEmailLog.STATUS_SENT).count(),
                 "error_count": AlertEmailLog.objects.filter(created_at__gte=cutoff, status=AlertEmailLog.STATUS_ERROR).count(),
             }
@@ -226,6 +253,27 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             return self.render_to_response(
                 self.get_context_data(bulk_recipients_form=form, active_tab="recipients")
             )
+
+        if action == "remove_contact_from_rule":
+            email = request.POST.get("email", "").strip()
+            rule = AlertRule.objects.filter(id=request.POST.get("rule_id")).first()
+            if rule and remove_recipient_from_rule(rule, email):
+                messages.success(request, f"{email} fue quitado de '{rule.name}'.")
+            else:
+                messages.error(request, "No se pudo quitar el destinatario de la alerta seleccionada.")
+            return redirect(f"/app/alerts/?tab=contacts&contact={quote(email)}")
+
+        if action == "remove_contact_from_all":
+            email = request.POST.get("email", "").strip()
+            updated = 0
+            for rule in AlertRule.objects.all():
+                if remove_recipient_from_rule(rule, email):
+                    updated += 1
+            if updated:
+                messages.success(request, f"{email} fue quitado de {updated} alerta(s).")
+            else:
+                messages.warning(request, f"No se encontro {email} en alertas configuradas.")
+            return redirect(f"/app/alerts/?tab=contacts&contact={quote(email)}")
 
         if action == "create_rule":
             form = AlertRuleForm(request.POST)
@@ -326,6 +374,30 @@ class AlertSettingsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             if category:
                 rules = rules.filter(event_type__in=category["events"])
         return rules
+
+    def alert_contacts(self, query=""):
+        contacts = {}
+        for rule in AlertRule.objects.order_by("name"):
+            for email in rule.recipient_list():
+                key = email.lower()
+                if query and query.lower() not in key:
+                    continue
+                if key not in contacts:
+                    contacts[key] = {
+                        "email": email,
+                        "rules": [],
+                        "critical_count": 0,
+                        "warning_count": 0,
+                        "info_count": 0,
+                    }
+                contacts[key]["rules"].append(rule)
+                if rule.priority == AlertRule.PRIORITY_CRITICAL:
+                    contacts[key]["critical_count"] += 1
+                elif rule.priority == AlertRule.PRIORITY_WARNING:
+                    contacts[key]["warning_count"] += 1
+                else:
+                    contacts[key]["info_count"] += 1
+        return sorted(contacts.values(), key=lambda item: item["email"].lower())
 
     def filtered_logs(self, form):
         cutoff = timezone.now() - timezone.timedelta(days=30)
